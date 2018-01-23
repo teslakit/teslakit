@@ -28,7 +28,7 @@ if __name__ == "__main__":
     num_sims = 100
     sim_start = 1700
     sim_end = 3201
-    
+
     evbmusd_sim = AutoRegLogisticReg(bmus, num_wts, num_sims, sim_start, sim_end)
 
 

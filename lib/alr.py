@@ -96,7 +96,7 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y):
 
             # Event sequence simulation   
             prob = alr.predict_proba(np.concatenate(terms.values(),axis=1))
-            probTrans = np.cumsum(prob[-1,:])  
+            probTrans = np.cumsum(prob[-1,:])
             evbmusd = np.append(evbmusd, np.where(probTrans>np.random.rand())[0][0]+1)
 
         evbmusd_sims[:,n] = evbmusd
@@ -110,3 +110,4 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y):
     evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
     return evbmusd_sims
+
