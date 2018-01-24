@@ -18,11 +18,11 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 p_pred_save = op.join(p_data, 'TKPRED_SST.nc')
 wpred = WP(p_pred_save)
 
+
 # calculate running average grouped by months and save
 #wpred.CalcRunningMean(5)
 #wpred.SaveData()
 
-# TODO: CONTINUAR A PARTIR DE AQUI
 
 # Principal Components Analysis
 y1 = 1880
@@ -32,6 +32,8 @@ mN = 5
 
 wpred.CalcPCA(y1, yN, m1, mN)
 
+import sys
+sys.exit()
 
 # KMA Classification 
 num_clusters = 6
@@ -43,4 +45,3 @@ AWT = ClassificationKMA(wpred.PCA, num_clusters, num_reps, repres)
 
 # ---------------------------------------------------------------------------
 # TODO: CONTINUAR CON LA REGRESION LOGISTICA
-# TODO: PLOTEOS
