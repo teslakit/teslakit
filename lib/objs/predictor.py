@@ -120,11 +120,14 @@ class WeatherPredictor(object):
 
         # principal components analysis
         ipca = PCA(n_components=var_anom_demean.shape[0])
-        ipca.fit(var_anom_demean)
+        PCs = ipca.fit_transform(var_anom_demean)
 
-        # TODO: RELACION CODIGO MATLAB
-        #EOFs = xr.DataArray(ff.components_)
-        #variance = xr.DataArray(ff.explained_variance_)
+        EOFs = xr.DataArray(ipca.components_)
+        variance = xr.DataArray(ipca.explained_variance_)
 
-        return ipca
+        return {
+            'PCs': PCs,
+            'EOFs': EOFs,
+            'variance': variance
+        }
 

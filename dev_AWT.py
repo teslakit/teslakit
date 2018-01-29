@@ -30,18 +30,15 @@ yN = 2016
 m1 = 6
 mN = 5
 
-ipca = wpred.CalcPCA(y1, yN, m1, mN)
-
-#print ipca.components_ (eofs)
-#print ipca.explained_variance_
+d_pca = wpred.CalcPCA(y1, yN, m1, mN)
 
 # KMA Classification 
 num_clusters = 6
 num_reps = 2000
 repres = 0.95
 
-AWT = ClassificationKMA(ipca, num_clusters, num_reps, repres)
+AWT = ClassificationKMA(d_pca, num_clusters, num_reps, repres)
 
 
 # ---------------------------------------------------------------------------
-# TODO: ENLAZAR CON LA REGRESION LOGISTICA
+# TODO: ENLAZAR CON LA REGRESION LOGISTICA al final

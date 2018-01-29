@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy
+from sklearn.cluster import KMeans
 
 def running_mean(x, N, mode_str='mean'):
     'Same running mean as used by Dylan'
@@ -29,10 +30,37 @@ def running_mean(x, N, mode_str='mean'):
     x = numpy.insert(x, 0, numpy.ones(N)*numpy.mean(x))
     x = numpy.append(x, numpy.ones(N)*numpy.mean(x))
 
-    cumsum = numpy.cumsum(numpy.insert(x, 0, 0)) 
+    cumsum = numpy.cumsum(numpy.insert(x, 0, 0))
     return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
 
-def ClassificationKMA(PCA, num_clusters, num_reps, repres):
+
+def ClassificationKMA(d_PCA, num_clusters, num_reps, repres):
     'TODO: DOCUMENTAR'
 
+    # PCA data
+    variance = d_PCA['variance']
+    EOFs = d_PCA['EOFs']
+    PCs = d_PCA['PCs']
+
+    # APEV: the cummulative proportion of explained variance by ith PC
+    APEV = numpy.cumsum(variance.values) / numpy.sum(variance.values)*100.0
+    nterm = numpy.where(APEV <= repres*100)[0][-1]
+
+    PCsub = PCs[:, :nterm+1]
+    EOFsub = EOFs[:nterm+1, :]
+
+    # KMEANS
+    kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
+
+    # TODO: SALE PERFECTO:
+    # AGRUPAR RESULTADOS EN AWT (XRDATASET O DICT)
+    # DOCUMENTAR 
+    # INCORPORAR PLOTEOS
+    # REPASAR SCRIPTS DEV_ PARA ESTA PARTE DEL PROYECTO
+
     return None
+    print kma
+    print kma.cluster_centers_
+    print kma.inertia_
+    print kma.labels_
+
