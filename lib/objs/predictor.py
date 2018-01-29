@@ -6,13 +6,14 @@ import os.path as op
 import numpy as np
 import xarray as xr
 import datetime
+from sklearn.decomposition import PCA
 
 from lib.custom_stats import running_mean
 
 class WeatherPredictor(object):
     'Predictor por Annual Weather Types methodology'
 
-    # TODO: INCORPORAR PLOTEOS CON MATPLOTLIB O LO QUE SEA QUE USA XR
+    # TODO: INCORPORAR PLOTEOS CON MATPLOTLIB (interactivo? plt.show()?) 
 
     def __init__(self, p_save):
 
@@ -20,9 +21,6 @@ class WeatherPredictor(object):
 
         self.data_set = None     # xr.Dataset
         self.name_pred = None     # name of the predictor variable (SST, MSL, ...)
-
-        # TODO: utilizar el dataset para guardarlo todo
-        self.PCA = None          # Principal components analysis: EOFs, PCs, varia
 
         # Load data from file if it exists
         self.LoadData()
@@ -77,6 +75,7 @@ class WeatherPredictor(object):
                     time_mnt = self.data_set.time[ix_mnt]
                     data_pnt = self.data_set['predictor'].loc[lon, lat, time_mnt]
 
+
                     tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(data_pnt.values, 5)
 
         # store data
@@ -85,9 +84,6 @@ class WeatherPredictor(object):
 
     def CalcPCA(self, y1, y2, m1, m2):
         'Principal component analysis'
-
-        # TODO: HAY DIFERENCIAS EN LA COLA DE LOS DATOS RUNNING_AVERAGE
-        # RESPECTO MATLAB, COMPROBAR 
 
         # use datetime for indexing
         dt1 = datetime.datetime(y1,m1,1)
@@ -107,11 +103,28 @@ class WeatherPredictor(object):
         # we need to reshape to collapse 12 months of data to a single vector
         nlon = data_avg_lat.longitude.shape[0]
         ntime = data_avg_lat.time.shape[0]
-        hovmoller = np.reshape(data_avg_lat.values,(12*nlon, ntime/12))
+        hovmoller=xr.DataArray(
+            np.reshape(data_avg_lat.values, (12*nlon, ntime/12), order='F'))
+        hovmoller = hovmoller.transpose()
 
-        # TODO: retornar output en xr.dataset o similar
+        # mean and standard deviation
+        var_anom_mean = hovmoller.mean(axis=0)
+        var_anom_std = hovmoller.std(axis=0)
 
-        PCA = None
-        return PCA
+        # Ok, so we're removing those means, and normalizing by the standard
+        # deviation at anomaly.  This gives a matrix with rows = time (observations)
+        # and columns = longitude (locations)
+        nk_m = np.kron(np.ones((y2-y1+1,1)), var_anom_mean)
+        nk_s = np.kron(np.ones((y2-y1+1,1)), var_anom_std)
+        var_anom_demean = (hovmoller - nk_m)/nk_s
 
+        # principal components analysis
+        ipca = PCA(n_components=var_anom_demean.shape[0])
+        ipca.fit(var_anom_demean)
+
+        # TODO: RELACION CODIGO MATLAB
+        #EOFs = xr.DataArray(ff.components_)
+        #variance = xr.DataArray(ff.explained_variance_)
+
+        return ipca
 

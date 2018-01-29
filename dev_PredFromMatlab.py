@@ -39,7 +39,7 @@ data_pred = xr.DataArray(var, coords=[lon, lat, time],
 data_bb = data_pred.loc[lon1:lon2, lat1:lat2, :]
 
 # Create a WeatherPredictor object and set data
-p_pred_save = op.join(p_data, 'TKPRED_SST_test.nc') # file to save/load pred data
+p_pred_save = op.join(p_data, 'TKPRED_SST.nc') # file to save/load pred data
 wpred = WP(p_pred_save)
 wpred.SetData(data_bb)
 
