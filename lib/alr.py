@@ -86,9 +86,9 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y):
     evbmusd_sims = np.zeros((len(list_sim_years), num_sims))
     for n in range(num_sims):
         print 'simulation num. {0}'.format(n+1)
-        evbmusd = evbmus[:2]  # simulation bmus start from KMA
+        evbmusd = evbmus[:mk_order]  # simulation bmus start from KMA
 
-        for i in range(len(list_sim_years) -mk_order-1):
+        for i in range(len(list_sim_years) -mk_order):
 
             terms = Generate_ALRTerms(
                 np.append(evbmusd[i : i + mk_order], 0),

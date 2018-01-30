@@ -52,15 +52,16 @@ def ClassificationKMA(d_PCA, num_clusters, num_reps, repres):
     # KMEANS
     kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
 
-    # TODO: SALE PERFECTO:
-    # AGRUPAR RESULTADOS EN AWT (XRDATASET O DICT)
-    # DOCUMENTAR 
-    # INCORPORAR PLOTEOS
-    # REPASAR SCRIPTS DEV_ PARA ESTA PARTE DEL PROYECTO
-
-    return None
+    print 'KMEANS Classification COMPLETE'
     print kma
-    print kma.cluster_centers_
-    print kma.inertia_
-    print kma.labels_
+
+    # TODO: DEVOLVER XARRAY?
+    return {
+        'Nterm': nterm,
+        'PCs': PCsub,
+        'cenEOFs': kma.cluster_centers_,
+        'bmus': kma.labels_,
+        'centroids': numpy.dot(kma.cluster_centers_, EOFsub)
+    }
+    # TODO: dates y bmus_corrected del codigo matlab?
 

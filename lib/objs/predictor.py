@@ -125,6 +125,9 @@ class WeatherPredictor(object):
         EOFs = xr.DataArray(ipca.components_)
         variance = xr.DataArray(ipca.explained_variance_)
 
+        print 'Principal Components Analysis COMPLETE'
+        print ipca
+
         return {
             'PCs': PCs,
             'EOFs': EOFs,

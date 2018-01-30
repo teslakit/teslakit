@@ -6,6 +6,7 @@ import os.path as op
 
 from lib.objs.predictor import WeatherPredictor as WP
 from lib.custom_stats import ClassificationKMA
+from lib.alr import AutoRegLogisticReg
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
@@ -18,13 +19,14 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 p_pred_save = op.join(p_data, 'TKPRED_SST.nc')
 wpred = WP(p_pred_save)
 
-
 # calculate running average grouped by months and save
 #wpred.CalcRunningMean(5)
 #wpred.SaveData()
 
 
+## ----------------------------------
 # Principal Components Analysis
+
 y1 = 1880
 yN = 2016
 m1 = 6
@@ -32,13 +34,28 @@ mN = 5
 
 d_pca = wpred.CalcPCA(y1, yN, m1, mN)
 
+
+## ----------------------------------
 # KMA Classification 
+
 num_clusters = 6
 num_reps = 2000
 repres = 0.95
 
-AWT = ClassificationKMA(d_pca, num_clusters, num_reps, repres)
+d_AWT = ClassificationKMA(d_pca, num_clusters, num_reps, repres)
 
 
-# ---------------------------------------------------------------------------
-# TODO: ENLAZAR CON LA REGRESION LOGISTICA al final
+## ----------------------------------
+## Autoregressive Logistic Regression
+
+bmus = d_AWT['bmus']
+num_wts = 6  # or len(set(bmus))
+num_sims = 100
+sim_start = 1700
+sim_end = 3701
+
+evbmusd_sim = AutoRegLogisticReg(bmus, num_wts, num_sims, sim_start, sim_end)
+print evbmusd_sim
+
+
+
