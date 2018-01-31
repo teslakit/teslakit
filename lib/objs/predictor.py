@@ -122,15 +122,12 @@ class WeatherPredictor(object):
         ipca = PCA(n_components=var_anom_demean.shape[0])
         PCs = ipca.fit_transform(var_anom_demean)
 
-        EOFs = xr.DataArray(ipca.components_)
-        variance = xr.DataArray(ipca.explained_variance_)
-
         print 'Principal Components Analysis COMPLETE'
-        print ipca
-
-        return {
-            'PCs': PCs,
-            'EOFs': EOFs,
-            'variance': variance
-        }
+        return xr.Dataset(
+            {
+                'PCs': (('n_components', 'n_components'), PCs),
+                'EOFs': (('n_components','n_features'), ipca.components_),
+                'variance': (('n_components',), ipca.explained_variance_),
+            }
+        )
 

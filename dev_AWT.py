@@ -32,7 +32,7 @@ yN = 2016
 m1 = 6
 mN = 5
 
-d_pca = wpred.CalcPCA(y1, yN, m1, mN)
+xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
 
 
 ## ----------------------------------
@@ -42,7 +42,7 @@ num_clusters = 6
 num_reps = 2000
 repres = 0.95
 
-d_AWT = ClassificationKMA(d_pca, num_clusters, num_reps, repres)
+xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
 
 
 ## ----------------------------------
@@ -56,6 +56,4 @@ sim_end = 3701
 
 evbmusd_sim = AutoRegLogisticReg(bmus, num_wts, num_sims, sim_start, sim_end)
 print evbmusd_sim
-
-
 
