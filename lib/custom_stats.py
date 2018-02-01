@@ -38,8 +38,7 @@ def running_mean(x, N, mode_str='mean'):
 
 def sort_cluster_gen_corr_end(centers, dimdim):
     'SOMs alternative'
-    # TODO: DOCUMENTAR
-
+    # TODO: DOCUMENTAR. BIEN PROGRAMADA PERO TESTEAR
 
     # get dimx, dimy
     dimy = np.floor(np.sqrt(dimdim)).astype(int)
@@ -50,15 +49,9 @@ def sort_cluster_gen_corr_end(centers, dimdim):
         # TODO: RAISE ERROR
         pass
 
-    # TODO: DURANTE EL DESARROLLO DE LA FUNCIOBN VAMOS A HARDCODEAR EL INPUT
-    #dd = distance_matrix(centers, centers)
+    dd = distance_matrix(centers, centers)
     qx = 0
-    #sc = np.random.permutation(dimdim).reshape(dimy, dimx)
-
-    from lib.io.matlab import ReadMatfile
-    dmf = ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/teslakit/data/dd_sc.mat')
-    dd = dmf['dd']
-    sc = np.array([[4, 3, 1],[5, 0, 2]])
+    sc = np.random.permutation(dimdim).reshape(dimy, dimx)
 
     # get qx
     for i in range(dimy):
@@ -92,6 +85,7 @@ def sort_cluster_gen_corr_end(centers, dimdim):
                     qx += dd[sc[i+1,j+1], sc[i,j]]
 
     # test permutations
+    q=np.inf
     go_out = False
     for i in range(dimdim):
         if go_out:
@@ -104,12 +98,11 @@ def sort_cluster_gen_corr_end(centers, dimdim):
             for k in range(dimdim):
                 if len(np.unique([i,j,k]))==3:
 
-                    u = sc
-                    u = u.reshape(1, dimdim)
-                    u[i] = sc[j]
-                    u[j] = sc[k]
-                    u[k] = sc[i]
-                    u = u.reshape(dimy, dimx)
+                    u = sc.flatten('F')
+                    u[i] = sc.flatten('F')[j]
+                    u[j] = sc.flatten('F')[k]
+                    u[k] = sc.flatten('F')[i]
+                    u = u.reshape(dimy, dimx, order='F')
 
                     f=0
                     for ix in range(dimy):
@@ -142,13 +135,18 @@ def sort_cluster_gen_corr_end(centers, dimdim):
                                 if not jx+1==dimx:
                                     f += dd[u[ix+1,jx+1], u[ix,jx]]
 
+                    if f<=q:
+                        q = f
+                        sc = u
+                        print sc
 
-    # TODO: SEGUIR AQUI
+                        if q<=qx:
+                            qx=q
+                            go_out=False
 
 
 
-    import sys; sys.exit()
-
+    return sc, dimy, dimx, qx
 
 def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     ''
