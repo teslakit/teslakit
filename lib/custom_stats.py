@@ -91,7 +91,6 @@ def sort_cluster_gen_corr_end(centers, dimdim):
         if go_out:
             break
 
-        print i
         go_out = True
 
         for j in range(dimdim):
@@ -138,15 +137,14 @@ def sort_cluster_gen_corr_end(centers, dimdim):
                     if f<=q:
                         q = f
                         sc = u
-                        print sc
 
                         if q<=qx:
                             qx=q
                             go_out=False
 
 
-
-    return sc, dimy, dimx, qx
+    # print qx
+    return sc.flatten('F')
 
 def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     ''
@@ -167,8 +165,8 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     # KMEANS
     kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
 
-    # TODO generar/almacenar el bmus corregido
-    #sort_data = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+    # sort kmeans
+    kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
 
     # TODO: dates y bmus_corrected del codigo matlab?
 
@@ -177,6 +175,7 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
 
     return xr.Dataset(
         {
+            'order': (('n_clusters'), kma_order),
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
             'bmus': (('n_pcacomp',), kma.labels_),
             'PCs': (('n_pcacomp','n_features'), PCsub),
