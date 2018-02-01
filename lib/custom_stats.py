@@ -167,20 +167,34 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
 
     # sort kmeans
     kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+    bmus_corrected = np.zeros((len(kma.labels_),),)*np.nan
+    for i in range(num_clusters):
+        posc = np.where(kma.labels_==kma_order[i])
+        bmus_corrected[posc] = i
+
+    # adding some usefull data
+    # TODO: km, x, SST_centers (igual entra en otra parte del codigo)
 
     # TODO: dates y bmus_corrected del codigo matlab?
 
-    print 'KMEANS Classification COMPLETE'
-    print kma
+    # first 3 PCs
+    PC1 = np.divide(PCsub[:,0], np.sqrt(variance.values[0]))
+    PC2 = np.divide(PCsub[:,1], np.sqrt(variance.values[1]))
+    PC3 = np.divide(PCsub[:,2], np.sqrt(variance.values[2]))
 
+    print 'KMEANS Classification COMPLETE'
     return xr.Dataset(
         {
             'order': (('n_clusters'), kma_order),
+            'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
             'bmus': (('n_pcacomp',), kma.labels_),
             'PCs': (('n_pcacomp','n_features'), PCsub),
             'centroids': (('n_clusters','n_pcafeat'),
                           np.dot(kma.cluster_centers_, EOFsub)),
+            'PC1': (('n_pcacomp'), PC1),
+            'PC2': (('n_pcacomp'), PC2),
+            'PC3': (('n_pcacomp'), PC3),
         }
     )
 

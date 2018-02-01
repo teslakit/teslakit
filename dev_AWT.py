@@ -33,7 +33,7 @@ m1 = 6
 mN = 5
 
 xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
-
+print xds_pca
 
 ## ----------------------------------
 # KMA Classification 
@@ -43,17 +43,19 @@ num_reps = 2000
 repres = 0.95
 
 xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
+print xds_AWT
 
-print xds_AWT['cenEOFs']
-print xds_AWT['bmus']
-print xds_AWT['centroids']
+# TODO: PC123 Y COPULAS con KS DENSITY. LUEGO EMPAQUETAR EN lib
+
+
+
+
 import sys; sys.exit()
-
 
 ## ----------------------------------
 ## Autoregressive Logistic Regression
 
-bmus = d_AWT['bmus']
+bmus = xds_AWT['bmus'].values
 num_wts = 6  # or len(set(bmus))
 num_sims = 100
 sim_start = 1700
