@@ -50,23 +50,102 @@ def sort_cluster_gen_corr_end(centers, dimdim):
         # TODO: RAISE ERROR
         pass
 
-    dd = distance_matrix(centers, centers)
+    # TODO: DURANTE EL DESARROLLO DE LA FUNCIOBN VAMOS A HARDCODEAR EL INPUT
+    #dd = distance_matrix(centers, centers)
     qx = 0
-    sc = np.random.permutation(dimdim).reshape(dimy, dimx)
+    #sc = np.random.permutation(dimdim).reshape(dimy, dimx)
 
+    from lib.io.matlab import ReadMatfile
+    dmf = ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/teslakit/data/dd_sc.mat')
+    dd = dmf['dd']
+    sc = np.array([[4, 3, 1],[5, 0, 2]])
+
+    # get qx
     for i in range(dimy):
         for j in range(dimx):
 
             # row F-1
             if not i==0:
-                pass
+                qx += dd[sc[i-1,j], sc[i,j]]
+
+                if not j==0:
+                    qx += dd[sc[i-1,j-1], sc[i,j]]
+
+                if not j+1==dimx:
+                    qx += dd[sc[i-1,j+1], sc[i,j]]
 
             # row F
             if not j==0:
-                pass
+                qx += dd[sc[i,j-1], sc[i,j]]
 
             if not j+1==dimx:
                 qx += dd[sc[i,j+1], sc[i,j]]
+
+            # row F+1
+            if not i+1==dimy:
+                qx += dd[sc[i+1,j], sc[i,j]]
+
+                if not j==0:
+                    qx += dd[sc[i+1,j-1], sc[i,j]]
+
+                if not j+1==dimx:
+                    qx += dd[sc[i+1,j+1], sc[i,j]]
+
+    # test permutations
+    go_out = False
+    for i in range(dimdim):
+        if go_out:
+            break
+
+        print i
+        go_out = True
+
+        for j in range(dimdim):
+            for k in range(dimdim):
+                if len(np.unique([i,j,k]))==3:
+
+                    u = sc
+                    u = u.reshape(1, dimdim)
+                    u[i] = sc[j]
+                    u[j] = sc[k]
+                    u[k] = sc[i]
+                    u = u.reshape(dimy, dimx)
+
+                    f=0
+                    for ix in range(dimy):
+                        for jx in range(dimx):
+
+                            # row F-1
+                            if not ix==0:
+                                f += dd[u[ix-1,jx], u[ix,jx]]
+
+                                if not jx==0:
+                                    f += dd[u[ix-1,jx-1], u[ix,jx]]
+
+                                if not jx+1==dimx:
+                                    f += dd[u[ix-1,jx+1], u[ix,jx]]
+
+                            # row F
+                            if not jx==0:
+                                f += dd[u[ix,jx-1], u[ix,jx]]
+
+                            if not jx+1==dimx:
+                                f += dd[u[ix,jx+1], u[ix,jx]]
+
+                            # row F+1
+                            if not ix+1==dimy:
+                                f += dd[u[ix+1,jx], u[ix,jx]]
+
+                                if not jx==0:
+                                    f += dd[u[ix+1,jx-1], u[ix,jx]]
+
+                                if not jx+1==dimx:
+                                    f += dd[u[ix+1,jx+1], u[ix,jx]]
+
+
+    # TODO: SEGUIR AQUI
+
+
 
     import sys; sys.exit()
 
@@ -91,7 +170,7 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
 
     # TODO generar/almacenar el bmus corregido
-    sort_data = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+    #sort_data = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
 
     # TODO: dates y bmus_corrected del codigo matlab?
 

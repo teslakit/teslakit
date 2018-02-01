@@ -44,6 +44,11 @@ repres = 0.95
 
 xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
 
+print xds_AWT['cenEOFs']
+print xds_AWT['bmus']
+print xds_AWT['centroids']
+import sys; sys.exit()
+
 
 ## ----------------------------------
 ## Autoregressive Logistic Regression
