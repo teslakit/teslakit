@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import xarray as xr
 from scipy.spatial import distance_matrix
 from sklearn.cluster import KMeans
-import xarray as xr
+
 
 def running_mean(x, N, mode_str='mean'):
     '''
@@ -16,7 +17,7 @@ def running_mean(x, N, mode_str='mean'):
     one of the following strings:
       'edge'    : X is padded with first and last values along dimension
                   DIM (default)
-      'zeros'    : X is padded with zeros
+      'zeros'   : X is padded with zeros
       'ones'    : X is padded with ones
       'mean'    : X is padded with the mean along dimension DIM
 
@@ -48,9 +49,10 @@ def running_mean(x, N, mode_str='mean'):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
 
-
 def sort_cluster_gen_corr_end(centers, dimdim):
-    'SOMs alternative'
+    '''
+    SOMs alternative
+    '''
     # TODO: DOCUMENTAR. BIEN PROGRAMADA PERO TESTEAR
 
     # get dimx, dimy
@@ -160,7 +162,8 @@ def sort_cluster_gen_corr_end(centers, dimdim):
     return sc.flatten('F')
 
 def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
-    ''
+    '''
+    '''
     # TODO DOCUMENTAR
 
     # PCA data

@@ -128,6 +128,10 @@ class WeatherPredictor(object):
                 'PCs': (('n_components', 'n_components'), PCs),
                 'EOFs': (('n_components','n_features'), ipca.components_),
                 'variance': (('n_components',), ipca.explained_variance_),
+
+                '_years':(('n_components',), range(y1,y2+1)),
+                '_longitude':(('n_lon',), self.data_set['longitude'].values),
+
             }
         )
 
