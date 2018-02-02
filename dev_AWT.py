@@ -7,6 +7,7 @@ import os.path as op
 from lib.objs.predictor import WeatherPredictor as WP
 from lib.custom_stats import ClassificationKMA
 from lib.alr import AutoRegLogisticReg
+from lib.custom_plot import PlotEOFs
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
@@ -20,9 +21,9 @@ p_pred_save = op.join(p_data, 'TKPRED_SST.nc')
 wpred = WP(p_pred_save)
 
 # calculate running average grouped by months and save
-#wpred.CalcRunningMean(5)
+wpred.CalcRunningMean(5)
 #wpred.SaveData()
-
+import sys; sys.exit()
 
 ## ----------------------------------
 # Principal Components Analysis
@@ -34,6 +35,14 @@ mN = 5
 
 xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
 print xds_pca
+
+
+# plot EOFs
+n_plot = 6
+PlotEOFs(xds_pca, n_plot)
+
+
+import sys; sys.exit()
 
 ## ----------------------------------
 # KMA Classification 
