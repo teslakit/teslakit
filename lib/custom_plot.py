@@ -28,10 +28,9 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
 
         # reshape from vector to matrix with separated months
-        # TODO: TEST MATPLOTLIB, PROGAMAR FUNCION
-        from lib.io.matlab import ReadMatfile
-        dm=ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/teslakit/data/c.mat')
-        C = dm['C']
+        C = np.reshape(spatial_fields[:len_x*12], (12, len_x)).transpose()
+
+        # TODO: meshgrid para usar meses / longitude en axis
 
         # eof cmap
         ax1 = plt.subplot2grid((6, 6), (0, 0), colspan=6, rowspan=4)
@@ -47,7 +46,5 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         # SHOW
         plt.show()
 
-        # TODO ACABAR
-        import sys; sys.exit()
 
 
