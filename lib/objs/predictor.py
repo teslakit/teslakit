@@ -131,7 +131,11 @@ class WeatherPredictor(object):
 
                 '_years':(('n_components',), range(y1,y2+1)),
                 '_longitude':(('n_lon',), self.data_set['longitude'].values),
+            },
 
+            attrs = {
+                'm1': m1,
+                'm2': m2,
             }
         )
 

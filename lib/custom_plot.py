@@ -3,6 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import calendar
 
 def Plot_PredictorEOFs(xds_PCA, n_plot):
     '''
@@ -19,6 +20,11 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
     lon = xds_PCA['_longitude'].values
     len_x = len(lon)
 
+    m1 = xds_PCA.attrs['m1']
+    m2 = xds_PCA.attrs['m2']
+    l_months = [calendar.month_name[x] for x in range(1,13)]
+    ylbl = l_months[m1-1:] + l_months[:m2]
+
     # percentage of variance each field explains
     n_percent = variance / np.sum(variance)
 
@@ -30,13 +36,13 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         # reshape from vector to matrix with separated months
         C = np.reshape(spatial_fields[:len_x*12], (12, len_x)).transpose()
 
-        # TODO: meshgrid para usar meses / longitude en axis
-
         # eof cmap
         ax1 = plt.subplot2grid((6, 6), (0, 0), colspan=6, rowspan=4)
         plt.pcolormesh(np.transpose(C), cmap='RdBu', shading='gouraud')
         plt.clim(-1,1)
         plt.title('EOF #{0}  ---  {1:.2f}%'.format(it+1,n_percent[it]*100))
+        ax1.set_xticklabels([str(x) for x in lon])
+        ax1.set_yticklabels(ylbl)
 
         # time series
         ax2 = plt.subplot2grid((6, 6), (5, 0), colspan=6, rowspan=2)

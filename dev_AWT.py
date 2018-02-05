@@ -37,11 +37,9 @@ xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
 print xds_pca
 
 # plot EOFs
-n_plot = 3
-Plot_PredictorEOFs(xds_pca, n_plot)
+#n_plot = 1
+#Plot_PredictorEOFs(xds_pca, n_plot)
 
-
-import sys; sys.exit()
 
 ## ----------------------------------
 # KMA Classification 

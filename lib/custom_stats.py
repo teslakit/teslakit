@@ -3,9 +3,26 @@
 
 import numpy as np
 import xarray as xr
+from scipy import stats
 from scipy.spatial import distance_matrix
 from sklearn.cluster import KMeans
+import statsmodels.api as sm
+from scipy.interpolate import interp1d
 
+
+def ksdensity_CDF(x):
+    '''
+    Kernel smoothing function estimate.
+    Returns cumulative probability function at x.
+    '''
+
+    # TODO METER UN SWITCH EN ARGS para devolver kde.icdf interp
+
+    kde = sm.nonparametric.KDEUnivariate(x)
+    kde.fit()
+
+    fint = interp1d(kde.support, kde.cdf)
+    return fint(x)
 
 def running_mean(x, N, mode_str='mean'):
     '''
@@ -45,6 +62,7 @@ def running_mean(x, N, mode_str='mean'):
     elif mode_str == 'mean':
         x = np.insert(x, 0, np.ones(N)*np.mean(x))
         x = np.append(x, np.ones(N)*np.mean(x))
+
 
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
@@ -197,6 +215,31 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     PC1 = np.divide(PCsub[:,0], np.sqrt(variance.values[0]))
     PC2 = np.divide(PCsub[:,1], np.sqrt(variance.values[1]))
     PC3 = np.divide(PCsub[:,2], np.sqrt(variance.values[2]))
+
+    # TODO ACABAR COPULAS
+    # Generate copula for each WT
+    for i in []:  #range(num_clusters):
+
+        # getting copula number from plotting order
+        num = kma_order[i]
+
+        # find all the best match units equal
+        ind = np.where(kma.labels_ == num)[:]
+
+        # transfom data using kernel estimator
+        cdf_PC1 = ksdensity_CDF(PC1[ind])
+        cdf_PC2 = ksdensity_CDF(PC2[ind])
+        cdf_PC3 = ksdensity_CDF(PC3[ind])
+        U = np.column_stack((cdf_PC1.T, cdf_PC2.T, cdf_PC3.T))
+
+        # TODO COPULAFIT. fit u to a student t copula. leer la web que compara
+
+        # TODO COPULARND para crear USIMULADO
+
+        # TODO: KS DENSITY ICDF PARA CREAR PC123_RND SIMULATODS
+
+        # TODO: USAR NUM PARA GUARDAR LOS RESULTADOS
+
 
     print 'KMEANS Classification COMPLETE'
     return xr.Dataset(
