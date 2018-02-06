@@ -9,6 +9,31 @@ from sklearn.cluster import KMeans
 import statsmodels.api as sm
 from scipy.interpolate import interp1d
 
+def Persistences(series):
+    'Return series persistences for each element'
+
+    # output dict
+    d_pers = {}
+    for e in set(series):
+        d_pers[e] = []
+
+    # analize series
+    e0 = None
+    while series.any():
+
+        # pol left
+        e1 = series[0]
+        series = np.delete(series, 0)
+
+        if e1 != e0:
+            d_pers[e1].append(1)
+        else:
+            d_pers[e1][-1]+=1
+
+        # step forward
+        e0 = e1
+
+    return d_pers
 
 def ksdensity_CDF(x):
     '''
@@ -210,6 +235,10 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     # TODO: km, x, SST_centers (igual entra en otra parte del codigo)
 
     # TODO: dates y bmus_corrected del codigo matlab?
+
+    # Get bmus Persistences
+    # TODO: ver como guardar esta info
+    d_pers = Persistences(kma.labels_)
 
     # first 3 PCs
     PC1 = np.divide(PCsub[:,0], np.sqrt(variance.values[0]))
