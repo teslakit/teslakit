@@ -3,6 +3,7 @@
 
 import os.path as op
 import xarray as xr
+import numpy as np
 
 from lib.custom_plot import Plot_MJOphases
 
@@ -45,10 +46,34 @@ ds_mjo = xr.open_dataset(p_mjo)
 # select only data after initial year
 y1 = '1979-01-01'
 ds_mjo_cut = ds_mjo.loc[dict(time=slice(y1, None))]
-#print ds_mjo_cut
 
 # plot MJO data
-Plot_MJOphases(ds_mjo_cut)
+#Plot_MJOphases(ds_mjo_cut)
 
 
+# categorize MJO (25 types)
+phase = ds_mjo_cut['phase']
+rmm1 = ds_mjo_cut['rmm1']
+rmm2 = ds_mjo_cut['rmm2']
+rmm = np.sqrt(rmm1**2+rmm2**2)
 
+# get category
+categ = np.empty(rmm.shape)*np.nan
+for i in range(1,9):
+    s = np.squeeze(np.where(phase == i))
+    rmm_p = rmm[s]
+
+    # TODO: VA LENTO. OPTIMIZAR
+    for j in s:
+        if rmm[j] > 2.5:
+            categ[j] = i
+        elif rmm[j] > 1.5:
+            categ[j] = i+8
+        elif rmm[j] > 1:
+            categ[j] = i+8*2
+        elif rmm[j] <= 1:
+            categ[j] = 25
+
+print categ
+
+import sys; sys.exit()
