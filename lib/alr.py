@@ -6,6 +6,7 @@ import numpy as np
 np.set_printoptions(threshold=np.nan)
 from sklearn import linear_model
 from collections import OrderedDict
+from datetime import datetime
 
 
 # TODO: YEARSAGO Y NUMYEARS FUNCTIONS: REPASAR Y SUSTITUIR
@@ -94,6 +95,7 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y,
     mk_order        - markov tree order. default 1
     time_data       - times associated with evbmus, default None
     '''
+
 
     # TODO: PROBLEMAS PARA COMPROBAR TIME_DATA EN EL INPUT. USAR DICCIONARIO
     #PARA OPCIONALES

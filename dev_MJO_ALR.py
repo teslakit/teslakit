@@ -58,17 +58,19 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 #
 ## add categories to MJO Dataset and save
 #ds_mjo_cut['categ'] = (('time',), categ)
+#
+## save dataset
 #ds_mjo_cut.to_netcdf(op.join(p_data, 'MJO_categ.nc'),'w')
 
 
 # plot MJO data
 #Plot_MJOphases(ds_mjo_cut)
 
-# TODO plot MJO categories
-#Plot_MJOCategories()
+# plot MJO categories
+#Plot_MJOCategories(ds_mjo_cut)
 
 
-# -------------------------------------------------------------------
+# -----------------------------------
 ## Autoregressive Logistic Regression
 
 # Load a MJO data from netcdf
@@ -76,7 +78,49 @@ p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
 ds_mjo_cut = xr.open_dataset(p_mjo_cut)
 
 
-Plot_MJOCategories(ds_mjo_cut)
+# TODO: VERSIONAR EL num_years
+from lib.alr import num_years
+import numpy as np
+from datetime import datetime
+time_data = ds_mjo_cut['time']
+
+y1 = time_data[0].dt.year
+m1 = time_data[0].dt.month
+d1 = time_data[0].dt.day
+y2 = time_data[-1].dt.year
+m2 = time_data[-1].dt.month
+d2 = time_data[-1].dt.day
+
+
+# TODO: CREO que esto devuelve el numero de anios entre dos fechas..
+# TODO: ESTO DEBERIA SER UNA FUNCION PROPIA EN PYTHON, REEMPLAZAR
+print num_years(
+    datetime(y1,m1,d1),
+    datetime(y2,m2,d2))
+
+import sys
+sys.exit()
+
+t = np.zeros_like(time_data, dtype=np.float)
+
+for i in range(len(time_data)):
+    t[i] = num_years(
+        datetime(time_data[0].year,
+            time_data[0].month,
+            time_data[0].day),
+        datetime(time_data[i].year,
+            time_data[i].month,
+            time_data[i].day))
+
+
+print t
+
+
+
+
+
+
+
 
 import sys; sys.exit()
 

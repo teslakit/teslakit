@@ -62,6 +62,8 @@ num_sims = 100
 sim_start = 1700
 sim_end = 3701
 
-evbmusd_sim = AutoRegLogisticReg(bmus, num_wts, num_sims, sim_start, sim_end)
+evbmusd_sim = AutoRegLogisticReg(
+    bmus, num_wts, num_sims, sim_start, sim_end)
+
 print evbmusd_sim
 
