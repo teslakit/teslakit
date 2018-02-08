@@ -52,12 +52,6 @@ repres = 0.95
 xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
 print xds_AWT
 
-# TODO: PC123 Y COPULAS con KS DENSITY. LUEGO EMPAQUETAR EN lib
-
-
-
-
-import sys; sys.exit()
 
 ## ----------------------------------
 ## Autoregressive Logistic Regression

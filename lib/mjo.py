@@ -36,5 +36,5 @@ def GetMJOCategories(rmm1, rmm2, phase):
         s = np.squeeze(np.where(categ == i))
         rmm_categ['cat_{0}'.format(i)] = np.column_stack((rmm1[s],rmm2[s]))
 
-    return categ, rmm_categ
+    return categ.astype(int), rmm_categ
 

@@ -3,6 +3,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import calendar
 
 def Plot_PredictorEOFs(xds_PCA, n_plot):
@@ -93,14 +94,105 @@ def Plot_MJOphases(xds_mjo):
     ax.plot([-4,4],[4,-4], color='k', linewidth=size_lines)
     ax.plot([-4,4],[0,0],  color='k', linewidth=size_lines)
     ax.plot([0,0], [-4,4], color='k', linewidth=size_lines)
-    ax.set_aspect('equal')
 
     # axis
     plt.xlim(-4, 4)
     plt.ylim(-4, 4)
     plt.xlabel('RMM1')
     plt.ylabel('RMM2')
+    ax.set_aspect('equal')
 
     # show
     plt.show()
 
+def Plot_MJOCategories(xds_mjo):
+    'Plot MJO data separated by 25 categories'
+
+    # data
+    rmm1 = xds_mjo['rmm1']
+    rmm2 = xds_mjo['rmm2']
+    categ = xds_mjo['categ']
+
+    # parameters for custom plot
+    size_lines = 0.8
+    color_lines_1 = (0.4102, 0.4102, 0.4102)
+    l_colors_categ = [
+        (0.527343750000000, 0.804687500000000, 0.979166666666667),
+        (0, 0.746093750000000, 1),
+        (0.253906250000000, 0.410156250000000, 0.878906250000000),
+        (0, 0, 0.800781250000000),
+        (0, 0, 0.542968750000000),
+        (0.273437500000000, 0.507812500000000, 0.703125000000000),
+        (0, 0.804687500000000, 0.816406250000000),
+        (0.250000000000000, 0.875000000000000, 0.812500000000000),
+        (0.500000000000000, 0, 0),
+        (0.542968750000000, 0.269531250000000, 0.0742187500000000),
+        (0.820312500000000, 0.410156250000000, 0.117187500000000),
+        (1, 0.839843750000000, 0),
+        (1, 0.644531250000000, 0),
+        (1, 0.269531250000000, 0),
+        (1, 0, 0),
+        (0.695312500000000, 0.132812500000000, 0.132812500000000),
+        (0.500000000000000, 0, 0.500000000000000),
+        (0.597656250000000, 0.195312500000000, 0.796875000000000),
+        (0.726562500000000, 0.332031250000000, 0.824218750000000),
+        (1, 0, 1),
+        (0.480468750000000, 0.406250000000000, 0.929687500000000),
+        (0.539062500000000, 0.167968750000000, 0.882812500000000),
+        (0.281250000000000, 0.238281250000000, 0.542968750000000),
+        (0.292968750000000, 0, 0.507812500000000),
+        (0.660156250000000, 0.660156250000000, 0.660156250000000),
+    ]
+
+    # plot figure
+    plt.figure(1)
+    ax = plt.subplot(111)
+
+    # plot sectors
+    ax.plot([-4,4],[-4,4], color='k', linewidth=size_lines, zorder=9)
+    ax.plot([-4,4],[4,-4], color='k', linewidth=size_lines, zorder=9)
+    ax.plot([-4,4],[0,0],  color='k', linewidth=size_lines, zorder=9)
+    ax.plot([0,0], [-4,4], color='k', linewidth=size_lines, zorder=9)
+
+    # plot circles
+    R = [1, 1.5, 2.5]
+
+    for rr in R:
+        ax.add_patch(
+            patches.Circle(
+                (0,0),
+                rr,
+                color='k',
+                linewidth=size_lines,
+                fill=False,
+                zorder=9)
+        )
+    ax.add_patch(
+        patches.Circle((0,0),R[0],fc='w',fill=True, zorder=10))
+
+    # plot data by categories
+    for i in range(1,25):
+        if i>8: size_points = 0.2
+        else: size_points = 1.7
+
+        ax.scatter(
+            rmm1.where(categ==i),
+            rmm2.where(categ==i),
+            c=l_colors_categ[i-1],
+            s=size_points)
+    ax.scatter(
+        rmm1.where(categ==25),
+        rmm2.where(categ==25),
+        c=l_colors_categ[i-1],
+        s=0.2,
+    zorder=11)
+
+    # axis
+    plt.xlim(-4, 4)
+    plt.ylim(-4, 4)
+    plt.xlabel('RMM1')
+    plt.ylabel('RMM2')
+    ax.set_aspect('equal')
+
+    # show
+    plt.show()

@@ -7,6 +7,29 @@ np.set_printoptions(threshold=np.nan)
 from sklearn import linear_model
 from collections import OrderedDict
 
+
+# TODO: YEARSAGO Y NUMYEARS FUNCTIONS: REPASAR Y SUSTITUIR
+def yearsago(years, from_date=None):
+    if from_date is None:
+        from_date = datetime.now()
+    try:
+        return from_date.replace(year=from_date.year - int(years))
+    except ValueError:
+        # Must be 2/29!
+        assert from_date.month == 2 and from_date.day == 29 # can be removed
+        return from_date.replace(month=2, day=28,year=from_date.year-int(years))
+
+def num_years(begin, end=None):
+    if end is None:
+        end = datetime.now()
+    num_years = (end - begin).days / 365.25
+
+    if begin > yearsago(num_years, end):
+        return num_years - 1
+    else:
+        return num_years
+
+
 def Generate_ALRTerms(bmus, clust_size, mk_order, t, cov, covT):
     '''
     Creates terms for ALR model. Returns OrderedDict with ALR terms.
@@ -28,7 +51,11 @@ def Generate_ALRTerms(bmus, clust_size, mk_order, t, cov, covT):
     if t:
         #T = np.zeros((bmus.size,1))
         #T[:,0] = t
-        terms['seasonality'] = np.column_stack([np.cos(2*np.pi*t), np.sin(2*np.pi*t)])
+        #terms['seasonality'] = np.column_stack([np.cos(2*np.pi*t), np.sin(2*np.pi*t)])
+        terms['seasonality'] = np.column_stack(
+            [np.cos(2*np.pi*t), np.sin(2*np.pi*t),
+             np.cos(4*np.pi*t), np.sin(4*np.pi*t),
+             np.cos(8*np.pi*t) ,np.sin(8*np.pi*t)])
 
     # Covariables term (normalization)
     if cov and covT:
@@ -54,24 +81,42 @@ def Generate_ALRTerms(bmus, clust_size, mk_order, t, cov, covT):
 
     return terms
 
-def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y):
+def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y,
+                      mk_order=1, time_data=None):
     '''
     TODO: definir lo que hace
 
-    evbmus - KMA classification bmus
-    cluster_size - number of states
-    num_sims - number of simulations
-    sim_start_y - simulation start year
-    sim_end_y - simulation end year
+    evbmus          - KMA classification bmus
+    cluster_size    - number of states
+    num_sims        - number of simulations
+    sim_start_y     - simulation start year
+    sim_end_y       - simulation end year
+    mk_order        - markov tree order. default 1
+    time_data       - times associated with evbmus, default None
     '''
 
-    mk_order = 1  #TODO  decidir si va fuera o dentro
+    # TODO: PROBLEMAS PARA COMPROBAR TIME_DATA EN EL INPUT. USAR DICCIONARIO
+    #PARA OPCIONALES
+    # TODO repasar codigo correspondiente a time data
+    if time_data.any():
+        t = np.zeros_like(time_data.index, dtype=np.float)
+        for i in len(time_data):
+            t[i] = num_years(
+            datetime(time_data[0].year,
+                     time_data[0].month,
+                     time_data[0].day),
+            datetime(time_data[i].year,
+                     time_data[i].month,
+                     time_data[i].day))
+    else:
+        t = None
 
-    # TODO: INTRODUCIR OPCION FITTING PERIOD? O USAR TODOS LOS DATOS EN BMUS
+    print t
+    import sys; sys.exit()
 
     # initialize model fitting
     terms = Generate_ALRTerms(
-        evbmus, cluster_size, mk_order, None, None, None)
+        evbmus, cluster_size, mk_order, t, None, None)
 
     # start model fitting
     tmodl = np.concatenate(terms.values(), axis=1)
@@ -88,11 +133,11 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y):
         print 'simulation num. {0}'.format(n+1)
         evbmusd = evbmus[:mk_order]  # simulation bmus start from KMA
 
-        for i in range(len(list_sim_years) -mk_order):
+        for i in range(len(list_sim_years) - mk_order):
 
             terms = Generate_ALRTerms(
                 np.append(evbmusd[i : i + mk_order], 0),
-                cluster_size, mk_order, None, None, None)
+                cluster_size, mk_order, t, None, None)
 
             # Event sequence simulation   
             prob = alr.predict_proba(np.concatenate(terms.values(),axis=1))
