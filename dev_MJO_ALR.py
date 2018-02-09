@@ -38,9 +38,9 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 #ds_mjo.to_netcdf(op.join(p_data, 'MJO.nc'),'w')
 
 
-# -------------------------------------------------------------------
-# Load MJO data and do categories analisys 
-#
+## -------------------------------------------------------------------
+## Load MJO data and do categories analisys 
+##
 ## Load a MJO data from netcdf
 #p_mjo = op.join(p_data, 'MJO.nc')
 #ds_mjo = xr.open_dataset(p_mjo)
@@ -59,14 +59,15 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 ## add categories to MJO Dataset and save
 #ds_mjo_cut['categ'] = (('time',), categ)
 #
+#
 ## save dataset
 #ds_mjo_cut.to_netcdf(op.join(p_data, 'MJO_categ.nc'),'w')
 
 
-# plot MJO data
+## plot MJO data
 #Plot_MJOphases(ds_mjo_cut)
 
-# plot MJO categories
+## plot MJO categories
 #Plot_MJOCategories(ds_mjo_cut)
 
 
@@ -77,64 +78,22 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
 ds_mjo_cut = xr.open_dataset(p_mjo_cut)
 
-
-# TODO: VERSIONAR EL num_years
-from lib.alr import num_years
-import numpy as np
-from datetime import datetime
-time_data = ds_mjo_cut['time']
-
-y1 = time_data[0].dt.year
-m1 = time_data[0].dt.month
-d1 = time_data[0].dt.day
-y2 = time_data[-1].dt.year
-m2 = time_data[-1].dt.month
-d2 = time_data[-1].dt.day
-
-
-# TODO: CREO que esto devuelve el numero de anios entre dos fechas..
-# TODO: ESTO DEBERIA SER UNA FUNCION PROPIA EN PYTHON, REEMPLAZAR
-print num_years(
-    datetime(y1,m1,d1),
-    datetime(y2,m2,d2))
-
-import sys
-sys.exit()
-
-t = np.zeros_like(time_data, dtype=np.float)
-
-for i in range(len(time_data)):
-    t[i] = num_years(
-        datetime(time_data[0].year,
-            time_data[0].month,
-            time_data[0].day),
-        datetime(time_data[i].year,
-            time_data[i].month,
-            time_data[i].day))
-
-
-print t
-
-
-
-
-
-
-
-
-import sys; sys.exit()
-
-bmus = ds_mjo['categ'].values
-t_data = ds_mjo['time'].values
+bmus = ds_mjo_cut['categ'].values
+t_data = ds_mjo_cut['time']
 num_wts = 25
 num_sims = 1
 sim_start = 1700
 sim_end = 2402
 mk_order = 2
 
+# TODO SEPARAR PARARMETROS FIJOS DE PARAMETROS OPCIONALES
+# TODO DAR MAS OPCIONES PARA DISENAR LOS PARAMETROS OPCIONALES
 evbmusd_sim = AutoRegLogisticReg(
     bmus, num_wts, num_sims, sim_start, sim_end,
     mk_order=2, time_data=t_data)
+
+# TODO: junto con time_data deberias indicar si hay termino T y/o termino
+# seasonality y en este caso definir seasonality, un diccionario con parametros
 
 print evbmusd_sim
 
