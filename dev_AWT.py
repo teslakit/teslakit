@@ -61,6 +61,15 @@ num_wts = 6  # or len(set(bmus))
 num_sims = 100
 sim_start = 1700
 sim_end = 3701
+mk_order = 1
+
+# Autoregressive terms
+d_ALR_terms = {
+    'mk_order'  : (True, mk_order),
+    'constant_term' : (True,),
+    'time_term' : (False, ),
+    'seasonality_term': (False,[],[]),
+}
 
 evbmusd_sim = AutoRegLogisticReg(
     bmus, num_wts, num_sims, sim_start, sim_end)

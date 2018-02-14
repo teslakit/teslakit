@@ -9,6 +9,8 @@ from collections import OrderedDict
 from datetime import datetime, date
 import xarray as xr
 
+# TODO: ACLARAR GESTION DEL DATO TIME
+
 def GetNumYears(time_data):
     'Returns time in custom year decimal format'
 
@@ -24,84 +26,105 @@ def GetNumYears(time_data):
     delta = d1- d0
     return  np.array(range(delta.days+1))/365.25
 
-def Generate_ALRTerms(bmus, clust_size, mk_order, t_yd, cov, covT):
+#def Generate_ALRTerms(bmus, clust_size, mk_order, time_data, season_data, cov, covT):
+def Generate_ALRTerms(bmus, clust_size, d_alrterms):
     '''
     Creates terms for ALR model. Returns OrderedDict with ALR terms.
 
     bmus - cluster evolution data
     clust_size - number of clusters
-    mk_order - markov chain order
-    t - time series
-    cov, covT - covariables
+    d_alrterms - ALR terms options
     '''
 
     # return an Ordered dictonary
     terms = OrderedDict()
 
     # constant term
-    terms['constant'] = np.ones((bmus.size,1))
+    if d_alrterms['constant_term'][0]:
+        terms['constant'] = np.ones((bmus.size,1))
 
-    # time and seasonality term 
-    # TODO: CUSTOMIZE SEASONALITY waves
-    if t_yd.size:
-        #T = np.zeros((bmus.size,1))
-        #T[:,0] = t
+    # Time term
+    # TODO: creo que este termino no funciona bien (14000,1) --> (14000,)
+    # time array (use custom time array with year decimals)
+    if d_alrterms['time_term'][0]:
+        terms['time'] = GetNumYears(d_alrterms['time_term'][1])
 
-        #terms['seasonality'] = np.column_stack([np.cos(2*np.pi*t), np.sin(2*np.pi*t)])
-        terms['seasonality'] = np.column_stack(
-            [np.cos(2*np.pi*t_yd), np.sin(2*np.pi*t_yd),
-             np.cos(4*np.pi*t_yd), np.sin(4*np.pi*t_yd),
-             np.cos(8*np.pi*t_yd) ,np.sin(8*np.pi*t_yd)])
+    # Seasonality term 
+    # time array (use custom time array with year decimals)
+    if d_alrterms['seasonality_term'][0]:
+        season_time = GetNumYears(d_alrterms['seasonality_term'][1])
+        season_amps = d_alrterms['seasonality_term'][2]
 
-    import sys; sys.exit()    
+        temp_seas = np.zeros((len(season_time), 2*len(season_amps)))
+        c = 0
+        for amp in season_amps:
+            temp_seas [:,c]   = np.cos(amp*np.pi*season_time)
+            temp_seas [:,c+1] = np.sin(amp*np.pi*season_time)
+            c+=2
+        terms['seasonality'] = temp_seas
 
+    # TODO: desarrollar covariables term
     # Covariables term (normalization)
-    if cov and covT:
-        alrt_covar = (cov - covT.mean(axis=0)) / covT.std(axis=0)
-        for i in range(alrt_covar.shape[1]):
-            terms['cov_{0}'.format(i+1)] = np.transpose(np.asmatrix(covN[:,i]))
+    #if cov and covT:
+    #    alrt_covar = (cov - covT.mean(axis=0)) / covT.std(axis=0)
+    #    for i in range(alrt_covar.shape[1]):
+    #        terms['cov_{0}'.format(i+1)] = np.transpose(np.asmatrix(covN[:,i]))
 
-    # dummi for markov chain
-    def dummi(csize):
-        D = np.ones((csize-1, csize)) * -1
-        for i in range(csize-1):
-            D[i, csize-1-i] = csize-i-1
-            D[i, csize-1+1-i:] = 0
-        return D
-    dum = dummi(clust_size)
+    # markov term
+    if d_alrterms['mk_order'][0]:
+        # dummi for markov chain
+        def dummi(csize):
+            D = np.ones((csize-1, csize)) * -1
+            for i in range(csize-1):
+                D[i, csize-1-i] = csize-i-1
+                D[i, csize-1+1-i:] = 0
+            return D
+        dum = dummi(clust_size)
 
-    # solve markov order N
-    for i in range(mk_order):
-        Z = np.zeros((bmus.size, clust_size-1))
-        for indz in range(bmus.size-i-1):
-            Z[indz+i+1,0:] = np.squeeze(dum[0:,bmus[indz]-1])
-        terms['markov_{0}'.format(i+1)] = Z
+        # solve markov order N
+        mk_order = d_alrterms['mk_order'][1]
+        for i in range(mk_order):
+            Z = np.zeros((bmus.size, clust_size-1))
+            for indz in range(bmus.size-i-1):
+                Z[indz+i+1,0:] = np.squeeze(dum[0:,bmus[indz]-1])
+            terms['markov_{0}'.format(i+1)] = Z
 
     return terms
 
 def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y,
-                      mk_order=1, time_data=None):
+                       d_alrterms = {}):
     '''
-    TODO: definir lo que hace
+    TODO: definir
 
     evbmus          - KMA classification bmus
     cluster_size    - number of states
     num_sims        - number of simulations
     sim_start_y     - simulation start year
     sim_end_y       - simulation end year
-    mk_order        - markov tree order. default 1
-    time_data       - times associated with evbmus, default None
+    d_alrterms      - ALR terms parameters
     '''
 
-    # handle optional time data (use custom time array with year decimals)
-    if isinstance(time_data, xr.DataArray):
-        t_yd = GetNumYears(time_data)
-    else:
-        t_yd = np.array([])  # empty array for no time data
+    # TODO: GENERALIZAR EL VECTOR TIEMPO PARA SER ANUAL, DAILY, O FUNCION DEL
+    # INPUT DE USUARIO
+    # TODO: PUEDE QUE HAYA QUE DAR: FECHA INICIAL, FECHA FINAL, RESOLUCION
+    # DAILY / YEARLY
+
+    # default ALR terms
+    d_alrterms_default = {
+        'mk_order'  : (True, 1),        # markov tree order (bool, mk_order)
+        'constant_term' : (True,),      # constant term     (bool,)
+        'time_term' : (False, ),        # time term         (bool, time_data)
+        'seasonality_term': (False,0,), # seasonality term  (bool, time_data, amplitudes)
+    }
+
+    # join user and default input
+    for k in d_alrterms_default.keys():
+        if k not in d_alrterms:
+            d_alrterms[k] = d_alrterms_default[k]
+
 
     # initialize model fitting
-    terms = Generate_ALRTerms(
-        evbmus, cluster_size, mk_order, t_yd, None, None)
+    terms = Generate_ALRTerms(evbmus, cluster_size, d_alrterms)
 
     # start model fitting
     tmodl = np.concatenate(terms.values(), axis=1)
@@ -109,22 +132,48 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y,
     alr.fit(tmodl,evbmus)
     predprob = alr.predict_proba(tmodl)
 
+    # get some data before simulations
+    if d_alrterms['time_term'][0]:
+        time_term_tarray = d_alrterms['time_term'][1]
+
+    if d_alrterms['seasonality_term'][0]:
+        season_time_array = d_alrterms['seasonality_term'][1]
+        season_amps = d_alrterms['seasonality_term'][2]
 
     # start model simulations
+    mk_order = d_alrterms['mk_order'][1]
     list_sim_years = range(sim_start_y, sim_end_y)
 
     evbmusd_sims = np.zeros((len(list_sim_years), num_sims))
+    print "Computing {0} simulations...".format(num_sims)
     for n in range(num_sims):
         print 'simulation num. {0}'.format(n+1)
         evbmusd = evbmus[:mk_order]  # simulation bmus start from KMA
+        # TODO: ? usar evbmus[:mk_order] (los primeros) o [-mk_order:] (los ultimos)
 
         for i in range(len(list_sim_years) - mk_order):
 
-            terms = Generate_ALRTerms(
-                np.append(evbmusd[i : i + mk_order], 0),
-                cluster_size, mk_order, t_yd, None, None)
+            # fix ALR terms for simulation (time related terms)
+            d_sim_alrterms = d_alrterms
 
-            # Event sequence simulation   
+            if d_sim_alrterms['time_term'][0]:
+                d_sim_alrterms['time_term'] = (
+                    True,
+                    time_term_tarray[i : i + mk_order + 1])
+
+            if d_sim_alrterms['seasonality_term'][0]:
+                d_sim_alrterms['seasonality_term'] = (
+                    True,
+                    season_time_array[i : i + mk_order + 1],
+                    season_amps
+                )
+
+            terms = Generate_ALRTerms(
+                np.append(evbmus[i : i + mk_order], 0),
+                cluster_size, d_sim_alrterms)
+
+
+            # Event sequence simulation  
             prob = alr.predict_proba(np.concatenate(terms.values(),axis=1))
             probTrans = np.cumsum(prob[-1,:])
             evbmusd = np.append(evbmusd, np.where(probTrans>np.random.rand())[0][0]+1)
@@ -139,5 +188,5 @@ def AutoRegLogisticReg(evbmus, cluster_size, num_sims, sim_start_y, sim_end_y,
 
     evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
-    return evbmusd_sims
+    return evbmusd_sims, evbmus_probcum
 
