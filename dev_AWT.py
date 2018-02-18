@@ -6,8 +6,8 @@ import os.path as op
 
 from lib.objs.predictor import WeatherPredictor as WP
 from lib.custom_stats import ClassificationKMA
-from lib.alr import AutoRegLogisticReg
 from lib.custom_plot import Plot_PredictorEOFs
+from lib.objs.alr_enveloper import ALR_ENV
 
 
 # data storage
@@ -57,22 +57,33 @@ print xds_AWT
 ## Autoregressive Logistic Regression
 
 bmus = xds_AWT['bmus'].values
+t_data = xds_AWT['time']
 num_wts = 6  # or len(set(bmus))
-num_sims = 100
-sim_start = 1700
-sim_end = 3701
-mk_order = 1
 
-# Autoregressive terms
-d_ALR_terms = {
-    'mk_order'  : (True, mk_order),
-    'constant_term' : (True,),
-    'time_term' : (False, ),
-    'seasonality_term': (False,[],[]),
+# Autoregressive logistic enveloper
+ALRE = ALR_ENV(bmus, t_data, num_wts)
+
+# ALR terms
+d_terms_settings = {
+    'mk_order'  : 1,
+    'constant' : True,
+    'time' : False,
+    'seasonality': (False, []),
 }
 
-evbmusd_sim = AutoRegLogisticReg(
-    bmus, num_wts, num_sims, sim_start, sim_end)
+ALRE.SetFittingTerms(d_terms_settings)
 
-print evbmusd_sim
+# ALR model fitting
+ALRE.FitModel()
+
+# ALR model simulations 
+sim_num = 10
+sim_start = 1700
+sim_end = 3200
+sim_freq = '1y'
+
+evbmus_sim, evbmus_probcum = ALRE.Simulate(sim_num, sim_start, sim_end,
+                                           sim_freq)
+print evbmus_sim
+print evbmus_probcum
 

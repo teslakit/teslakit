@@ -6,7 +6,7 @@ import xarray as xr
 
 from lib.mjo import GetMJOCategories
 from lib.custom_plot import Plot_MJOphases, Plot_MJOCategories
-from lib.alr import AutoRegLogisticReg
+from lib.objs.alr_enveloper import ALR_ENV
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
@@ -65,37 +65,48 @@ ds_mjo_cut.to_netcdf(p_mjo_cut)
 
 
 # plot MJO data
-Plot_MJOphases(ds_mjo_cut)
+#Plot_MJOphases(ds_mjo_cut)
 
 # plot MJO categories
-Plot_MJOCategories(ds_mjo_cut)
+#Plot_MJOCategories(ds_mjo_cut)
 
 
 # -----------------------------------
 # Autoregressive Logistic Regression
 
 # Load a MJO data from netcdf
-#p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
-#ds_mjo_cut = xr.open_dataset(p_mjo_cut)
+p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
+ds_mjo_cut = xr.open_dataset(p_mjo_cut)
 
 bmus = ds_mjo_cut['categ'].values
 t_data = ds_mjo_cut['time']
-num_wts = 25
-num_sims = 1
-sim_start = 1700
-sim_end = 2402
-mk_order = 3
+num_categs  = 25
 
-# Autoregressive terms
-d_ALR_terms = {
-    'mk_order'  : (True, mk_order),
-    'constant_term' : (True,),
-    'time_term' : (False, ),
-    'seasonality_term': (True, t_data, [2,4,8]),
+# Autoregressive logistic enveloper
+ALRE = ALR_ENV(bmus, t_data, num_categs)
+
+# ALR terms
+d_terms_settings = {
+    'mk_order'  : 3,
+    'constant' : True,
+    'time' : False,
+    'seasonality': (True, [2,4,8]),
 }
 
-evbmusd_sim, evbmus_probcum = AutoRegLogisticReg(
-    bmus, num_wts, num_sims, sim_start, sim_end,
-    d_ALR_terms)
+ALRE.SetFittingTerms(d_terms_settings)
 
-print evbmusd_sim
+# ALR model fitting
+ALRE.FitModel()
+
+# ALR model simulations 
+sim_num = 1
+sim_start = 1900
+sim_end = 2602
+sim_freq = '1d'
+
+evbmus_sim, evbmus_probcum = ALRE.Simulate(sim_num, sim_start, sim_end,
+                                           sim_freq)
+
+print evbmus_sim
+print evbmus_probcum
+
