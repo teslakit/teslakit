@@ -12,7 +12,7 @@ from lib.objs.alr_enveloper import ALR_ENV
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 
 
-# -------------------------------------------------------------------
+# ---------------------------------
 ## parse MJO.mat to netcdf dataset
 #
 #from lib.io.matlab import ReadMatfile as rmat
