@@ -26,7 +26,7 @@ ALRE = ALR_ENV(bmus, t_data, num_categs)
 d_terms_settings = {
     'mk_order'  : 3,
     'constant' : True,
-    'time' : False,
+    'long_term' : False,
     'seasonality': (True, [2,4,8]),
 }
 

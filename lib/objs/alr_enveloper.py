@@ -33,7 +33,7 @@ class ALR_ENV(object):
         default_settings = {
             'mk_order'  : 0,
             'constant' : False,
-            'time' : False,
+            'long_term' : False,
             'seasonality': (False, []),
         }
 
@@ -65,9 +65,9 @@ class ALR_ENV(object):
             terms['constant'] = np.ones((bmus.size, 1))
 
         # time term (use custom time array with year decimals)
-        if d_terms_settings['time']:
-            terms['time'] = np.ones((bmus.size, 1))
-            terms['time'][:,0] = self.GetFracYears(time)
+        if d_terms_settings['long_term']:
+            terms['long_term'] = np.ones((bmus.size, 1))
+            terms['long_term'][:,0] = self.GetFracYears(time)
 
         # seasonality term
         if d_terms_settings['seasonality'][0]:
@@ -176,6 +176,7 @@ class ALR_ENV(object):
         # TODO: PARSEADO DEL ORIGINAL. ES UN SINSENTIDO 
         # TODO: HABLAR CON LAURA Y ANA QUE BMUS USAR PARA INICIAR SIM
         evbmus_base = evbmus_values[0:mk_order+1]
+        # TODO: COGERLO DESDE EL PRINCIPIO DE LA SERIE BMUS
 
         evbmus_sims = np.zeros((len(list_sim_dates), num_sims))
 
@@ -208,5 +209,5 @@ class ALR_ENV(object):
 
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
-        return evbmus_sims, evbmus_probcum
+        return evbmus_sims, evbmus_probcum, list_sim_dates
 

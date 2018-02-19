@@ -67,7 +67,7 @@ ALRE = ALR_ENV(bmus, t_data, num_wts)
 d_terms_settings = {
     'mk_order'  : 1,
     'constant' : True,
-    'time' : False,
+    'long_term' : False,
     'seasonality': (False, []),
 }
 
