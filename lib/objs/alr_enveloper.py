@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import time
 #np.set_printoptions(threshold=np.nan)
 from collections import OrderedDict
 from sklearn import linear_model
@@ -24,6 +25,7 @@ class ALR_ENV(object):
         self.ALR_model = None
 
         # ALR terms
+        self.d_terms_settings = {}
         self.terms_fit = {}
 
     def SetFittingTerms(self, d_terms_settings):
@@ -35,6 +37,7 @@ class ALR_ENV(object):
             'constant' : False,
             'long_term' : False,
             'seasonality': (False, []),
+            'covariates': (False, [])
         }
 
         # join user and default input
@@ -83,14 +86,15 @@ class ALR_ENV(object):
 
             terms['seasonality'] = temp_seas
 
-        # TODO: desarrollar covariables term
-        # Covariables term (normalization)
-        #if cov and covT:
-        #    alrt_covar = (cov - covT.mean(axis=0)) / covT.std(axis=0)
-        #    for i in range(alrt_covar.shape[1]):
-        #        terms['cov_{0}'.format(i+1)] = np.transpose(np.asmatrix(covN[:,i]))
+        # Covariables term (normalized)
+        if d_terms_settings['covariates'][0]:
+            cov_norm = d_terms_settings['covariates'][1]
+            for i in range(cov_norm.shape[1]):
+                terms['cov_{0}'.format(i+1)] = np.transpose(
+                    np.asmatrix(cov_norm[:,i]))
 
         # markov term
+        # TODO: COMPARAR MARKOVs CON JAAA ALR PARA COVARS
         if d_terms_settings['mk_order'] > 0:
 
             # dummi for markov chain
@@ -150,13 +154,17 @@ class ALR_ENV(object):
         tmodl = np.concatenate(terms.values(), axis=1)
 
         # fit model
+        start_time = time.time()
         self.ALR_model = linear_model.LogisticRegression(
             penalty='l2', C=1e5, fit_intercept=False)
         self.ALR_model.fit(tmodl, evbmus)
+        elapsed_time = time.time() - start_time
+        print "Optimization done in {0:.2f} seconds".format(elapsed_time)
 
-        #predprob = self.ALR_model.predict_proba(tmodl)
+        predprob = self.ALR_model.predict_proba(tmodl)
+        print predprob
 
-    def Simulate(self, num_sims, sim_start_y, sim_end_y, sim_freq):
+    def Simulate(self, num_sims, sim_start_y, sim_end_y, sim_freq, sim_covars_T=None):
         'Launch ARL model simulations'
 
         # get needed data
@@ -173,18 +181,26 @@ class ALR_ENV(object):
             list_sim_dates = [date(x,1,1) for x in
                               range(sim_start_y,sim_end_y+1)]
 
-        # TODO: PARSEADO DEL ORIGINAL. ES UN SINSENTIDO 
-        # TODO: HABLAR CON LAURA Y ANA QUE BMUS USAR PARA INICIAR SIM
-        evbmus_base = evbmus_values[0:mk_order+1]
-        # TODO: COGERLO DESDE EL PRINCIPIO DE LA SERIE BMUS
-
+        # start simulations
         evbmus_sims = np.zeros((len(list_sim_dates), num_sims))
-
         for n in range(num_sims):
             print 'simulation num. {0}'.format(n+1)
-            evbmus = evbmus_base[-mk_order:]
+            evbmus = evbmus_values[-mk_order:]
 
+            # TODO: SACAF EL IF DEL BUCLE, PORQUE LO RALENTIZA
             for i in range(len(list_sim_dates) - mk_order):
+
+                # handle optional covars
+                if self.d_terms_settings['covariates'][0]:
+                    sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
+                    sim_cov_norm = (
+                        sim_covars_evbmus - sim_covars_T.mean(axis=0)
+                    ) / sim_covars_T.std(axis=0)
+
+                    self.d_terms_settings['covariates']=(
+                        True,
+                        sim_cov_norm
+                    )
 
                 # generate time step ALR terms
                 terms_i = self.GenerateALRTerms(
@@ -193,11 +209,11 @@ class ALR_ENV(object):
                     list_sim_dates[i : i + mk_order + 1],
                     self.cluster_size)
 
-
                 # Event sequence simulation  
                 prob = self.ALR_model.predict_proba(np.concatenate(terms_i.values(),axis=1))
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
+                print i
 
             evbmus_sims[:,n] = evbmus
 
