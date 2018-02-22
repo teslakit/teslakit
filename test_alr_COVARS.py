@@ -55,6 +55,7 @@ date_end = min(dates_MJO[-1], dates_AWT[-1])
 dates_covar = [date_ini + timedelta(days=i) for i in
                range((date_end-date_ini).days+1)]
 
+print ''
 print 'KMA dates:   {0} --- {1}'.format(dates_KMA[0], dates_KMA[-1])
 print ''
 print 'COVARIATES:'
@@ -122,17 +123,20 @@ ALRE.FitModel()
 
 # ---------------------------------
 # ALR model simulations 
-sim_num = 4
+sim_num = 2
 sim_start = 1700
-sim_end = 1702
+sim_end = 1701
 sim_freq = '1d'
 
 
 # ---------------------------------
 # get covariates data for simulation
 
+# TODO:TESTEAR DATOS 1000 YEARS 
+
 # AWT: PCs
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
+#p_mat = op.join(p_data, 'AWT_1000.mat')
 d_mat = rmat(p_mat)['AWT']
 PCs = d_mat['PCs']
 dates_AWT = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
@@ -142,6 +146,7 @@ dates_AWT_d_sim = [x.date() for x in PCs_d_sim.index]
 
 # MJO: rmm1, rmm2
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
+#p_mat = op.join(p_data, 'AWT_1000.mat')
 d_mat = rmat(p_mat)
 rmm1 = d_mat['rmm1']
 rmm2 = d_mat['rmm2']
@@ -149,6 +154,7 @@ dates_MJO = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
 rmm = np.vstack((rmm1, rmm2)).transpose()
 temp = pd.DataFrame(rmm, columns=['rmm1','rmm2'], index=dates_MJO)
 MJO_d_sim = temp.reindex(pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D'),method='pad') # there are nans in 1978
+
 
 # make covar data share the same dates
 date_ini = max(dates_MJO[0], dates_AWT[0])
@@ -185,5 +191,8 @@ p_mat_output = op.join(p_data, 'output_500a_part1_v2_alrSims.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum
-    hf['dates'] = np.vstack((dates_sim.year, dates_sim.month, dates_sim.day)).T
+    hf['dates'] = np.vstack(
+        ([d.year for d in dates_sim],
+        [d.month for d in dates_sim],
+        [d.day for d in dates_sim])).T
 
