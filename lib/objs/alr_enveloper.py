@@ -22,6 +22,7 @@ class ALR_ENV(object):
         self.cluster_size = cluster_size
 
         # ALR model core
+        # TODO: VER SI PUEDE GUARDARSE EN UN ARCHIVO DESPUES DEL FIT
         self.ALR_model = None
 
         # ALR terms
@@ -154,15 +155,15 @@ class ALR_ENV(object):
         tmodl = np.concatenate(terms.values(), axis=1)
 
         # fit model
+        print "\nFitting autoregressive logistic model..."
         start_time = time.time()
         self.ALR_model = linear_model.LogisticRegression(
             penalty='l2', C=1e5, fit_intercept=False)
         self.ALR_model.fit(tmodl, evbmus)
         elapsed_time = time.time() - start_time
-        print "Optimization done in {0:.2f} seconds".format(elapsed_time)
+        print "Optimization done in {0:.2f} seconds\n".format(elapsed_time)
 
-        predprob = self.ALR_model.predict_proba(tmodl)
-        print predprob
+        #predprob = self.ALR_model.predict_proba(tmodl)
 
     def Simulate(self, num_sims, sim_start_y, sim_end_y, sim_freq, sim_covars_T=None):
         'Launch ARL model simulations'
@@ -182,6 +183,7 @@ class ALR_ENV(object):
                               range(sim_start_y,sim_end_y+1)]
 
         # start simulations
+        print "\nLaunching simulations...\n"
         evbmus_sims = np.zeros((len(list_sim_dates), num_sims))
         for n in range(num_sims):
             print 'simulation num. {0}'.format(n+1)
@@ -213,7 +215,6 @@ class ALR_ENV(object):
                 prob = self.ALR_model.predict_proba(np.concatenate(terms_i.values(),axis=1))
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
-                print i
 
             evbmus_sims[:,n] = evbmus
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import h5py # TODO temporal para exportar al final
 import os.path as op
 import xarray as xr
 import pandas as pd
@@ -121,9 +122,9 @@ ALRE.FitModel()
 
 # ---------------------------------
 # ALR model simulations 
-sim_num = 10
+sim_num = 4
 sim_start = 1700
-sim_end = 1703
+sim_end = 1702
 sim_freq = '1d'
 
 
@@ -175,9 +176,14 @@ cov_T_sim = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
 
 
 # launch simulation
-evbmus_sim, evbmus_probcum, dump = ALRE.Simulate(
+evbmus_sim, evbmus_probcum, dates_sim = ALRE.Simulate(
     sim_num, sim_start, sim_end, sim_freq, cov_T_sim)
 
-print evbmus_sim
-print evbmus_probcum
+
+# TODO: GUARDAR RESULTADOS PARA TESTEOS
+p_mat_output = op.join(p_data, 'output_500a_part1_v2_alrSims.h5')
+with h5py.File(p_mat_output, 'w') as hf:
+    hf['bmusim'] = evbmus_sim
+    hf['probcum'] = evbmus_probcum
+    hf['dates'] = np.vstack((dates_sim.year, dates_sim.month, dates_sim.day)).T
 
