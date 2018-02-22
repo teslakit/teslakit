@@ -115,7 +115,7 @@ d_terms_settings = {
 ALRE.SetFittingTerms(d_terms_settings)
 
 # ALR model fitting
-ALRE.FitModel()
+#ALRE.FitModel()
 
 
 
@@ -133,6 +133,7 @@ sim_freq = '1d'
 # get covariates data for simulation
 
 # TODO:TESTEAR DATOS 1000 YEARS 
+#print 'tests 1000 years'
 
 # AWT: PCs
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
@@ -141,8 +142,19 @@ d_mat = rmat(p_mat)['AWT']
 PCs = d_mat['PCs']
 dates_AWT = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
 temp = pd.DataFrame(PCs[:,0:3], columns=['PC1','PC2','PC3'], index=dates_AWT)
+
+
+# no funciona para mas de 500 y
+#print pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D')
 PCs_d_sim = temp.reindex(pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D'),method='pad')
-dates_AWT_d_sim = [x.date() for x in PCs_d_sim.index]
+
+
+# no acepta period_Range para el reindex
+#PCs_d_sim = temp.reindex(pd.period_range(temp.index[0], temp.index[-1], freq='D'),method='pad')
+
+
+
+
 
 # MJO: rmm1, rmm2
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
@@ -186,7 +198,7 @@ evbmus_sim, evbmus_probcum, dates_sim = ALRE.Simulate(
     sim_num, sim_start, sim_end, sim_freq, cov_T_sim)
 
 
-# TODO: GUARDAR RESULTADOS PARA TESTEOS
+# TODO: GUARDAR RESULTADOS PARA PLOT MATLAB
 p_mat_output = op.join(p_data, 'output_500a_part1_v2_alrSims.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim

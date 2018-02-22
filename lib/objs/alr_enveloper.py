@@ -22,7 +22,7 @@ class ALR_ENV(object):
         self.cluster_size = cluster_size
 
         # ALR model core
-        # TODO: VER SI PUEDE GUARDARSE EN UN ARCHIVO DESPUES DEL FIT
+        # TODO: Guardar modelo para no repetir FIT
         self.ALR_model = None
 
         # ALR terms
@@ -95,7 +95,6 @@ class ALR_ENV(object):
                     np.asmatrix(cov_norm[:,i]))
 
         # markov term
-        # TODO: COMPARAR MARKOVs CON JAAA ALR PARA COVARS
         if d_terms_settings['mk_order'] > 0:
 
             # dummi for markov chain
@@ -187,12 +186,14 @@ class ALR_ENV(object):
         evbmus_sims = np.zeros((len(list_sim_dates), num_sims))
         for n in range(num_sims):
             print 'simulation num. {0}'.format(n+1)
-            evbmus = evbmus_values[-mk_order:]
+            evbmus = evbmus_values[1:mk_order+1] # TODO: arreglado, comentar
 
-            # TODO: SACAF EL IF DEL BUCLE, PORQUE LO RALENTIZA
             for i in range(len(list_sim_dates) - mk_order):
 
                 # handle optional covars
+                # TODO: optimizar 
+                # en vez de d_terms, hacer terms_sim y override
+                # sacar covariates del dict y usarlo como variable 
                 if self.d_terms_settings['covariates'][0]:
                     sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
                     sim_cov_norm = (
