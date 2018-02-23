@@ -8,6 +8,7 @@ from collections import OrderedDict
 from sklearn import linear_model
 from datetime import datetime, date, timedelta
 import xarray
+import pickle
 
 class ALR_ENV(object):
     'AutoRegressive Logistic Enveloper'
@@ -52,17 +53,24 @@ class ALR_ENV(object):
         cluster_size = self.cluster_size
 
         self.terms_fit = self.GenerateALRTerms(d_terms_settings, bmus, time,
-                                               cluster_size)
+                                               cluster_size, time2yfrac=True)
 
         # store data
         self.mk_order = d_terms_settings['mk_order']
         self.d_terms_settings = d_terms_settings
 
-    def GenerateALRTerms(self, d_terms_settings, bmus, time, cluster_size):
+    def GenerateALRTerms(self, d_terms_settings, bmus, time, cluster_size,
+                         time2yfrac=False):
         'Generate ALR terms from user terms settings'
 
         # terms stored at OrderedDict
         terms = OrderedDict()
+
+        # time options (time has to bee yearly fraction)
+        if time2yfrac:
+            time_yfrac = self.GetFracYears(time)
+        else:
+            time_yfrac = time
 
         # constant term
         if d_terms_settings['constant']:
@@ -71,20 +79,17 @@ class ALR_ENV(object):
         # time term (use custom time array with year decimals)
         if d_terms_settings['long_term']:
             terms['long_term'] = np.ones((bmus.size, 1))
-            terms['long_term'][:,0] = self.GetFracYears(time)
+            terms['long_term'][:,0] = time_yfrac
 
         # seasonality term
         if d_terms_settings['seasonality'][0]:
             amplitudes  = d_terms_settings['seasonality'][1]
-            time_yfrac = self.GetFracYears(time)
-
             temp_seas = np.zeros((len(time_yfrac), 2*len(amplitudes)))
             c = 0
             for a in amplitudes:
                 temp_seas [:,c]   = np.cos(a * np.pi * time_yfrac)
                 temp_seas [:,c+1] = np.sin(a * np.pi * time_yfrac)
                 c+=2
-
             terms['seasonality'] = temp_seas
 
         # Covariables term (normalized)
@@ -164,6 +169,18 @@ class ALR_ENV(object):
 
         #predprob = self.ALR_model.predict_proba(tmodl)
 
+    def SaveModel(self, p_save):
+        'Saves fitted model for future use'
+
+        pickle.dump(self.ALR_model, open(p_save, 'wb'))
+        print 'ALR model saved at {0}'.format(p_save)
+
+    def LoadModel(self, p_load):
+        'Load fitted model'
+
+        self.ALR_model = pickle.load(open(p_load, 'rb'))
+        print 'ALR model loaded from {0}'.format(p_load)
+
     def Simulate(self, num_sims, sim_start_y, sim_end_y, sim_freq, sim_covars_T=None):
         'Launch ARL model simulations'
 
@@ -181,19 +198,20 @@ class ALR_ENV(object):
             list_sim_dates = [date(x,1,1) for x in
                               range(sim_start_y,sim_end_y+1)]
 
+        # generate time yearly fractional array
+        time_yfrac = self.GetFracYears(list_sim_dates)
+
         # start simulations
         print "\nLaunching simulations...\n"
-        evbmus_sims = np.zeros((len(list_sim_dates), num_sims))
+        evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
             print 'simulation num. {0}'.format(n+1)
             evbmus = evbmus_values[1:mk_order+1] # TODO: arreglado, comentar
 
-            for i in range(len(list_sim_dates) - mk_order):
+            for i in range(len(time_yfrac) - mk_order):
 
                 # handle optional covars
-                # TODO: optimizar 
-                # en vez de d_terms, hacer terms_sim y override
-                # sacar covariates del dict y usarlo como variable 
+                # TODO: optimizar manejo covars
                 if self.d_terms_settings['covariates'][0]:
                     sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
                     sim_cov_norm = (
@@ -209,8 +227,8 @@ class ALR_ENV(object):
                 terms_i = self.GenerateALRTerms(
                     self.d_terms_settings,
                     np.append(evbmus[ i : i + mk_order], 0),
-                    list_sim_dates[i : i + mk_order + 1],
-                    self.cluster_size)
+                    time_yfrac[i : i + mk_order + 1],
+                    self.cluster_size, time2yfrac=False)
 
                 # Event sequence simulation  
                 prob = self.ALR_model.predict_proba(np.concatenate(terms_i.values(),axis=1))

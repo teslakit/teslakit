@@ -14,6 +14,9 @@ from datetime import date, timedelta, datetime
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/tests_ALR/'
 
+# TODO: CARGAR/GESTIONAR LOS DATOS MEDIANTE XARRAY (NO PANDAS)
+# TODO: REORDENAR EL TEST: 1 COGER DATOS. 2 ALRE
+
 
 # ---------------------------------
 # get test data from base .mat demo files 
@@ -114,18 +117,21 @@ d_terms_settings = {
 
 ALRE.SetFittingTerms(d_terms_settings)
 
-# ALR model fitting
-#ALRE.FitModel()
+# TODO: TEST SAVE/LOAD
+### ALR model fitting
+##ALRE.FitModel()
+##ALRE.SaveModel(op.join(p_data, 'ALR_model_test.sav'))
+##import sys; sys.exit()
 
+# ALR model already fitted: load it
+ALRE.LoadModel(op.join(p_data, 'ALR_model_test.sav'))
 
-
-# TODO: simular 3 years de test
 
 # ---------------------------------
 # ALR model simulations 
-sim_num = 2
+sim_num = 5
 sim_start = 1700
-sim_end = 1701
+sim_end = 1705
 sim_freq = '1d'
 
 
@@ -199,7 +205,7 @@ evbmus_sim, evbmus_probcum, dates_sim = ALRE.Simulate(
 
 
 # TODO: GUARDAR RESULTADOS PARA PLOT MATLAB
-p_mat_output = op.join(p_data, 'output_500a_part1_v2_alrSims.h5')
+p_mat_output = op.join(p_data, 'output_alr_saveloadmodel.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum
