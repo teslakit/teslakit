@@ -14,7 +14,7 @@ from datetime import date, timedelta, datetime
 # TODO: la gestion de datos temporales, datetime, np.datetime64 en este script
 #es un desastre. Aprender a usar correctamente los tiempos de xarray.dataset
 
-# TODO: 200 lineas solo para cargar y procesar datos, resumir 
+# TODO: 200 lineas solo para cargar y procesar datos, refactor urgente 
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/tests_ALR/'
@@ -232,7 +232,7 @@ d_terms_settings = {
     'constant' : True,
     'long_term' : False,
     'seasonality': (True, [2]),
-    'covariates': (True, cov_norm),
+    'covariates': (True, cov_norm_fit),
 }
 
 ALRE.SetFittingTerms(d_terms_settings)
