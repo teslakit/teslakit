@@ -23,7 +23,6 @@ class ALR_ENV(object):
         self.cluster_size = cluster_size
 
         # ALR model core
-        # TODO: Guardar modelo para no repetir FIT
         self.ALR_model = None
 
         # ALR terms
@@ -118,7 +117,6 @@ class ALR_ENV(object):
                 for indz in range(bmus.size-i-1):
                     Z[indz+i+1,0:] = np.squeeze(dum[0:,bmus[indz]-1])
                 terms['markov_{0}'.format(i+1)] = Z
-
         return terms
 
     def GetFracYears(self, time):
@@ -212,6 +210,7 @@ class ALR_ENV(object):
 
                 # handle optional covars
                 # TODO: optimizar manejo covars
+                # seria perfecto no tener que alterar self.d_term_settings aqui
                 if self.d_terms_settings['covariates'][0]:
                     sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
                     sim_cov_norm = (

@@ -11,73 +11,169 @@ from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import DateConverter_Mat2Py
 from datetime import date, timedelta, datetime
 
+# TODO: la gestion de datos temporales, datetime, np.datetime64 en este script
+#es un desastre. Aprender a usar correctamente los tiempos de xarray.dataset
+
+# TODO: 200 lineas solo para cargar y procesar datos, resumir 
+
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/tests_ALR/'
 
-# TODO: CARGAR/GESTIONAR LOS DATOS MEDIANTE XARRAY (NO PANDAS)
-# TODO: REORDENAR EL TEST: 1 COGER DATOS. 2 ALRE
 
+## -------------------------------------------------------------------
+## Get data used to FIT ALR model
 
-# ---------------------------------
-# get test data from base .mat demo files 
-
-# KMA: bmus
+## KMA: bmus
 p_mat = op.join(p_data, 'KMA_daily_42.mat')
 d_mat = rmat(p_mat)['KMA']
-bmus = d_mat['bmus']
-dates_KMA = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
+xds_KMA_fit = xr.Dataset(
+    {
+        'bmus':(('time',), d_mat['bmus']),
+    },
+    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+)
+# store datetime array
+d1 = date(
+    xds_KMA_fit.time.values[0].year,
+    xds_KMA_fit.time.values[0].month,
+    xds_KMA_fit.time.values[0].day
+)
+d2 = date(
+    xds_KMA_fit.time.values[-1].year,
+    xds_KMA_fit.time.values[-1].month,
+    xds_KMA_fit.time.values[-1].day
+)
+dates_KMA_fit = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
-
-# MJO: rmm1, rmm2
+## MJO: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
 p_mat = op.join(p_data, 'MJO.mat')
 d_mat = rmat(p_mat)
-rmm1 = d_mat['rmm1']
-rmm2 = d_mat['rmm2']
-dates_MJO = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
-# remove MJO nans (before 1979)
-rmm = np.vstack((rmm1, rmm2)).transpose()
-temp = pd.DataFrame(rmm, columns=['rmm1','rmm2'], index=dates_MJO)
-MJO_d = temp.reindex(pd.date_range(start=datetime(1979,01,01),end=temp.index[-1],freq='D'),method='pad') # there are nans in 1978
-dates_MJO = [x.date() for x in MJO_d.index] # update MJO dates
+xds_MJO_fit = xr.Dataset(
+    {
+        'rmm1': (('time',), d_mat['rmm1']),
+        'rmm2': (('time',), d_mat['rmm2']),
+    },
+    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+)
+d1 = date(1979,01,01)  # reindex to 1979-01-01 forward
+d2 = date(
+    xds_MJO_fit.time.values[-1].year,
+    xds_MJO_fit.time.values[-1].month,
+    xds_MJO_fit.time.values[-1].day
+)
+rix = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+xds_MJO_fit = xds_MJO_fit.reindex({'time':rix}, method='pad')
+dates_MJO_fit = rix  # store datetime array
 
 
-# AWT: PCs
+## AWT: PCs (annual data, parse to daily)
 p_mat = op.join(p_data, 'PCs_for_AWT_mes10.mat')
 d_mat = rmat(p_mat)['AWT']
-PCs = d_mat['PCs']
-dates_AWT = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
-# parse annual data to daily data (using pandas)
-temp = pd.DataFrame(PCs[:,0:3], columns=['PC1','PC2','PC3'], index=dates_AWT)
-PCs_d = temp.reindex(pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D'),method='pad')
-dates_AWT_d = [x.date() for x in PCs_d.index]
+xds_PCs_fit = xr.Dataset(
+    {
+        'PC1': (('time',), d_mat['PCs'][:,0]),
+        'PC2': (('time',), d_mat['PCs'][:,1]),
+        'PC3': (('time',), d_mat['PCs'][:,2]),
+    },
+    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+)
+# reindex annual data to daily data
+# TODO: SE REPITE MUCHO, BUSCAR FORMA DIRECTA DE PARSEAR A DATETIME O METERLO
+# EN FUNCION
+d1 = date(
+    xds_PCs_fit.time.values[0].year,
+    xds_PCs_fit.time.values[0].month,
+    xds_PCs_fit.time.values[0].day
+)
+d2 = date(
+    xds_PCs_fit.time.values[-1].year,
+    xds_PCs_fit.time.values[-1].month,
+    xds_PCs_fit.time.values[-1].day
+)
+rix = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+xds_PCs_fit = xds_PCs_fit.reindex({'time':rix}, method='pad')
+dates_PCs_fit = rix  # store datetime array
 
 
-# make covar data share the same dates
-date_ini = max(dates_MJO[0], dates_AWT[0])
-date_end = min(dates_MJO[-1], dates_AWT[-1])
-dates_covar = [date_ini + timedelta(days=i) for i in
-               range((date_end-date_ini).days+1)]
 
-print ''
-print 'KMA dates:   {0} --- {1}'.format(dates_KMA[0], dates_KMA[-1])
-print ''
-print 'COVARIATES:'
-print 'MJO dates:   {0} --- {1}'.format(dates_MJO[0], dates_MJO[-1])
-print 'AWT dates:   {0} --- {1}'.format(dates_AWT[0], dates_AWT[-1])
-print 'covar dates: {0} --- {1}'.format(dates_covar[0], dates_covar[-1])
+## -------------------------------------------------------------------
+## Get data used to SIMULATE with trained ALR model 
+
+## MJO: rmm1, rmm2 (daily data)
+p_mat = op.join(p_data, 'MJO_500_part1.mat')
+#p_mat = op.join(p_data, '?????????')  # TODO: usar 1000y
+d_mat = rmat(p_mat)
+xds_MJO_sim = xr.Dataset(
+    {
+        'rmm1': (('time',), d_mat['rmm1']),
+        'rmm2': (('time',), d_mat['rmm2']),
+    },
+    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+)
+# store datetime array
+d1 = date(
+    xds_MJO_sim.time.values[0].year,
+    xds_MJO_sim.time.values[0].month,
+    xds_MJO_sim.time.values[0].day
+)
+d2 = date(
+    xds_MJO_sim.time.values[-1].year,
+    xds_MJO_sim.time.values[-1].month,
+    xds_MJO_sim.time.values[-1].day
+)
+dates_MJO_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 
-# ---------------------------------
-# Mount covariates
+## AWT: PCs (annual data, parse to daily)
+p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
+#p_mat = op.join(p_data, 'AWT_forALR.mat')  # TODO: usar 1000y
+d_mat = rmat(p_mat)['AWT']
+xds_PCs_sim = xr.Dataset(
+    {
+        'PC1': (('time',), d_mat['PCs'][:,0]),
+        'PC2': (('time',), d_mat['PCs'][:,1]),
+        'PC3': (('time',), d_mat['PCs'][:,2]),
+    },
+    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+)
+# reindex annual data to daily data
+d1 = date(
+    xds_PCs_sim.time.values[0].year,
+    xds_PCs_sim.time.values[0].month,
+    xds_PCs_sim.time.values[0].day
+)
+d2 = date(
+    xds_PCs_sim.time.values[-1].year,
+    xds_PCs_sim.time.values[-1].month,
+    xds_PCs_sim.time.values[-1].day
+)
+rix = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+xds_PCs_sim = xds_PCs_sim.reindex({'time':rix}, method='pad')
+dates_PCs_sim = rix  # store datetime array
+
+
+
+## -------------------------------------------------------------------
+## Mount covariates matrix
+
+# available data
+# model fit: xds_KMA_fit, xds_MJO_fit, xds_PCs_fit
+# model sim: xds_MJO_sim, xds_PCs_sim
+
+
+# covariates: FIT
+d1 = max(dates_MJO_fit[0], dates_PCs_fit[0])
+d2 = min(dates_MJO_fit[-1], dates_PCs_fit[-1])
+dates_covar_fit = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 # PCs covar 
-cov_PCs = PCs_d.loc[dates_covar[0]:dates_covar[-1]]
+cov_PCs = xds_PCs_fit.sel(time=slice(dates_covar_fit[0],dates_covar_fit[-1]))
 cov_1 = cov_PCs.PC1.values.reshape(-1,1)
 cov_2 = cov_PCs.PC2.values.reshape(-1,1)
 cov_3 = cov_PCs.PC3.values.reshape(-1,1)
 
 # MJO covars
-cov_MJO = MJO_d.loc[dates_covar[0]:dates_covar[-1]]
+cov_MJO = xds_MJO_fit.sel(time=slice(dates_covar_fit[0],dates_covar_fit[-1]))
 cov_4 = cov_MJO.rmm1.values.reshape(-1,1)
 cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
 
@@ -85,21 +181,45 @@ cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
 cov_T = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
 
 # KMA related covars starting at KMA period 
-i0 = dates_covar.index(dates_KMA[0])
+i0 = dates_covar_fit.index(xds_KMA_fit.time.values[0])
 cov_KMA = cov_T[i0:,:]
 
 # normalize
-cov_norm = (cov_KMA - cov_T.mean(axis=0)) / cov_T.std(axis=0)
+cov_norm_fit = (cov_KMA - cov_T.mean(axis=0)) / cov_T.std(axis=0)
 
 
-# -----------------------------------
-# Autoregressive Logistic Regression
+# covariates: SIMULATION
+d1 = max(dates_MJO_sim[0], dates_PCs_sim[0])
+d2 = min(dates_MJO_sim[-1], dates_PCs_sim[-1])
+dates_covar_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+
+# PCs covar 
+cov_PCs = xds_PCs_sim.sel(time=slice(dates_covar_sim[0],dates_covar_sim[-1]))
+cov_1 = cov_PCs.PC1.values.reshape(-1,1)
+cov_2 = cov_PCs.PC2.values.reshape(-1,1)
+cov_3 = cov_PCs.PC3.values.reshape(-1,1)
+
+# MJO covars
+cov_MJO = xds_MJO_sim.sel(time=slice(dates_covar_sim[0],dates_covar_sim[-1]))
+cov_4 = cov_MJO.rmm1.values.reshape(-1,1)
+cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
+
+# join covars (do not normalize simulation covariates)
+cov_T_sim = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
+
+
+
+
+## -------------------------------------------------------------------
+## Autoregressive Logistic Regression
+
 
 # use bmus inside covariate time frame
-i0 = dates_KMA.index(max(dates_covar[0], dates_KMA[0]))
-i1 = dates_KMA.index(min(dates_covar[-1], dates_KMA[-1]))+1
-bmus = bmus[i0 : i1]
-t_data = dates_KMA[i0 : i1]
+i0 = dates_KMA_fit.index(max(dates_covar_fit[0], dates_KMA_fit[0]))
+i1 = dates_KMA_fit.index(min(dates_covar_fit[-1], dates_KMA_fit[-1]))+1
+
+bmus = xds_KMA_fit.bmus[i0:i1]
+t_data = bmus.time.values
 num_clusters  = 42
 
 
@@ -117,95 +237,27 @@ d_terms_settings = {
 
 ALRE.SetFittingTerms(d_terms_settings)
 
-# TODO: TEST SAVE/LOAD
-### ALR model fitting
-##ALRE.FitModel()
-##ALRE.SaveModel(op.join(p_data, 'ALR_model_test.sav'))
-##import sys; sys.exit()
 
-# ALR model already fitted: load it
-ALRE.LoadModel(op.join(p_data, 'ALR_model_test.sav'))
+# ALR fit model
+ALRE.FitModel()
+
+# save ALR for future simulations
+ALRE.SaveModel(op.join(p_data, 'ALR_model_t1_allterms.sav'))
 
 
-# ---------------------------------
 # ALR model simulations 
 sim_num = 5
 sim_start = 1700
 sim_end = 1705
 sim_freq = '1d'
 
-
-# ---------------------------------
-# get covariates data for simulation
-
-# TODO:TESTEAR DATOS 1000 YEARS 
-#print 'tests 1000 years'
-
-# AWT: PCs
-p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
-#p_mat = op.join(p_data, 'AWT_1000.mat')
-d_mat = rmat(p_mat)['AWT']
-PCs = d_mat['PCs']
-dates_AWT = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
-temp = pd.DataFrame(PCs[:,0:3], columns=['PC1','PC2','PC3'], index=dates_AWT)
-
-
-# no funciona para mas de 500 y
-#print pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D')
-PCs_d_sim = temp.reindex(pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D'),method='pad')
-
-
-# no acepta period_Range para el reindex
-#PCs_d_sim = temp.reindex(pd.period_range(temp.index[0], temp.index[-1], freq='D'),method='pad')
-
-
-
-
-
-# MJO: rmm1, rmm2
-p_mat = op.join(p_data, 'MJO_500_part1.mat')
-#p_mat = op.join(p_data, 'AWT_1000.mat')
-d_mat = rmat(p_mat)
-rmm1 = d_mat['rmm1']
-rmm2 = d_mat['rmm2']
-dates_MJO = [date(r[0],r[1],r[2]) for r in d_mat['Dates']]
-rmm = np.vstack((rmm1, rmm2)).transpose()
-temp = pd.DataFrame(rmm, columns=['rmm1','rmm2'], index=dates_MJO)
-MJO_d_sim = temp.reindex(pd.date_range(start=temp.index[0],end=temp.index[-1],freq='D'),method='pad') # there are nans in 1978
-
-
-# make covar data share the same dates
-date_ini = max(dates_MJO[0], dates_AWT[0])
-date_end = min(dates_MJO[-1], dates_AWT[-1])
-dates_covar_sim = [date_ini + timedelta(days=i) for i in
-                   range((date_end-date_ini).days+1)]
-
-
-# ---------------------------------
-# Mount simulation covariates
-
-# PCs covar 
-cov_PCs = PCs_d_sim.loc[dates_covar_sim[0]:dates_covar_sim[-1]]
-cov_1 = cov_PCs.PC1.values.reshape(-1,1)
-cov_2 = cov_PCs.PC2.values.reshape(-1,1)
-cov_3 = cov_PCs.PC3.values.reshape(-1,1)
-
-# MJO covars
-cov_MJO = MJO_d_sim.loc[dates_covar_sim[0]:dates_covar_sim[-1]]
-cov_4 = cov_MJO.rmm1.values.reshape(-1,1)
-cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
-
-# join covars and norm.
-cov_T_sim = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
-
-
 # launch simulation
 evbmus_sim, evbmus_probcum, dates_sim = ALRE.Simulate(
     sim_num, sim_start, sim_end, sim_freq, cov_T_sim)
 
 
-# TODO: GUARDAR RESULTADOS PARA PLOT MATLAB
-p_mat_output = op.join(p_data, 'output_alr_saveloadmodel.h5')
+# Save results for matlab plot 
+p_mat_output = op.join(p_data, 'alrout_t1_allterms_5y5s.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum
