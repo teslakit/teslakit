@@ -6,28 +6,36 @@ import time
 #np.set_printoptions(threshold=np.nan)
 from collections import OrderedDict
 from sklearn import linear_model
+import scipy.stats as stat
 from datetime import datetime, date, timedelta
 import xarray
 import pickle
+from lib.util.terminal import printProgressBar as pb
+
+# TODO: introducir modelo de statsmodels 
+# TODO: ajustar las ejecuciones anuales a los cambios
 
 class ALR_ENV(object):
     'AutoRegressive Logistic Enveloper'
 
-    def __init__(self, evbmus_values, evbmus_time, cluster_size):
+    def __init__(self, xds_bmus_fit, cluster_size):
 
         # evbmus series
-        self.evbmus_values = evbmus_values
-        self.evbmus_time = evbmus_time
+        self.evbmus_values = xds_bmus_fit.values
+        self.evbmus_time = xds_bmus_fit.time.values
 
         # cluster data
         self.cluster_size = cluster_size
 
-        # ALR model core
-        self.ALR_model = None
-
         # ALR terms
         self.d_terms_settings = {}
         self.terms_fit = {}
+
+        # ALR model core
+        self.model = None
+
+        # ALR model auxiliar vars
+        self.p_values = None
 
     def SetFittingTerms(self, d_terms_settings):
         'Set terms settings that will be used for fitting'
@@ -122,79 +130,71 @@ class ALR_ENV(object):
     def GetFracYears(self, time):
         'Returns time in custom year decimal format'
 
-        if isinstance(time[0], xarray.core.dataarray.DataArray):
-            y0 = time[0].dt.year
-            m0 = time[0].dt.month
-            d0 = time[0].dt.day
-            y1 = time[-1].dt.year
-            m1 = time[-1].dt.month
-            d1 = time[-1].dt.day
-        elif isinstance(time[0], date):
-            y0 = time[0].year
-            m0 = time[0].month
-            d0 = time[0].day
-            y1 = time[-1].year
-            m1 = time[-1].month
-            d1 = time[-1].day
-        else:
-            # TODO raise error
-            print 'GetFracYears time not recognized'
-            import sys; sys.exit()
+        # get start/end data. resolution day
+        y0 = time[0].year
+        m0 = time[0].month
+        d0 = time[0].day
+        y1 = time[-1].year
+        m1 = time[-1].month
+        d1 = time[-1].day
 
-        # year fractions
-        d0 = date(y0, m0, d0)
-        d1 = date(y1, m1, d1)
-        delta = d1 - d0
+        # start "year cicle" at 01/01 
+        d_y0 = date(y0, 01, 01)
 
-        return  np.array(range(delta.days+1))/365.25
+        # time array
+        d_0 = date(y0, m0, d0)
+        d_1 = date(y1, m1, d1)
+
+        # year_decimal from year start to d1
+        delta_y0 = d_1 - d_y0
+        y_fraq_y0 = np.array(range(delta_y0.days+1))/365.25
+
+        # cut year_decimal from d_0 
+        i0 = (d_0-d_y0).days
+        y_fraq = y_fraq_y0[i0:]
+
+        return y_fraq
 
     def FitModel(self):
-        'Fits ARL model using terms_fit'
+        'Fits ARL model using sklearn'
 
         # get fitting data
-        evbmus = self.evbmus_values
-        terms = self.terms_fit
-        tmodl = np.concatenate(terms.values(), axis=1)
+        X = np.concatenate(self.terms_fit.values(), axis=1)
+        y = self.evbmus_values
 
         # fit model
         print "\nFitting autoregressive logistic model..."
         start_time = time.time()
-        self.ALR_model = linear_model.LogisticRegression(
+
+        self.model = linear_model.LogisticRegression(
             penalty='l2', C=1e5, fit_intercept=False)
-        self.ALR_model.fit(tmodl, evbmus)
+        self.model.fit(X, y)
+
         elapsed_time = time.time() - start_time
         print "Optimization done in {0:.2f} seconds\n".format(elapsed_time)
 
-        #predprob = self.ALR_model.predict_proba(tmodl)
+        # TODO
+        # Get p-values from sklearn 
 
     def SaveModel(self, p_save):
         'Saves fitted model for future use'
 
-        pickle.dump(self.ALR_model, open(p_save, 'wb'))
+        pickle.dump(self.model, open(p_save, 'wb'))
         print 'ALR model saved at {0}'.format(p_save)
 
     def LoadModel(self, p_load):
         'Load fitted model'
 
-        self.ALR_model = pickle.load(open(p_load, 'rb'))
+        self.model = pickle.load(open(p_load, 'rb'))
         print 'ALR model loaded from {0}'.format(p_load)
 
-    def Simulate(self, num_sims, sim_start_y, sim_end_y, sim_freq, sim_covars_T=None):
+    def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'
+        # TODO: CAMBIAR TESTS PARA LAS SIMULACIONES ANUALES
 
         # get needed data
         evbmus_values = self.evbmus_values
         mk_order = self.mk_order
-
-        # generate simulation date list
-        if sim_freq == '1d':
-            d1 = date(sim_start_y, 1, 1)
-            d2 = date(sim_end_y, 1, 1)
-            tdelta = d2 - d1
-            list_sim_dates = [d1+timedelta(days=i) for i in range(tdelta.days)]
-        elif sim_freq == '1y':
-            list_sim_dates = [date(x,1,1) for x in
-                              range(sim_start_y,sim_end_y+1)]
 
         # generate time yearly fractional array
         time_yfrac = self.GetFracYears(list_sim_dates)
@@ -203,9 +203,9 @@ class ALR_ENV(object):
         print "\nLaunching simulations...\n"
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
-            print 'simulation num. {0}'.format(n+1)
-            evbmus = evbmus_values[1:mk_order+1] # TODO: arreglado, comentar
 
+            #print 'Sim. Num. {0}'.format(n+1)
+            evbmus = evbmus_values[1:mk_order+1] # TODO: arreglado, comentar
             for i in range(len(time_yfrac) - mk_order):
 
                 # handle optional covars
@@ -230,11 +230,21 @@ class ALR_ENV(object):
                     self.cluster_size, time2yfrac=False)
 
                 # Event sequence simulation  
-                prob = self.ALR_model.predict_proba(np.concatenate(terms_i.values(),axis=1))
+                prob = self.model.predict_proba(np.concatenate(terms_i.values(),axis=1))
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
 
+                # progress bar
+                pb(i + 1, len(time_yfrac),
+                   prefix = 'Sim. Num. {0}'.format(n+1),
+                   suffix = 'Complete', length = 50)
+
             evbmus_sims[:,n] = evbmus
+
+            # progress bar
+            pb(len(time_yfrac), len(time_yfrac),
+                prefix = 'Sim. Num. {0}'.format(n+1),
+                suffix = 'Complete', length = 50)
 
             # Probabilities in the nsims simulations
             evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
@@ -244,5 +254,5 @@ class ALR_ENV(object):
 
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
-        return evbmus_sims, evbmus_probcum, list_sim_dates
+        return evbmus_sims, evbmus_probcum
 

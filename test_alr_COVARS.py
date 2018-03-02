@@ -12,8 +12,8 @@ from datetime import date, timedelta
 
 
 # data storage
-p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/tests_ALR/'
-
+p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data'
+p_data = op.join(p_data, 'tests_ALR', 'test_data_laura')
 
 ## -------------------------------------------------------------------
 ## Get data used to FIT ALR model and preprocess
@@ -39,7 +39,7 @@ xds_MJO_fit = xr.Dataset(
     },
     coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
-# reindex to daily data after 1979-01-01 (avoid NaNavoid NaNs) 
+# reindex to daily data after 1979-01-01 (avoid NaN) 
 d1 = max(xds_MJO_fit.time.values[0], date(1979,01,01))
 d2 = xds_MJO_fit.time.values[-1]
 xds_MJO_fit = xds_MJO_fit.reindex(
@@ -73,7 +73,6 @@ xds_PCs_fit = xds_PCs_fit.reindex(
 
 ## MJO: rmm1, rmm2 (daily data)
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
-#p_mat = op.join(p_data, '?????????')  # TODO: usar 1000y
 d_mat = rmat(p_mat)
 xds_MJO_sim = xr.Dataset(
     {
@@ -86,7 +85,6 @@ xds_MJO_sim = xr.Dataset(
 
 ## AWT: PCs (annual data, parse to daily)
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
-#p_mat = op.join(p_data, 'AWT_forALR.mat')  # TODO: usar 1000y
 d_mat = rmat(p_mat)['AWT']
 xds_PCs_sim = xr.Dataset(
     {
@@ -135,9 +133,18 @@ cov_T = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
 # KMA related covars starting at KMA period 
 i0 = d_covars_fit.index(xds_KMA_fit.time.values[0])
 cov_KMA = cov_T[i0:,:]
+d_covars_fit = d_covars_fit[i0:]
 
 # normalize
 cov_norm_fit = (cov_KMA - cov_T.mean(axis=0)) / cov_T.std(axis=0)
+xds_cov_fit = xr.Dataset(
+    {
+        'cov_norm': (('time','n_covariates'), cov_norm_fit),
+    },
+    coords = {
+        'time': d_covars_fit,
+    }
+)
 
 
 # covariates: SIMULATION
@@ -158,59 +165,82 @@ cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
 
 # join covars (do not normalize simulation covariates)
 cov_T_sim = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
+xds_cov_sim = xr.Dataset(
+    {
+        'cov_T': (('time','n_covariates'), cov_T_sim),
+    },
+    coords = {
+        'time': d_covars_sim,
+    }
+)
 
 
 
 ## -------------------------------------------------------------------
 ## Autoregressive Logistic Regression
 
+# available data:
+# model fit: xds_KMA_fit, xds_cov_sim, num_clusters
+# model sim: xds_cov_sim, sim_num, sim_years
+
 
 # use bmus inside covariate time frame
-bmus = xds_KMA_fit.sel(
+num_clusters = 42
+xds_bmus_fit = xds_KMA_fit.sel(
     time=slice(
         max(d_covars_fit[0], xds_KMA_fit.time.values[0]),
         min(d_covars_fit[-1], xds_KMA_fit.time.values[-1]),
     )
 ).bmus
-t_data = bmus.time.values
-num_clusters = 42
 
 
 # Autoregressive logistic enveloper
-ALRE = ALR_ENV(bmus, t_data, num_clusters)
+ALRE = ALR_ENV(xds_bmus_fit, num_clusters)
 
 # ALR terms
 d_terms_settings = {
     'mk_order'  : 3,
-    'constant' : True,          # previous constant True
+    'constant' : True,
     'long_term' : False,
-    'seasonality': (True, [2]),  # previous seasonality amp 2
-    'covariates': (True, cov_norm_fit),
+    'seasonality': (True, [2]),
+    'covariates': (True, xds_cov_fit.cov_norm.values),
 }
 
 ALRE.SetFittingTerms(d_terms_settings)
 
 
 # ALR fit model
-ALRE.FitModel()
+#ALRE.FitModel()
 
 # save ALR for future simulations
-ALRE.SaveModel(op.join(p_data, 'ALR_model_t1_allterms.sav'))
+p_save = op.join(p_data, 'ALR_model_test_autotimesync.sav')
+#ALRE.SaveModel(p_save)
+ALRE.LoadModel(p_save)
 
 
 # ALR model simulations 
-sim_num = 5
-sim_start = 1700
-sim_end = 1705
-sim_freq = '1d'
+sim_num = 4
+sim_years = 2
+
+# start simulation at PCs available data
+d1 = xds_cov_sim.time.values[0]
+d2 = date(d1.year+sim_years, d1.month, d1.day)
+dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+
+
+# print some info
+print 'ALR model fitted with data: {0} --- {1}'.format(
+    xds_bmus_fit.time.values[0], xds_PCs_fit.time.values[-1])
+print 'ALR model simulations with data: {0} --- {1}'.format(
+    dates_sim[0], dates_sim[-1])
+
 
 # launch simulation
-evbmus_sim, evbmus_probcum, dates_sim = ALRE.Simulate(
-    sim_num, sim_start, sim_end, sim_freq, cov_T_sim)
-
+evbmus_sim, evbmus_probcum = ALRE.Simulate(
+    sim_num, dates_sim, cov_T_sim)
 
 # Save results for matlab plot 
-p_mat_output = op.join(p_data, 'alrout_t1_allterms_5y5s.h5')
+p_mat_output = op.join(p_data, 'alrout_test_autotimesync_y100s1.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum
