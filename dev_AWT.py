@@ -49,6 +49,7 @@ num_clusters = 6
 num_reps = 2000
 repres = 0.95
 
+# TODO: ACABAR COPULAS DENTRO
 xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
 print xds_AWT
 
@@ -77,6 +78,7 @@ ALRE.SetFittingTerms(d_terms_settings)
 ALRE.FitModel()
 
 # ALR model simulations 
+# TODO: ADAPTARLO A LOS CAMBIOS ALR_env
 sim_num = 10
 sim_start = 1700
 sim_end = 3200

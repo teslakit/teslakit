@@ -19,6 +19,7 @@ p_data = op.join(p_data, 'tests_ALR', 'test_data_laura')
 ## Get data used to FIT ALR model and preprocess
 
 ## KMA: bmus
+# TODO: ESTOS SALEN DE UN PREPROCESO (ESTELA + TCS)
 p_mat = op.join(p_data, 'KMA_daily_42.mat')
 d_mat = rmat(p_mat)['KMA']
 xds_KMA_fit = xr.Dataset(
@@ -29,6 +30,8 @@ xds_KMA_fit = xr.Dataset(
 )
 
 
+# TODO: ESTOS DATOS SON HISTORICOS (COVARIATES). NO PREPROCESO
+# LEER DE LA BASE EN NETCDF
 ## MJO: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
 p_mat = op.join(p_data, 'MJO.mat')
 d_mat = rmat(p_mat)
@@ -49,6 +52,7 @@ xds_MJO_fit = xds_MJO_fit.reindex(
 
 
 ## AWT: PCs (annual data, parse to daily)
+# TODO: VIENE DE DEV_AWT / PREDICTOR.CALCPCA
 p_mat = op.join(p_data, 'PCs_for_AWT.mat')
 d_mat = rmat(p_mat)['AWT']
 xds_PCs_fit = xr.Dataset(
@@ -70,8 +74,10 @@ xds_PCs_fit = xds_PCs_fit.reindex(
 
 ## -------------------------------------------------------------------
 ## Get data used to SIMULATE with ALR model 
+# TODO: ESTOS DATOS SON LOS QUE VIENEN DEL PROCESO PREVIO (DEV_X)
 
 ## MJO: rmm1, rmm2 (daily data)
+# TODO: A PARTIR DE EVBMUS_SIM EN DEV_MJO_ALR 
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
 d_mat = rmat(p_mat)
 xds_MJO_sim = xr.Dataset(
@@ -84,6 +90,7 @@ xds_MJO_sim = xr.Dataset(
 
 
 ## AWT: PCs (annual data, parse to daily)
+# TODO: ESTE SALE DE LAS COPULAS
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
 d_mat = rmat(p_mat)['AWT']
 xds_PCs_sim = xr.Dataset(
@@ -220,7 +227,7 @@ ALRE.LoadModel(p_save)
 
 # ALR model simulations 
 sim_num = 4
-sim_years = 2
+sim_years = 10
 
 # start simulation at PCs available data
 d1 = xds_cov_sim.time.values[0]
@@ -240,7 +247,7 @@ evbmus_sim, evbmus_probcum = ALRE.Simulate(
     sim_num, dates_sim, cov_T_sim)
 
 # Save results for matlab plot 
-p_mat_output = op.join(p_data, 'alrout_test_autotimesync_y100s1.h5')
+p_mat_output = op.join(p_data, 'alrout_test_autotimesync_y100s1_delete.h5')
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum

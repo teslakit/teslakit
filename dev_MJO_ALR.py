@@ -4,75 +4,45 @@
 import os.path as op
 import xarray as xr
 
-from lib.mjo import GetMJOCategories
+from lib.mjo import GetMJOCategories, DownloadMJO
 from lib.custom_plot import Plot_MJOphases, Plot_MJOCategories
 from lib.objs.alr_enveloper import ALR_ENV
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 
+p_mjo_hist = op.join(p_data, 'historical', 'MJO_hist.nc')
+
 
 # ---------------------------------
-## parse MJO.mat to netcdf dataset
-#
-#from lib.io.matlab import ReadMatfile as rmat
-#from lib.custom_dateutils import DateConverter_Mat2Py
-#
-#p_mjo_mat = op.join(p_data, 'MJO.mat')
-#d_mjo = rmat(p_mjo_mat)
-#dim_mjo = len(d_mjo['mjo'])
-#times = DateConverter_Mat2Py(d_mjo['time'])
-#
-#ds_mjo = xr.Dataset(
-#    {
-#        'mjo':(('time',), d_mjo['mjo']),
-#        'ph':(('time',), d_mjo['ph']),
-#        'phase':(('time',), d_mjo['phase']),
-#        'phi':(('time',), d_mjo['phi']),
-#        'rmm1':(('time',), d_mjo['rmm1']),
-#        'rmm2':(('time',), d_mjo['rmm2']),
-#    },
-#    {'time':times}
-#)
-#
-#ds_mjo.to_netcdf(op.join(p_data, 'MJO.nc'),'w')
+# Download mjo and mount xarray.dataset
+#y1 = '1979-01-01'
+#ds_mjo_hist = DownloadMJO(p_mjo_hist, init_year=y1)
+
+# Load MJO data (previously downloaded)
+ds_mjo_hist = xr.open_dataset(p_mjo_hist)
 
 
-# -------------------------------------------------------------------
-# Load MJO data and do categories analisys 
-#
-# Load a MJO data from netcdf
-p_mjo = op.join(p_data, 'MJO.nc')
-ds_mjo = xr.open_dataset(p_mjo)
-
-# select only data after initial year
-y1 = '1979-01-01'
-ds_mjo_cut = ds_mjo.loc[dict(time=slice(y1, None))]
-
-# set MJO categories (25)
-rmm1 = ds_mjo_cut['rmm1']
-rmm2 = ds_mjo_cut['rmm2']
-phase = ds_mjo_cut['phase']
+# ---------------------------------
+# Calculate MJO categories (25 used) 
+rmm1 = ds_mjo_hist['rmm1']
+rmm2 = ds_mjo_hist['rmm2']
+phase = ds_mjo_hist['phase']
 
 categ, d_rmm_categ = GetMJOCategories(rmm1, rmm2, phase)
 
-# add categories to MJO Dataset and save
-ds_mjo_cut['categ'] = (('time',), categ)
-
-# save dataset
-p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
-ds_mjo_cut.to_netcdf(p_mjo_cut)
-
 
 # plot MJO data
-#Plot_MJOphases(ds_mjo_cut)
+Plot_MJOphases(rmm1, rmm2, phase)
 
 # plot MJO categories
-#Plot_MJOCategories(ds_mjo_cut)
+Plot_MJOCategories(rmm1, rmm2, categ)
 
 
-# -----------------------------------
+
+# ---------------------------------
 # Autoregressive Logistic Regression
+# TODO: adaptar a los cambios de ALR_ENVELOPER
 
 # Load a MJO data from netcdf
 p_mjo_cut = op.join(p_data, 'MJO_categ.nc')
@@ -87,7 +57,7 @@ ALRE = ALR_ENV(bmus, t_data, num_categs)
 
 # ALR terms
 d_terms_settings = {
-    'mk_order'  : 3,
+    'mk_order'  : 0,  # markov 0 for MJO
     'constant' : True,
     'long_term' : False,
     'seasonality': (True, [2,4,8]),
@@ -108,5 +78,10 @@ evbmus_sim, evbmus_probcum = ALRE.Simulate(sim_num, sim_start, sim_end,
                                            sim_freq)
 
 print evbmus_sim
+
 print evbmus_probcum
 
+
+# TODO: AHORA TENGO QUE PASAR EVBMUSSIM A UNA SERIE DE DATOS RMM1.RMM2 
+# GENERADA "PSEUDOALEATORIAMENTE" "CAYENDO EN LAS CATEGORIAS Y COGIENDO UNO AL
+# AZAR" DWT_PREPARE_MJO_AWT_2P

@@ -123,6 +123,7 @@ class WeatherPredictor(object):
         PCs = ipca.fit_transform(var_anom_demean)
 
         print 'Principal Components Analysis COMPLETE'
+        # TODO: ESTE OUTPUT SE USA EN TEST_ALR_COVARS
         return xr.Dataset(
             {
                 'PCs': (('n_components', 'n_components'), PCs),

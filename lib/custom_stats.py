@@ -209,6 +209,7 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
     '''
     '''
     # TODO DOCUMENTAR
+    # TODO: ACABAR COPULAS
 
     # PCA data
     variance = xds_PCA['variance']

@@ -53,13 +53,8 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         # SHOW
         plt.show()
 
-def Plot_MJOphases(xds_mjo):
+def Plot_MJOphases(rmm1, rmm2, phase):
     'Plot MJO data separated by phase'
-
-    # data
-    rmm1 = xds_mjo['rmm1']
-    rmm2 = xds_mjo['rmm2']
-    phase = xds_mjo['phase']
 
     # parameters for custom plot
     size_points = 0.2
@@ -105,13 +100,8 @@ def Plot_MJOphases(xds_mjo):
     # show
     plt.show()
 
-def Plot_MJOCategories(xds_mjo):
+def Plot_MJOCategories(rmm1, rmm2, categ):
     'Plot MJO data separated by 25 categories'
-
-    # data
-    rmm1 = xds_mjo['rmm1']
-    rmm2 = xds_mjo['rmm2']
-    categ = xds_mjo['categ']
 
     # parameters for custom plot
     size_lines = 0.8
