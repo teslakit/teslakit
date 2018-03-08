@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+import pandas as pd
 import time
 #np.set_printoptions(threshold=np.nan)
 from collections import OrderedDict
@@ -130,13 +131,21 @@ class ALR_ENV(object):
     def GetFracYears(self, time):
         'Returns time in custom year decimal format'
 
+        # fix np.datetime64
+        if not 'year' in dir(time[0]):
+            time_0 = pd.to_datetime(time[0])
+            time_1 = pd.to_datetime(time[-1])
+        else:
+            time_0 = time[0]
+            time_1 = time[-1]
+
         # get start/end data. resolution day
-        y0 = time[0].year
-        m0 = time[0].month
-        d0 = time[0].day
-        y1 = time[-1].year
-        m1 = time[-1].month
-        d1 = time[-1].day
+        y0 = time_0.year
+        m0 = time_0.month
+        d0 = time_0.day
+        y1 = time_1.year
+        m1 = time_1.month
+        d1 = time_1.day
 
         # start "year cicle" at 01/01 
         d_y0 = date(y0, 01, 01)
@@ -190,7 +199,7 @@ class ALR_ENV(object):
 
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'
-        # TODO: CAMBIAR TESTS PARA LAS SIMULACIONES ANUALES
+        # TODO: CAMBIAR/COMPROBAR TESTS PARA LAS SIMULACIONES ANUALES
 
         # get needed data
         evbmus_values = self.evbmus_values
@@ -240,11 +249,6 @@ class ALR_ENV(object):
                    suffix = 'Complete', length = 50)
 
             evbmus_sims[:,n] = evbmus
-
-            # progress bar
-            pb(len(time_yfrac), len(time_yfrac),
-                prefix = 'Sim. Num. {0}'.format(n+1),
-                suffix = 'Complete', length = 50)
 
             # Probabilities in the nsims simulations
             evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
