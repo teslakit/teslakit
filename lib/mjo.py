@@ -32,14 +32,13 @@ def GetMJOCategories(rmm1, rmm2, phase):
             elif rmm[j] <= 1:
                 categ[j] = 25
 
-    # get rmm_caot
+    # get rmm_categ
     rmm_categ = {}
     for i in range(1,26):
         s = np.squeeze(np.where(categ == i))
         rmm_categ['cat_{0}'.format(i)] = np.column_stack((rmm1[s],rmm2[s]))
 
     return categ.astype(int), rmm_categ
-
 
 def DownloadMJO(p_ncfile, init_year=None):
     '''

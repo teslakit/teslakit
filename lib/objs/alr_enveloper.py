@@ -7,13 +7,18 @@ import time
 #np.set_printoptions(threshold=np.nan)
 from collections import OrderedDict
 from sklearn import linear_model
+import statsmodels.discrete.discrete_model as sm
 import scipy.stats as stat
 from datetime import datetime, date, timedelta
 import xarray
 import pickle
 from lib.util.terminal import printProgressBar as pb
 
-# TODO: introducir modelo de statsmodels 
+# fix library
+from scipy import stats
+stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
+
+
 # TODO: ajustar las ejecuciones anuales a los cambios
 
 class ALR_ENV(object):
@@ -31,12 +36,13 @@ class ALR_ENV(object):
         # ALR terms
         self.d_terms_settings = {}
         self.terms_fit = {}
+        self.terms_fit_names = []
 
         # ALR model core
         self.model = None
 
-        # ALR model auxiliar vars
-        self.p_values = None
+        # config
+        self.model_library = 'statsmodels'  # sklearn / statsmodels
 
     def SetFittingTerms(self, d_terms_settings):
         'Set terms settings that will be used for fitting'
@@ -60,7 +66,7 @@ class ALR_ENV(object):
         time = self.evbmus_time
         cluster_size = self.cluster_size
 
-        self.terms_fit = self.GenerateALRTerms(d_terms_settings, bmus, time,
+        self.terms_fit, self.terms_fit_names = self.GenerateALRTerms(d_terms_settings, bmus, time,
                                                cluster_size, time2yfrac=True)
 
         # store data
@@ -73,6 +79,7 @@ class ALR_ENV(object):
 
         # terms stored at OrderedDict
         terms = OrderedDict()
+        terms_names = []
 
         # time options (time has to bee yearly fraction)
         if time2yfrac:
@@ -83,11 +90,13 @@ class ALR_ENV(object):
         # constant term
         if d_terms_settings['constant']:
             terms['constant'] = np.ones((bmus.size, 1))
+            terms_names.append('intercept')
 
         # time term (use custom time array with year decimals)
         if d_terms_settings['long_term']:
             terms['long_term'] = np.ones((bmus.size, 1))
             terms['long_term'][:,0] = time_yfrac
+            terms_names.append('long_term')
 
         # seasonality term
         if d_terms_settings['seasonality'][0]:
@@ -97,6 +106,8 @@ class ALR_ENV(object):
             for a in amplitudes:
                 temp_seas [:,c]   = np.cos(a * np.pi * time_yfrac)
                 temp_seas [:,c+1] = np.sin(a * np.pi * time_yfrac)
+                terms_names.append('season_cos_amp{0}'.format(a))
+                terms_names.append('season_sin_amp{0}'.format(a))
                 c+=2
             terms['seasonality'] = temp_seas
 
@@ -106,6 +117,7 @@ class ALR_ENV(object):
             for i in range(cov_norm.shape[1]):
                 terms['cov_{0}'.format(i+1)] = np.transpose(
                     np.asmatrix(cov_norm[:,i]))
+                terms_names.append('cov_{0}'.format(i+1))
 
         # markov term
         if d_terms_settings['mk_order'] > 0:
@@ -126,7 +138,13 @@ class ALR_ENV(object):
                 for indz in range(bmus.size-i-1):
                     Z[indz+i+1,0:] = np.squeeze(dum[0:,bmus[indz]-1])
                 terms['markov_{0}'.format(i+1)] = Z
-        return terms
+
+                for ics in range(cluster_size-1):
+                    terms_names.append(
+                        'markov_orden{0}_{1}'.format(i+1,ics+1)
+                    )
+
+        return terms, terms_names
 
     def GetFracYears(self, time):
         'Returns time in custom year decimal format'
@@ -172,18 +190,39 @@ class ALR_ENV(object):
         y = self.evbmus_values
 
         # fit model
-        print "\nFitting autoregressive logistic model..."
+        print "\nFitting autoregressive logistic model ..."
         start_time = time.time()
 
-        self.model = linear_model.LogisticRegression(
-            penalty='l2', C=1e5, fit_intercept=False)
-        self.model.fit(X, y)
+        if self.model_library == 'statsmodels':
+
+            # mount data with pandas
+            X = pd.DataFrame(X, columns=self.terms_fit_names)
+            y = pd.DataFrame(y, columns=['bmus'])
+
+            # statsmodel multinominal logit model
+            self.model = sm.MNLogit(y,X).fit(
+                method='lbfgs',
+                maxiter=1000,
+            )
+            print self.model.summary()
+
+        elif self.model_library == 'sklearn':
+
+            # use sklearn logistig regression
+            self.model = linear_model.LogisticRegression(
+                penalty='l2', C=1e5, fit_intercept=False,
+                solver='lbfgs'
+            )
+            self.model.fit(X, y)
+
+        else:
+            print 'wrong config: {0} not in model_library'.format(
+                self.model_library
+            )
+            sys.exit()
 
         elapsed_time = time.time() - start_time
         print "Optimization done in {0:.2f} seconds\n".format(elapsed_time)
-
-        # TODO
-        # Get p-values from sklearn 
 
     def SaveModel(self, p_save):
         'Saves fitted model for future use'
@@ -200,6 +239,18 @@ class ALR_ENV(object):
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'
         # TODO: CAMBIAR/COMPROBAR TESTS PARA LAS SIMULACIONES ANUALES
+
+        # switch library probabilities predictor function 
+        if self.model_library == 'statsmodels':
+            pred_prob_fun = self.model.predict
+        elif self.model_library == 'sklearn':
+            pred_prob_fun = self.model.predict_proba
+        else:
+            print 'wrong config: {0} not in model_library'.format(
+                self.model_library
+            )
+            sys.exit()
+
 
         # get needed data
         evbmus_values = self.evbmus_values
@@ -232,23 +283,26 @@ class ALR_ENV(object):
                     )
 
                 # generate time step ALR terms
-                terms_i = self.GenerateALRTerms(
+                terms_i, _ = self.GenerateALRTerms(
                     self.d_terms_settings,
                     np.append(evbmus[ i : i + mk_order], 0),
                     time_yfrac[i : i + mk_order + 1],
                     self.cluster_size, time2yfrac=False)
 
-                # Event sequence simulation  
-                prob = self.model.predict_proba(np.concatenate(terms_i.values(),axis=1))
+
+                # Event sequence simulation  (sklearn)
+                X = np.concatenate(terms_i.values(),axis=1)
+                prob = pred_prob_fun(X)  # statsmodels // sklearn functions
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
 
                 # progress bar
-                pb(i + 1, len(time_yfrac),
+                pb(i + 1, len(time_yfrac)-mk_order,
                    prefix = 'Sim. Num. {0}'.format(n+1),
                    suffix = 'Complete', length = 50)
 
             evbmus_sims[:,n] = evbmus
+
 
             # Probabilities in the nsims simulations
             evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))

@@ -7,13 +7,15 @@ import xarray as xr
 import numpy as np
 from lib.objs.alr_enveloper import ALR_ENV
 from lib.io.matlab import ReadMatfile as rmat
-from lib.custom_dateutils import DateConverter_Mat2Py
-from datetime import date, timedelta
+from lib.custom_dateutils import xds2datetime as x2d
+from lib.custom_dateutils import xds_reindex_daily as xr_daily
+from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
+from datetime import datetime, timedelta
 
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data'
-p_data = op.join(p_data, 'tests_ALR', 'test_data_laura')
+p_data = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
 
 ## -------------------------------------------------------------------
 ## Get data used to FIT ALR model and preprocess
@@ -26,7 +28,7 @@ xds_KMA_fit = xr.Dataset(
     {
         'bmus':(('time',), d_mat['bmus']),
     },
-    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+    coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 
 
@@ -40,15 +42,10 @@ xds_MJO_fit = xr.Dataset(
         'rmm1': (('time',), d_mat['rmm1']),
         'rmm2': (('time',), d_mat['rmm2']),
     },
-    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+    coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 # reindex to daily data after 1979-01-01 (avoid NaN) 
-d1 = max(xds_MJO_fit.time.values[0], date(1979,01,01))
-d2 = xds_MJO_fit.time.values[-1]
-xds_MJO_fit = xds_MJO_fit.reindex(
-    {'time': [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]},
-    method = 'pad',
-)
+xds_MJO_fit = xr_daily(xds_MJO_fit, datetime(1979,01,01))
 
 
 ## AWT: PCs (annual data, parse to daily)
@@ -61,15 +58,10 @@ xds_PCs_fit = xr.Dataset(
         'PC2': (('time',), d_mat['PCs'][:,1]),
         'PC3': (('time',), d_mat['PCs'][:,2]),
     },
-    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+    coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 # reindex annual data to daily data
-d1 = xds_PCs_fit.time.values[0]
-d2 = xds_PCs_fit.time.values[-1]
-xds_PCs_fit = xds_PCs_fit.reindex(
-    {'time': [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]},
-    method = 'pad',
-)
+xds_PCs_fit = xr_daily(xds_PCs_fit)
 
 
 ## -------------------------------------------------------------------
@@ -85,7 +77,7 @@ xds_MJO_sim = xr.Dataset(
         'rmm1': (('time',), d_mat['rmm1']),
         'rmm2': (('time',), d_mat['rmm2']),
     },
-    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+    coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 
 
@@ -99,15 +91,10 @@ xds_PCs_sim = xr.Dataset(
         'PC2': (('time',), d_mat['PCs'][:,1]),
         'PC3': (('time',), d_mat['PCs'][:,2]),
     },
-    coords = {'time': [date(r[0],r[1],r[2]) for r in d_mat['Dates']]}
+    coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 # reindex annual data to daily data
-d1 = xds_PCs_sim.time.values[0]
-d2 = xds_PCs_sim.time.values[-1]
-xds_PCs_sim = xds_PCs_sim.reindex(
-    {'time': [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]},
-    method = 'pad',
-)
+xds_PCs_sim = xr_daily(xds_PCs_sim)
 
 
 ## -------------------------------------------------------------------
@@ -119,9 +106,7 @@ xds_PCs_sim = xds_PCs_sim.reindex(
 
 
 # covariates: FIT
-d1 = max(xds_MJO_fit.time.values[0], xds_PCs_fit.time.values[0])
-d2 = min(xds_MJO_fit.time.values[-1], xds_PCs_fit.time.values[-1])
-d_covars_fit = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+d_covars_fit = xcd_daily(xds_MJO_fit, xds_PCs_fit)
 
 # PCs covar 
 cov_PCs = xds_PCs_fit.sel(time=slice(d_covars_fit[0],d_covars_fit[-1]))
@@ -138,7 +123,7 @@ cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
 cov_T = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
 
 # KMA related covars starting at KMA period 
-i0 = d_covars_fit.index(xds_KMA_fit.time.values[0])
+i0 = d_covars_fit.index(x2d(xds_KMA_fit.time[0]))
 cov_KMA = cov_T[i0:,:]
 d_covars_fit = d_covars_fit[i0:]
 
@@ -155,9 +140,7 @@ xds_cov_fit = xr.Dataset(
 
 
 # covariates: SIMULATION
-d1 = max(xds_MJO_sim.time.values[0], xds_PCs_sim.time.values[0])
-d2 = min(xds_MJO_sim.time.values[-1], xds_PCs_sim.time.values[-1])
-d_covars_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+d_covars_sim = xcd_daily(xds_MJO_sim, xds_PCs_sim)
 
 # PCs covar 
 cov_PCs = xds_PCs_sim.sel(time=slice(d_covars_sim[0],d_covars_sim[-1]))
@@ -192,53 +175,59 @@ xds_cov_sim = xr.Dataset(
 
 
 # use bmus inside covariate time frame
-num_clusters = 42
+d_covars_bmus_fit = [
+        max(d_covars_fit[0], x2d(xds_KMA_fit.time[0])),
+        min(d_covars_fit[-1], x2d(xds_KMA_fit.time[-1]))]
+
 xds_bmus_fit = xds_KMA_fit.sel(
-    time=slice(
-        max(d_covars_fit[0], xds_KMA_fit.time.values[0]),
-        min(d_covars_fit[-1], xds_KMA_fit.time.values[-1]),
-    )
+    time=slice(d_covars_bmus_fit[0], d_covars_bmus_fit[-1])
 ).bmus
 
 
 # Autoregressive logistic enveloper
+num_clusters = 42
 ALRE = ALR_ENV(xds_bmus_fit, num_clusters)
 
 # ALR terms
 d_terms_settings = {
-    'mk_order'  : 3,
+    'mk_order'  : 0,
     'constant' : True,
     'long_term' : False,
-    'seasonality': (True, [2]),
+    'seasonality': (True, [2, 4]),
     'covariates': (True, xds_cov_fit.cov_norm.values),
 }
 
 ALRE.SetFittingTerms(d_terms_settings)
 
 
-# ALR fit model
-#ALRE.FitModel()
+# name test 
+name_test = 'ALR_TEST_1'
+fit_and_save = True  # False for loading
 
-# save ALR for future simulations
-p_save = op.join(p_data, 'ALR_model_test_autotimesync.sav')
-#ALRE.SaveModel(p_save)
-ALRE.LoadModel(p_save)
+
+# ALR model fitting
+p_save = op.join(p_data, '{0}.sav'.format(name_test))
+if fit_and_save:
+    ALRE.FitModel()
+    ALRE.SaveModel(p_save)
+else:
+    ALRE.LoadModel(p_save)
 
 
 # ALR model simulations 
-sim_num = 4
-sim_years = 10
+sim_num = 2
+sim_years = 300
 
 # start simulation at PCs available data
-d1 = xds_cov_sim.time.values[0]
-d2 = date(d1.year+sim_years, d1.month, d1.day)
+d1 = x2d(xds_cov_sim.time[0])
+d2 = datetime(d1.year+sim_years, d1.month, d1.day)
 dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 
 # print some info
-print 'ALR model fitted with data: {0} --- {1}'.format(
-    xds_bmus_fit.time.values[0], xds_PCs_fit.time.values[-1])
-print 'ALR model simulations with data: {0} --- {1}'.format(
+print 'ALR model fit   : {0} --- {1}'.format(
+    d_covars_bmus_fit[0], d_covars_bmus_fit[-1])
+print 'ALR model sim   : {0} --- {1}'.format(
     dates_sim[0], dates_sim[-1])
 
 
@@ -247,7 +236,9 @@ evbmus_sim, evbmus_probcum = ALRE.Simulate(
     sim_num, dates_sim, cov_T_sim)
 
 # Save results for matlab plot 
-p_mat_output = op.join(p_data, 'alrout_test_autotimesync_y100s1_delete.h5')
+p_mat_output = op.join(
+    p_data, '{0}_y{1}s{2}.h5'.format(
+        name_test, sim_years, sim_num))
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum

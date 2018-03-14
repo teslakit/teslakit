@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os.path as op
+import numpy as np
 import xarray as xr
 from datetime import date, timedelta, datetime
 
@@ -55,6 +56,7 @@ ALRE = ALR_ENV(xds_bmus_fit, num_categs)
 
 # ALR terms
 d_terms_settings = {
+    'mk_order'  : 3,
     'constant' : True,
     'seasonality': (True, [2,4,8]),
 }
@@ -65,30 +67,29 @@ ALRE.SetFittingTerms(d_terms_settings)
 ALRE.FitModel()
 
 # ALR model simulations 
-sim_num = 4
-sim_years = 10
+sim_num = 1  # only one simulation for mjo daily
+sim_years = 15
 
 # simulation dates
 d1 = date(1900,1,1)
 d2 = date(d1.year+sim_years, d1.month, d1.day)
 dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
-
-# print some info
-print 'ALR model fitted with data: {0} --- {1}'.format(
-    xds_bmus_fit.time.values[0], xds_bmus_fit.time.values[-1])
-print 'ALR model simulations with data: {0} --- {1}'.format(
-    dates_sim[0], dates_sim[-1])
-
-
 # launch simulation
-evbmus_sim, evbmus_probcum = ALRE.Simulate(
+evbmus_sim, _ = ALRE.Simulate(
     sim_num, dates_sim)
 
-print evbmus_sim
-print evbmus_probcum
+# parse to 1D array
+evbmus_sim = np.squeeze(evbmus_sim)
 
+# Generate mjo_sim list using random mjo from each category
+mjo_sim = np.empty((len(evbmus_sim),2)) * np.nan
+for c, m in enumerate(evbmus_sim):
+    options = d_rmm_categ['cat_{0}'.format(int(m))]
+    r = np.random.randint(options.shape[0])
+    mjo_sim[c,:] = options[r,:]
 
-# TODO: AHORA TENGO QUE PASAR EVBMUSSIM A UNA SERIE DE DATOS RMM1.RMM2 
-# GENERADA "PSEUDOALEATORIAMENTE" "CAYENDO EN LAS CATEGORIAS Y COGIENDO UNO AL
-# AZAR" DWT_PREPARE_MJO_AWT_2P
+# TODO: GUARDAR MJO SIMULADO, PENSAR ESTRUCTURA DE DATOS INTERNA PARA
+# CONECTAR EL CODIGO
+print mjo_sim
+

@@ -24,3 +24,49 @@ def DateConverter_Mat2Py(datearray_matlab):
     'Parses matlab datenum array to python datetime list'
 
     return [datematlab2datetime(x) for x in datearray_matlab]
+
+def xds2datetime(d64):
+    'converts np.datetime64[ns] into datetime'
+
+    return datetime(d64.dt.year, d64.dt.month, d64.dt.day)
+
+def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
+    '''
+    Reindex xarray.Dataset to daily data between optional limits
+    '''
+
+    # parse xds times to python datetime
+    xds_dt1 = xds2datetime(xds_data.time[0])
+    xds_dt2 = xds2datetime(xds_data.time[-1])
+
+    # cut data at limits
+    if dt_lim1:
+        xds_dt1 = max(xds_dt1, dt_lim1)
+    if dt_lim2:
+        xds_dt2 = min(xds_dt2, dt_lim2)
+
+    # number of days
+    num_days = (xds_dt2-xds_dt1).days+1
+
+    # reindex xarray.Dataset
+    return xds_data.reindex(
+        {'time': [xds_dt1 + timedelta(days=i) for i in range(num_days)]},
+        method = 'pad',
+    )
+
+def xds_common_dates_daily(xds1, xds2):
+    '''
+    returns daily datetime array between 2 xarray.Dataset common dates
+    '''
+
+    # parse xds times to python datetime
+    xds1_dt1 = xds2datetime(xds1.time[0])
+    xds1_dt2 = xds2datetime(xds1.time[-1])
+    xds2_dt1 = xds2datetime(xds2.time[0])
+    xds2_dt2 = xds2datetime(xds2.time[-1])
+
+    d1 = max(xds1_dt1, xds2_dt1)
+    d2 = min(xds1_dt2, xds2_dt2)
+
+    return [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+
