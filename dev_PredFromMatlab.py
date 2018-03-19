@@ -43,6 +43,11 @@ p_pred_save = op.join(p_data, 'TKPRED_SST.nc') # file to save/load pred data
 wpred = WP(p_pred_save)
 wpred.SetData(data_bb)
 
+# TODO: CALCULATE RUNNING MEAN
+# calculate running average grouped by months and save
+#wpred.CalcRunningMean(5)
+#wpred.SaveData()
+
 # now save WeatherPredictor data to a netcdf
 wpred.SaveData()
 

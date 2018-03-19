@@ -23,10 +23,6 @@ p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
 p_pred_save = op.join(p_data, 'TKPRED_SST.nc')
 wpred = WP(p_pred_save)
 
-# calculate running average grouped by months and save
-#wpred.CalcRunningMean(5)
-#wpred.SaveData()
-
 
 ## ----------------------------------
 # Principal Components Analysis
@@ -37,7 +33,6 @@ m1 = 6
 mN = 5
 
 xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
-print xds_pca
 
 # plot EOFs
 #n_plot = 1
@@ -55,6 +50,8 @@ repres = 0.95
 xds_AWT = ClassificationKMA(
     xds_pca, num_clusters, num_reps, repres)
 
+
+# TODO: GUARDAR xds_pca y xds_AWT PARA E1A_MMSL_KWA.m
 
 
 ## ----------------------------------
@@ -93,6 +90,8 @@ dates_sim = [
 
 evbmus_sim, evbmus_probcum = ALRE.Simulate(
     sim_num, dates_sim)
+
+# TODO: EL OUTPUT DE LA SIMULACION SEA UN XARRAY.DATASET
 
 print evbmus_sim
 print evbmus_probcum

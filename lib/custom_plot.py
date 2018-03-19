@@ -196,7 +196,6 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     'Plots ARL simulation output in a perpetual_year stacked bar chart'
 
     # parameters for custom plot
-    # TODO interpolar uno con el siguiente a ver si es lo que hace matlab
     l_colors_dwt = [
         (1.0000, 0.1344, 0.0021),
         (1.0000, 0.2669, 0.0022),
