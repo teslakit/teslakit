@@ -9,6 +9,8 @@ from lib.custom_stats import ClassificationKMA
 from lib.custom_plot import Plot_PredictorEOFs
 from lib.objs.alr_enveloper import ALR_ENV
 
+from datetime import datetime, timedelta
+
 
 # data storage
 p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
@@ -50,19 +52,23 @@ num_reps = 2000
 repres = 0.95
 
 # TODO: ACABAR COPULAS DENTRO
-xds_AWT = ClassificationKMA(xds_pca, num_clusters, num_reps, repres)
-print xds_AWT
+xds_AWT = ClassificationKMA(
+    xds_pca, num_clusters, num_reps, repres)
+
 
 
 ## ----------------------------------
 ## Autoregressive Logistic Regression
 
-bmus = xds_AWT['bmus'].values
-t_data = xds_AWT['time']
-num_wts = 6  # or len(set(bmus))
+xds_bmus_fit = xr.Dataset(
+    {
+        'bmus':(('time',), xds_AWT.bmus),
+    },
+    coords = {'time': xds_AWT.time.values}
+).bmus
 
-# Autoregressive logistic enveloper
-ALRE = ALR_ENV(bmus, t_data, num_wts)
+num_wts = 6
+ALRE = ALR_ENV(xds_bmus_fit, num_wts)
 
 # ALR terms
 d_terms_settings = {
@@ -78,14 +84,16 @@ ALRE.SetFittingTerms(d_terms_settings)
 ALRE.FitModel()
 
 # ALR model simulations 
-# TODO: ADAPTARLO A LOS CAMBIOS ALR_env
 sim_num = 10
-sim_start = 1700
-sim_end = 3200
-sim_freq = '1y'
+year_sim1 = 1700
+year_sim2 = 2700
 
-evbmus_sim, evbmus_probcum = ALRE.Simulate(sim_num, sim_start, sim_end,
-                                           sim_freq)
+dates_sim = [
+    datetime(x,1,1) for x in range(year_sim1,year_sim2+1)]
+
+evbmus_sim, evbmus_probcum = ALRE.Simulate(
+    sim_num, dates_sim)
+
 print evbmus_sim
 print evbmus_probcum
 

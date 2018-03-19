@@ -201,8 +201,8 @@ ALRE.SetFittingTerms(d_terms_settings)
 
 
 # name test 
-name_test = 'ALR_TEST_1'
-fit_and_save = True  # False for loading
+name_test = 'ALR_SM_1000iter_mk0_seas24'
+fit_and_save = True # False for loading
 
 
 # ALR model fitting
@@ -235,6 +235,8 @@ print 'ALR model sim   : {0} --- {1}'.format(
 evbmus_sim, evbmus_probcum = ALRE.Simulate(
     sim_num, dates_sim, cov_T_sim)
 
+# TODO: EL OUTPUT DE LA SIMULACION SEA UN XARRAY.DATASET
+
 # Save results for matlab plot 
 p_mat_output = op.join(
     p_data, '{0}_y{1}s{2}.h5'.format(
@@ -246,4 +248,6 @@ with h5py.File(p_mat_output, 'w') as hf:
         ([d.year for d in dates_sim],
         [d.month for d in dates_sim],
         [d.day for d in dates_sim])).T
+
+# TODO GUARDAR CON EL OUTPUT TAMBIEN LAS COVARIATES SIMULATION
 

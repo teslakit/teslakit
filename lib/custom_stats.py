@@ -8,7 +8,7 @@ from scipy.spatial import distance_matrix
 from sklearn.cluster import KMeans
 import statsmodels.api as sm
 from scipy.interpolate import interp1d
-from datetime import date
+from datetime import datetime
 
 def Persistences(series):
     'Return series persistences for each element'
@@ -284,7 +284,7 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
             'PC1': (('n_pcacomp'), PC1),
             'PC2': (('n_pcacomp'), PC2),
             'PC3': (('n_pcacomp'), PC3),
-            'time': (('n_pcacomp'), [date(x,1,1) for x in xds_PCA._years]),
+            'time': (('n_pcacomp'), [datetime(x,1,1) for x in xds_PCA._years]),
         }
     )
 

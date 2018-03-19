@@ -19,8 +19,6 @@ from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 
-# TODO: ajustar las ejecuciones anuales a los cambios
-
 class ALR_ENV(object):
     'AutoRegressive Logistic Enveloper'
 
@@ -66,8 +64,8 @@ class ALR_ENV(object):
         time = self.evbmus_time
         cluster_size = self.cluster_size
 
-        self.terms_fit, self.terms_fit_names = self.GenerateALRTerms(d_terms_settings, bmus, time,
-                                               cluster_size, time2yfrac=True)
+        self.terms_fit, self.terms_fit_names = self.GenerateALRTerms(
+            d_terms_settings, bmus, time, cluster_size, time2yfrac=True)
 
         # store data
         self.mk_order = d_terms_settings['mk_order']
@@ -149,15 +147,22 @@ class ALR_ENV(object):
     def GetFracYears(self, time):
         'Returns time in custom year decimal format'
 
+
         # fix np.datetime64
         if not 'year' in dir(time[0]):
             time_0 = pd.to_datetime(time[0])
             time_1 = pd.to_datetime(time[-1])
+            time_d = pd.to_datetime(time[1])
         else:
             time_0 = time[0]
             time_1 = time[-1]
+            time_d = time[1]
 
-        # get start/end data. resolution day
+        # resolution year
+        if time_d.year - time_0.year == 1:
+            return range(time_1.year - time_0.year+1)
+
+        # resolution day: get start/end data
         y0 = time_0.year
         m0 = time_0.month
         d0 = time_0.day
@@ -204,7 +209,7 @@ class ALR_ENV(object):
                 method='lbfgs',
                 maxiter=1000,
             )
-            print self.model.summary()
+            #print self.model.summary()
 
         elif self.model_library == 'sklearn':
 
@@ -238,7 +243,6 @@ class ALR_ENV(object):
 
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'
-        # TODO: CAMBIAR/COMPROBAR TESTS PARA LAS SIMULACIONES ANUALES
 
         # switch library probabilities predictor function 
         if self.model_library == 'statsmodels':
@@ -265,7 +269,7 @@ class ALR_ENV(object):
         for n in range(num_sims):
 
             #print 'Sim. Num. {0}'.format(n+1)
-            evbmus = evbmus_values[1:mk_order+1] # TODO: arreglado, comentar
+            evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
 
                 # handle optional covars
