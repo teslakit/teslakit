@@ -40,7 +40,7 @@ def GetMJOCategories(rmm1, rmm2, phase):
 
     return categ.astype(int), rmm_categ
 
-def DownloadMJO(p_ncfile, init_year=None):
+def DownloadMJO(p_ncfile, init_year=None, log=False):
     '''
     Download MJO data and stores it on netcdf format
     init_year: optional, data before init_year will be discarded ('yyyy-mm-dd')
@@ -79,8 +79,9 @@ def DownloadMJO(p_ncfile, init_year=None):
     # save at netcdf file
     ds_mjo.to_netcdf(p_ncfile,'w')
 
-    #print '\nMJO historical data downloaded to \n{0}\nMJO time: {1} - {2}\n'.format(
-    #    p_ncfile, ds_mjo.time.values[0],ds_mjo.time.values[-1])
+    if log:
+        print '\nMJO historical data downloaded to \n{0}\nMJO time: {1} - {2}\n'.format(
+            p_ncfile, ds_mjo.time.values[0],ds_mjo.time.values[-1])
 
     return ds_mjo
 

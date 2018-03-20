@@ -124,6 +124,7 @@ class WeatherPredictor(object):
 
         print 'Principal Components Analysis COMPLETE'
         # TODO: ESTE OUTPUT SE USA EN TEST_ALR_COVARS
+        # TODO: TIENE SENTIDO CAMBIAR "N_COMPONENTS" POR "TIME"?
         return xr.Dataset(
             {
                 'PCs': (('n_components', 'n_components'), PCs),

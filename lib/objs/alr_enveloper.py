@@ -10,7 +10,7 @@ from sklearn import linear_model
 import statsmodels.discrete.discrete_model as sm
 import scipy.stats as stat
 from datetime import datetime, date, timedelta
-import xarray
+import xarray as xr
 import pickle
 from lib.util.terminal import printProgressBar as pb
 
@@ -302,7 +302,7 @@ class ALR_ENV(object):
 
                 # progress bar
                 pb(i + 1, len(time_yfrac)-mk_order,
-                   prefix = 'Sim. Num. {0}'.format(n+1),
+                   prefix = 'Sim. Num. {0:03d}'.format(n+1),
                    suffix = 'Complete', length = 50)
 
             evbmus_sims[:,n] = evbmus
@@ -316,5 +316,15 @@ class ALR_ENV(object):
 
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
-        return evbmus_sims, evbmus_probcum
+        # return ALR simulation data in a xr.Dataset
+        return xr.Dataset(
+            {
+                'evbmus_sims': (('time', 'n_sim'), evbmus_sims),
+                'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
+            },
+
+            coords = {
+                'time' : [np.datetime64(d) for d in list_sim_dates],
+            },
+        )
 

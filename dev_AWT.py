@@ -88,11 +88,7 @@ year_sim2 = 2700
 dates_sim = [
     datetime(x,1,1) for x in range(year_sim1,year_sim2+1)]
 
-evbmus_sim, evbmus_probcum = ALRE.Simulate(
-    sim_num, dates_sim)
+xds_alr = ALRE.Simulate(sim_num, dates_sim)
 
-# TODO: EL OUTPUT DE LA SIMULACION SEA UN XARRAY.DATASET
-
-print evbmus_sim
-print evbmus_probcum
+print xds_alr
 
