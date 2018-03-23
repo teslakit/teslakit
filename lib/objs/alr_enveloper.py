@@ -12,7 +12,9 @@ import scipy.stats as stat
 from datetime import datetime, date, timedelta
 import xarray as xr
 import pickle
+
 from lib.util.terminal import printProgressBar as pb
+from lib.custom_plot import Plot_ARL_PValues, Plot_ARL_Params
 
 # fix library
 from scipy import stats
@@ -104,8 +106,8 @@ class ALR_ENV(object):
             for a in amplitudes:
                 temp_seas [:,c]   = np.cos(a * np.pi * time_yfrac)
                 temp_seas [:,c+1] = np.sin(a * np.pi * time_yfrac)
-                terms_names.append('season_cos_amp{0}'.format(a))
-                terms_names.append('season_sin_amp{0}'.format(a))
+                terms_names.append('ss_cos_{0}'.format(a))
+                terms_names.append('ss_sin_{0}'.format(a))
                 c+=2
             terms['seasonality'] = temp_seas
 
@@ -139,14 +141,13 @@ class ALR_ENV(object):
 
                 for ics in range(cluster_size-1):
                     terms_names.append(
-                        'markov_orden{0}_{1}'.format(i+1,ics+1)
+                        'mk{0}_{1}'.format(i+1,ics+1)
                     )
 
         return terms, terms_names
 
     def GetFracYears(self, time):
         'Returns time in custom year decimal format'
-
 
         # fix np.datetime64
         if not 'year' in dir(time[0]):
@@ -187,7 +188,7 @@ class ALR_ENV(object):
 
         return y_fraq
 
-    def FitModel(self):
+    def FitModel(self, max_iter=1000):
         'Fits ARL model using sklearn'
 
         # get fitting data
@@ -207,9 +208,9 @@ class ALR_ENV(object):
             # statsmodel multinominal logit model
             self.model = sm.MNLogit(y,X).fit(
                 method='lbfgs',
-                maxiter=1000,
+                maxiter=max_iter,
             )
-            #print self.model.summary()
+            # TODO: problemas en summary() con maxiter?
 
         elif self.model_library == 'sklearn':
 
@@ -240,6 +241,22 @@ class ALR_ENV(object):
 
         self.model = pickle.load(open(p_load, 'rb'))
         print 'ALR model loaded from {0}'.format(p_load)
+
+    def Report_pvalue(self):
+        'Report containing pvalues and params info'
+
+        # TODO: OPCION PARA GUARDAR EN FICHERO.PNG
+
+        # get pvalues dataframe
+        pval_df = self.model.pvalues.transpose()
+        params_df = self.model.params.transpose()
+        name_terms = pval_df.columns.tolist()
+
+        # plot p-values
+        Plot_ARL_PValues(pval_df.values, name_terms)
+
+        # plot parameters
+        Plot_ARL_Params(params_df.values, name_terms)
 
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'

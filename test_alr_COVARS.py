@@ -105,6 +105,7 @@ xds_PCs_sim = xr_daily(xds_PCs_sim)
 # model sim: xds_MJO_sim, xds_PCs_sim
 
 
+
 # covariates: FIT
 d_covars_fit = xcd_daily(xds_MJO_fit, xds_PCs_fit)
 
@@ -201,8 +202,8 @@ ALRE.SetFittingTerms(d_terms_settings)
 
 
 # name test 
-name_test = 'ALR_SM_1000iter_mk0_seas24'
-fit_and_save = True # False for loading
+name_test = 'ALR_SM_100iter_mk1_seas24'
+fit_and_save = False # False for loading
 
 
 # ALR model fitting
@@ -212,6 +213,11 @@ if fit_and_save:
     ALRE.SaveModel(p_save)
 else:
     ALRE.LoadModel(p_save)
+
+
+# Plot model p-values and params
+ALRE.Report_pvalue()
+import sys; sys.exit()
 
 
 # ALR model simulations 
@@ -232,12 +238,14 @@ print 'ALR model sim   : {0} --- {1}'.format(
 
 
 # launch simulation
-evbmus_sim, evbmus_probcum = ALRE.Simulate(
+xds_ALR = ALRE.Simulate(
     sim_num, dates_sim, cov_T_sim)
 
-# TODO: EL OUTPUT DE LA SIMULACION SEA UN XARRAY.DATASET
 
 # Save results for matlab plot 
+evbmus_sim = xds_ALR.evbmus_sim.values
+evbmus_probcum = xds_ALR.evbmus_probcum.values
+
 p_mat_output = op.join(
     p_data, '{0}_y{1}s{2}.h5'.format(
         name_test, sim_years, sim_num))
@@ -249,5 +257,5 @@ with h5py.File(p_mat_output, 'w') as hf:
         [d.month for d in dates_sim],
         [d.day for d in dates_sim])).T
 
-# TODO GUARDAR CON EL OUTPUT TAMBIEN LAS COVARIATES SIMULATION
+# TODO: INTRODUCIR AQUI UN PLOT_COMPARE_PCS ?
 

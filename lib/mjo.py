@@ -74,7 +74,7 @@ def DownloadMJO(p_ncfile, init_year=None, log=False):
 
     # cut dataset if asked
     if init_year:
-        ds_mjo =ds_mjo.loc[dict(time=slice(init_year, None))]
+        ds_mjo = ds_mjo.loc[dict(time=slice(init_year, None))]
 
     # save at netcdf file
     ds_mjo.to_netcdf(p_ncfile,'w')

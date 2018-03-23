@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 
 from lib.util.terminal import printProgressBar as pb
 
+# TODO: CREAR FUNCION CustomColormap con datos y el interp
+
 def Plot_PredictorEOFs(xds_PCA, n_plot):
     '''
     Plot EOFs
@@ -56,6 +58,7 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
 
         # SHOW
         plt.show()
+
 
 def Plot_MJOphases(rmm1, rmm2, phase):
     'Plot MJO data separated by phase'
@@ -192,8 +195,52 @@ def Plot_MJOCategories(rmm1, rmm2, categ):
     # show
     plt.show()
 
+
+def Plot_ARL_PValues(p_values, term_names):
+    'Plot ARL/BMUS p-values'
+
+    # plot figure
+    fig, ax = plt.subplots(1,1)
+
+    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
+    c.cmap.set_over('w')
+    fig.colorbar(c, ax=ax)
+
+    # axis
+    ax.set_title('p-value', fontweight='bold')
+    ax.set_ylabel('WT')
+    plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
+    [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
+
+    # show
+    plt.show()
+
+def Plot_ARL_Params(params, term_names):
+    'Plot ARL/BMUS params'
+
+    # plot figure
+    fig, ax = plt.subplots(1,1)
+
+    # text table and color
+    ax.matshow(params, cmap=plt.cm.bwr, origin='lower')
+    for i in xrange(params.shape[1]):
+        for j in xrange(params.shape[0]):
+            c = params[j,i]
+            ax.text(i, j, '{0:.1f}'.format(c),
+                    va='center', ha='center', size=5)
+
+    # axis
+    ax.set_title('params', fontweight='bold')
+    ax.set_ylabel('WT')
+    ax.xaxis.tick_bottom()
+    plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
+    [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
+
+    # show
+    plt.show()
+
 def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
-    'Plots ARL simulation output in a perpetual_year stacked bar chart'
+    'Plots ARL bmus simulated in a perpetual_year stacked bar chart'
 
     # parameters for custom plot
     l_colors_dwt = [
@@ -251,8 +298,6 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     xi = np.arange(num_clusters)
     np_colors_int =  itp(xi)
 
-
-
     # generate perpetual year list
     dp1 = datetime(1981,1,1)
     dp2 = datetime(1981,12,31)
@@ -290,11 +335,6 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
 
         # store bottom
         bottom_val += row_val
-
-        # progressbar
-        pb(r, num_clusters,
-            prefix = 'Plotting',
-            suffix = 'Complete', length = 50)
 
     # axis
     plt.xlim(1, 365)
