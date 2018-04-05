@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import h5py
+# basic import
 import os.path as op
+import sys
+sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+
+# tk libs
 from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import datevec2datetime
 from lib.custom_plot import Plot_ARL_PerpYear
 
 
 # data storage
-p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data'
+p_data = op.join(op.dirname(__file__),'..','data')
 p_tests = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
 
 
@@ -18,6 +22,7 @@ p_tests = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
 #p_out = op.join(p_tests, name_out)
 
 # load results for matlab plot 
+#import h5py
 #hf = h5py.File(p_out, 'r')
 #bmus_sim = hf['bmusim'].value
 
@@ -36,8 +41,4 @@ num_sims = 1  # TODO: los datos historicos 1 simulacion
 
 # Plot perpetual year
 Plot_ARL_PerpYear(bmus_hist, dates_hist, num_wts, num_sims)
-
-
-# TODO EL OUTPUT DE ALR DEBE SER UN DATASET CON METADATA: num_wts, num_sims,
-# name_covariates, value_covariates, 
 

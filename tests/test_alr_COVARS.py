@@ -1,26 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import h5py
+# basic import
 import os.path as op
+import sys
+sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+
+# python libs
 import xarray as xr
 import numpy as np
-from lib.objs.alr_enveloper import ALR_ENV
+from datetime import datetime, timedelta
+
+# tk libs
+from lib.objs.alr_wrapper import ALR_WRP
 from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import xds2datetime as x2d
 from lib.custom_dateutils import xds_reindex_daily as xr_daily
 from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
-from datetime import datetime, timedelta
 
 
 # data storage
-p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data'
+p_data = op.join(op.dirname(__file__),'..','data')
 p_data = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
 
-## -------------------------------------------------------------------
-## Get data used to FIT ALR model and preprocess
 
-## KMA: bmus
+# --------------------------------------
+# Get data used to FIT ALR model and preprocess
+
+# KMA: bmus
 # TODO: ESTOS SALEN DE UN PREPROCESO (ESTELA + TCS)
 p_mat = op.join(p_data, 'KMA_daily_42.mat')
 d_mat = rmat(p_mat)['KMA']
@@ -32,9 +39,9 @@ xds_KMA_fit = xr.Dataset(
 )
 
 
-# TODO: ESTOS DATOS SON HISTORICOS (COVARIATES). NO PREPROCESO
-# LEER DE LA BASE EN NETCDF
-## MJO: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
+# MJO: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
+# TODO: ESTOS DATOS SON HISTORICOS (COVARIATES).
+# TODO: CAMBIAR A LEER DE LA BASE EN NETCDF
 p_mat = op.join(p_data, 'MJO.mat')
 d_mat = rmat(p_mat)
 xds_MJO_fit = xr.Dataset(
@@ -48,7 +55,7 @@ xds_MJO_fit = xr.Dataset(
 xds_MJO_fit = xr_daily(xds_MJO_fit, datetime(1979,01,01))
 
 
-## AWT: PCs (annual data, parse to daily)
+# AWT: PCs (annual data, parse to daily)
 # TODO: VIENE DE DEV_AWT / PREDICTOR.CALCPCA
 p_mat = op.join(p_data, 'PCs_for_AWT.mat')
 d_mat = rmat(p_mat)['AWT']
@@ -64,11 +71,12 @@ xds_PCs_fit = xr.Dataset(
 xds_PCs_fit = xr_daily(xds_PCs_fit)
 
 
-## -------------------------------------------------------------------
-## Get data used to SIMULATE with ALR model 
+
+# --------------------------------------
+# Get data used to SIMULATE with ALR model 
 # TODO: ESTOS DATOS SON LOS QUE VIENEN DEL PROCESO PREVIO (DEV_X)
 
-## MJO: rmm1, rmm2 (daily data)
+# MJO: rmm1, rmm2 (daily data)
 # TODO: A PARTIR DE EVBMUS_SIM EN DEV_MJO_ALR 
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
 d_mat = rmat(p_mat)
@@ -81,7 +89,7 @@ xds_MJO_sim = xr.Dataset(
 )
 
 
-## AWT: PCs (annual data, parse to daily)
+# AWT: PCs (annual data, parse to daily)
 # TODO: ESTE SALE DE LAS COPULAS
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
 d_mat = rmat(p_mat)['AWT']
@@ -97,14 +105,13 @@ xds_PCs_sim = xr.Dataset(
 xds_PCs_sim = xr_daily(xds_PCs_sim)
 
 
-## -------------------------------------------------------------------
-## Mount covariates matrix
+
+# --------------------------------------
+# Mount covariates matrix
 
 # available data:
 # model fit: xds_KMA_fit, xds_MJO_fit, xds_PCs_fit
 # model sim: xds_MJO_sim, xds_PCs_sim
-
-
 
 # covariates: FIT
 d_covars_fit = xcd_daily(xds_MJO_fit, xds_PCs_fit)
@@ -167,8 +174,8 @@ xds_cov_sim = xr.Dataset(
 
 
 
-## -------------------------------------------------------------------
-## Autoregressive Logistic Regression
+# --------------------------------------
+# Autoregressive Logistic Regression
 
 # available data:
 # model fit: xds_KMA_fit, xds_cov_sim, num_clusters
@@ -185,39 +192,38 @@ xds_bmus_fit = xds_KMA_fit.sel(
 ).bmus
 
 
-# Autoregressive logistic enveloper
+# Autoregressive logistic wrapper
 num_clusters = 42
-ALRE = ALR_ENV(xds_bmus_fit, num_clusters)
+ALRW = ALR_WRP(xds_bmus_fit, num_clusters)
 
 # ALR terms
 d_terms_settings = {
-    'mk_order'  : 0,
+    'mk_order'  : 1,
     'constant' : True,
     'long_term' : False,
     'seasonality': (True, [2, 4]),
     'covariates': (True, xds_cov_fit.cov_norm.values),
 }
 
-ALRE.SetFittingTerms(d_terms_settings)
+ALRW.SetFittingTerms(d_terms_settings)
 
 
 # name test 
-name_test = 'ALR_SM_100iter_mk1_seas24'
-fit_and_save = False # False for loading
+name_test = 'mk_test'
+fit_and_save = True # False for loading
 
 
 # ALR model fitting
 p_save = op.join(p_data, '{0}.sav'.format(name_test))
 if fit_and_save:
-    ALRE.FitModel()
-    ALRE.SaveModel(p_save)
+    ALRW.FitModel(max_iter=20000)
+    ALRW.SaveModel(p_save)
 else:
-    ALRE.LoadModel(p_save)
-
+    ALRW.LoadModel(p_save)
 
 # Plot model p-values and params
-ALRE.Report_pvalue()
-import sys; sys.exit()
+p_report = op.join(p_data, 'r_{0}'.format(name_test))
+ALRW.Report_pvalue(p_report)
 
 
 # ALR model simulations 
@@ -238,7 +244,7 @@ print 'ALR model sim   : {0} --- {1}'.format(
 
 
 # launch simulation
-xds_ALR = ALRE.Simulate(
+xds_ALR = ALRW.Simulate(
     sim_num, dates_sim, cov_T_sim)
 
 
@@ -249,6 +255,7 @@ evbmus_probcum = xds_ALR.evbmus_probcum.values
 p_mat_output = op.join(
     p_data, '{0}_y{1}s{2}.h5'.format(
         name_test, sim_years, sim_num))
+import h5py
 with h5py.File(p_mat_output, 'w') as hf:
     hf['bmusim'] = evbmus_sim
     hf['probcum'] = evbmus_probcum

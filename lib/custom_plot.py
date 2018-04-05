@@ -8,15 +8,13 @@ from scipy.interpolate import interp1d
 import calendar
 from datetime import datetime, timedelta
 
-from lib.util.terminal import printProgressBar as pb
-
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
 def Plot_PredictorEOFs(xds_PCA, n_plot):
     '''
     Plot EOFs
     '''
-    # TODO: DOC
+    # TODO: INCORPORAR P_EXPORT
 
     # PCA data
     variance = xds_PCA['variance'].values
@@ -60,7 +58,7 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         plt.show()
 
 
-def Plot_MJOphases(rmm1, rmm2, phase):
+def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
     'Plot MJO data separated by phase'
 
     # parameters for custom plot
@@ -78,9 +76,8 @@ def Plot_MJOphases(rmm1, rmm2, phase):
     color_lines_1 = (0.4102, 0.4102, 0.4102)
 
 
-    # plot data
-    plt.figure(1)
-    ax = plt.subplot(111)
+    # plot figure
+    fig, ax = plt.subplots(1,1, figsize=(9,9))
     ax.scatter(rmm1, rmm2, c='b', s=size_points)
 
     # plot data by phases
@@ -104,10 +101,15 @@ def Plot_MJOphases(rmm1, rmm2, phase):
     plt.ylabel('RMM2')
     ax.set_aspect('equal')
 
-    # show
-    plt.show()
+    # show / export
+    if not p_export:
+        plt.show()
 
-def Plot_MJOCategories(rmm1, rmm2, categ):
+    else:
+        fig.savefig(p_export, dpi=96)
+        plt.close()
+
+def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
     'Plot MJO data separated by 25 categories'
 
     # parameters for custom plot
@@ -143,8 +145,7 @@ def Plot_MJOCategories(rmm1, rmm2, categ):
     ]
 
     # plot figure
-    plt.figure(1)
-    ax = plt.subplot(111)
+    fig, ax = plt.subplots(1,1, figsize=(9,9))
 
     # plot sectors
     ax.plot([-4,4],[-4,4], color='k', linewidth=size_lines, zorder=9)
@@ -192,17 +193,24 @@ def Plot_MJOCategories(rmm1, rmm2, categ):
     plt.ylabel('RMM2')
     ax.set_aspect('equal')
 
-    # show
-    plt.show()
+    # show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=96)
+        plt.close()
 
 
-def Plot_ARL_PValues(p_values, term_names):
+def Plot_ARL_PValues(p_values, term_names, p_export=None):
     'Plot ARL/BMUS p-values'
 
     # plot figure
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1, figsize=(16,9))
 
-    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
+    # TODO: DESACHER
+    #c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
+    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=1)
     c.cmap.set_over('w')
     fig.colorbar(c, ax=ax)
 
@@ -212,14 +220,19 @@ def Plot_ARL_PValues(p_values, term_names):
     plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
     [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
 
-    # show
-    plt.show()
+    # show / export
+    if not p_export:
+        plt.show()
 
-def Plot_ARL_Params(params, term_names):
+    else:
+        fig.savefig(p_export, dpi=96)
+        plt.close()
+
+def Plot_ARL_Params(params, term_names, p_export=None):
     'Plot ARL/BMUS params'
 
     # plot figure
-    fig, ax = plt.subplots(1,1)
+    fig, ax = plt.subplots(1,1, figsize=(16,12))
 
     # text table and color
     ax.matshow(params, cmap=plt.cm.bwr, origin='lower')
@@ -227,7 +240,7 @@ def Plot_ARL_Params(params, term_names):
         for j in xrange(params.shape[0]):
             c = params[j,i]
             ax.text(i, j, '{0:.1f}'.format(c),
-                    va='center', ha='center', size=5)
+                    va='center', ha='center', size=6, fontweight='bold')
 
     # axis
     ax.set_title('params', fontweight='bold')
@@ -236,8 +249,13 @@ def Plot_ARL_Params(params, term_names):
     plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
     [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
 
-    # show
-    plt.show()
+    # show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
 
 def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     'Plots ARL bmus simulated in a perpetual_year stacked bar chart'

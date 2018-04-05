@@ -1,19 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# basic import
 import os
 import os.path as op
+
+# python libs
 import numpy as np
 import xarray as xr
 import datetime
 from sklearn.decomposition import PCA
 
+# tk libs
 from lib.custom_stats import running_mean
 
-class WeatherPredictor(object):
-    'Predictor por Annual Weather Types methodology'
 
-    # TODO: INCORPORAR PLOTEOS CON MATPLOTLIB (interactivo? plt.show()?) 
+class WeatherPredictor(object):
+    'Predictor por AWT-methodology'
+
+    # TODO: INCORPORAR PLOTEOS CON MATPLOTLIB 
 
     def __init__(self, p_save):
 
@@ -79,8 +84,9 @@ class WeatherPredictor(object):
                     tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(data_pnt.values, 5)
 
         # store data
-        self.data_set['predictor_runavg'] = (('longitude', 'latitude', 'time'),
-                                             tempdata_runavg)
+        self.data_set['predictor_runavg'] = (
+            ('longitude', 'latitude', 'time'),
+            tempdata_runavg)
 
     def CalcPCA(self, y1, y2, m1, m2):
         'Principal component analysis'

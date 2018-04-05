@@ -1,20 +1,25 @@
-
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import xarray as xr
+# basic import
 import os.path as op
+import sys
+sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
+# python libs
+import xarray as xr
+
+# tk libs
 from lib.io.matlab import ReadMatfile
 from lib.objs.predictor import WeatherPredictor as WP
 from lib.custom_dateutils import DateConverter_Mat2Py
 
 # data storage
-p_data = '/Users/ripollcab/Projects/TESLA-kit/teslakit/data/'
+p_data = op.join(op.dirname(__file__),'..','data')
 
 
-# -------------------------------------------------------------------
-# START FROM MATLAB DATA: CREATE TESLAKIT PREDICTOR
+# --------------------------------------
+# Parse predictor from old .mat to netcdf 
 
 # predictor used: SST spatial fields (ERSST v4)
 p_pred_mat = op.join(p_data, 'SST_1854_2017.mat')
@@ -31,9 +36,11 @@ var = d_pred['sst']
 time = DateConverter_Mat2Py(d_pred['time'])  # matlab datenum to python datetime
 
 # parse data to xr.DataArray
-data_pred = xr.DataArray(var, coords=[lon, lat, time],
-                         dims=['longitude', 'latitude', 'time'],
-                         name=n_pred)
+data_pred = xr.DataArray(
+    var,
+    coords=[lon, lat, time],
+    dims=['longitude', 'latitude', 'time'],
+    name=n_pred)
 
 # cut bounding box
 data_bb = data_pred.loc[lon1:lon2, lat1:lat2, :]
@@ -43,13 +50,11 @@ p_pred_save = op.join(p_data, 'TKPRED_SST.nc') # file to save/load pred data
 wpred = WP(p_pred_save)
 wpred.SetData(data_bb)
 
-# TODO: CALCULATE RUNNING MEAN
 # calculate running average grouped by months and save
-#wpred.CalcRunningMean(5)
-#wpred.SaveData()
+wpred.CalcRunningMean(5)
 
 # now save WeatherPredictor data to a netcdf
-wpred.SaveData()
+#wpred.SaveData()
 
 print wpred.data_set
 

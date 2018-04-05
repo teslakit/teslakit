@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# basic import
+import os.path as op
+import sys
+sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+
+# tk libs
+from lib.mjo import DownloadMJO
+
+# data storage
+p_data = op.join(op.dirname(__file__),'..','data')
+p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
+
+
+# Download mjo and save xarray.dataset to netcdf
+y1 = '1979-01-01'
+xds_mjo_hist = DownloadMJO(p_mjo_hist, init_year=y1, log=True)
+xds_mjo_hist.to_netcdf(p_mjo_hist)
+

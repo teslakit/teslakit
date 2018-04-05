@@ -12,6 +12,8 @@ import scipy.stats as stat
 from datetime import datetime, date, timedelta
 import xarray as xr
 import pickle
+import os
+import os.path as op
 
 from lib.util.terminal import printProgressBar as pb
 from lib.custom_plot import Plot_ARL_PValues, Plot_ARL_Params
@@ -21,7 +23,7 @@ from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 
-class ALR_ENV(object):
+class ALR_WRP(object):
     'AutoRegressive Logistic Enveloper'
 
     def __init__(self, xds_bmus_fit, cluster_size):
@@ -129,14 +131,47 @@ class ALR_ENV(object):
                     D[i, csize-1-i] = csize-i-1
                     D[i, csize-1+1-i:] = 0
                 return D
-            dum = dummi(cluster_size)
+
+            def dummi_norm(csize):
+                D = np.zeros((csize, csize-1))
+                for i in range(csize-1):
+                    D[i,i] = float((csize-i-1))/(csize-i)
+                    D[i+1:,i] = -1.0/(csize-i)
+
+                return np.transpose(np.flipud(D))
+
+            def helmert_ints(csize, reverse=False):
+                D = np.zeros((csize, csize-1))
+                for i in range(csize-1):
+                    D[i,i] = csize-i-1
+                    D[i+1:,i] = -1.0
+
+                if reverse:
+                    return np.fliplr(np.flipud(D))
+                else:
+                    return D
+
+            def helmert_norm(csize, reverse=False):
+                D = np.zeros((csize, csize-1))
+                for i in range(csize-1):
+                    D[i,i] = float((csize-i-1))/(csize-i)
+                    D[i+1:,i] = -1.0/(csize-i)
+
+                if reverse:
+                    return np.fliplr(np.flipud(D))
+                else:
+                    return D
+
+            #  helmert
+            dum = helmert_norm(cluster_size, reverse=True)
 
             # solve markov order N
             mk_order = d_terms_settings['mk_order']
             for i in range(mk_order):
                 Z = np.zeros((bmus.size, cluster_size-1))
                 for indz in range(bmus.size-i-1):
-                    Z[indz+i+1,0:] = np.squeeze(dum[0:,bmus[indz]-1])
+                    Z[indz+i+1,:] = np.squeeze(dum[bmus[indz]-1,:])
+
                 terms['markov_{0}'.format(i+1)] = Z
 
                 for ics in range(cluster_size-1):
@@ -195,6 +230,15 @@ class ALR_ENV(object):
         X = np.concatenate(self.terms_fit.values(), axis=1)
         y = self.evbmus_values
 
+
+        # TODO: PRUEBAS SOBRE EL X
+        #np.set_printoptions(threshold=np.nan)
+        #print np.amax(X,axis=0)
+        #print np.amin(X,axis=0)
+        #import sys; sys.exit()
+
+
+
         # fit model
         print "\nFitting autoregressive logistic model ..."
         start_time = time.time()
@@ -242,10 +286,14 @@ class ALR_ENV(object):
         self.model = pickle.load(open(p_load, 'rb'))
         print 'ALR model loaded from {0}'.format(p_load)
 
-    def Report_pvalue(self):
+    def Report_pvalue(self, p_save):
         'Report containing pvalues and params info'
 
         # TODO: OPCION PARA GUARDAR EN FICHERO.PNG
+
+        # report folder
+        if not op.isdir(p_save):
+            os.mkdir(p_save)
 
         # get pvalues dataframe
         pval_df = self.model.pvalues.transpose()
@@ -253,10 +301,12 @@ class ALR_ENV(object):
         name_terms = pval_df.columns.tolist()
 
         # plot p-values
-        Plot_ARL_PValues(pval_df.values, name_terms)
+        p_plot = op.join(p_save, 'pval.png')
+        Plot_ARL_PValues(pval_df.values, name_terms, p_plot)
 
         # plot parameters
-        Plot_ARL_Params(params_df.values, name_terms)
+        p_plot = op.join(p_save, 'params.png')
+        Plot_ARL_Params(params_df.values, name_terms, p_plot)
 
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'

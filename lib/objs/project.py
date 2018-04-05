@@ -21,7 +21,6 @@ class Project(object):
         # path control
         self.p_dict = self.GeneratePaths(p_case)
 
-
     def GeneratePaths(self, p_case):
         'Generates case paths template'
 
@@ -37,7 +36,6 @@ class Project(object):
             'mjo_ALR_sim': op.join(p_case, 'xds_MJO_ALR_sim.nc'),
         }
 
-
     def Generate_Predictor(p_pred):
         '''
         Generate predictor variable
@@ -52,7 +50,6 @@ class Project(object):
 
         y1 = '1979-01-01'  # remove nans
         DownloadMJO(self.p_dict['mjo_hist'], init_year=y1, log=True)
-
 
     def Generate_AWT_simulation(self):
         '''
@@ -121,7 +118,6 @@ class Project(object):
 
         xds_alr = ALRE.Simulate(sim_num, dates_sim)
         xds_alr.to_netcdf(self.p_dict['pred_AWT_ALR_sim'], 'w')
-
 
     def Generate_MJO_simulation(self):
         '''
@@ -201,7 +197,6 @@ class Project(object):
             }
         )
         xds_mjo_sim.to_netcdf(self.p_dict['mjo_ALR_sim'])
-
 
     def Plot_MJO_historical(self):
 
