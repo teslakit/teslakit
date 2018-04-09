@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -10,11 +12,10 @@ from datetime import datetime, timedelta
 
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
-def Plot_PredictorEOFs(xds_PCA, n_plot):
+def Plot_PredictorEOFs(xds_PCA, n_plot, p_export=None):
     '''
     Plot EOFs
     '''
-    # TODO: INCORPORAR P_EXPORT
 
     # PCA data
     variance = xds_PCA['variance'].values
@@ -35,6 +36,9 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
 
     for it in range(n_plot):
 
+        # plot figure
+        fig = plt.figure(figsize=(16,9))
+
         # map of the spatial field
         spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
 
@@ -54,8 +58,16 @@ def Plot_PredictorEOFs(xds_PCA, n_plot):
         plt.plot(years, PCs[it,:]/np.sqrt(variance[it]))
         plt.xlim(years[0], years[-1])
 
-        # SHOW
-        plt.show()
+        # show / export
+        if not p_export:
+            plt.show()
+
+        else:
+            if not op.isdir(p_export):
+                os.makedirs(p_export)
+            p_expi = op.join(p_export, 'EOFs_{0}'.format(it+1))
+            fig.savefig(p_expi, dpi=96)
+            plt.close()
 
 
 def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):

@@ -38,9 +38,10 @@ mN = 5
 xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
 
 # plot EOFs
-#n_plot = 1
-# TODO: INCORPORAR P_EXPORT
-#Plot_PredictorEOFs(xds_pca, n_plot)
+n_plot = 2
+p_export = op.join(p_export_figs, 'predictor_EOFs')  # if only show: None
+Plot_PredictorEOFs(xds_pca, n_plot, p_export)
+
 
 
 # --------------------------------------
