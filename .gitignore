@@ -3,3 +3,5 @@
 data/
 vses
 www.bom.gov.au/
+dist/
+teslakit.egg-info/
