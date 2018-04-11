@@ -11,18 +11,19 @@ import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadMatfile
-from lib.objs.predictor import WeatherPredictor as WP
+from lib.predictor import CalcRunningMean
 from lib.custom_dateutils import DateConverter_Mat2Py
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
+p_pred_mat = op.join(p_data, 'SST_1854_2017.mat')
+p_pred_nc = op.join(p_data, 'SST_1985_2017.nc')
 
 
 # --------------------------------------
 # Parse predictor from old .mat to netcdf 
 
 # predictor used: SST spatial fields (ERSST v4)
-p_pred_mat = op.join(p_data, 'SST_1854_2017.mat')
 n_pred = 'SST';
 lat1, lat2 = 5, -5
 lon1, lon2 = 120, 280
@@ -35,26 +36,31 @@ lon = d_pred['lon']
 var = d_pred['sst']
 time = DateConverter_Mat2Py(d_pred['time'])  # matlab datenum to python datetime
 
-# parse data to xr.DataArray
-data_pred = xr.DataArray(
-    var,
-    coords=[lon, lat, time],
-    dims=['longitude', 'latitude', 'time'],
-    name=n_pred)
+
+# parse data to xr.Dataset
+xds_predictor = xr.Dataset(
+    {
+        'SST': (('longitude','latitude','time'), var),
+    },
+    coords = {
+        'longitude': lon,
+        'latitude': lat,
+        'time': time
+    }
+)
 
 # cut bounding box
-data_bb = data_pred.loc[lon1:lon2, lat1:lat2, :]
+xds_predictor = xds_predictor.sel(
+    longitude=slice(lon1,lon2),
+    latitude=slice(lat1,lat2)
+)
 
-# Create a WeatherPredictor object and set data
-p_pred_save = op.join(p_data, 'TKPRED_SST.nc') # file to save/load pred data
-wpred = WP(p_pred_save)
-wpred.SetData(data_bb)
 
-# calculate running average grouped by months and save
-wpred.CalcRunningMean(5)
+# calculate running average grouped by months 
+xds_predictor = CalcRunningMean(xds_predictor, 'SST', 5)
 
-# now save WeatherPredictor data to a netcdf
-#wpred.SaveData()
+# save netcdf
+xds_predictor.to_netcdf(p_pred_nc, 'w')
 
-print wpred.data_set
+print xds_predictor
 

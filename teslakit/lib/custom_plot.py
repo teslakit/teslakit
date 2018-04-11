@@ -12,9 +12,19 @@ from datetime import datetime, timedelta
 
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
-def Plot_PredictorEOFs(xds_PCA, n_plot, p_export=None):
+def Plot_EOFs_Annual(xds_PCA, lon, y1, y2, m1, m2, n_plot, p_export=None):
     '''
-    Plot EOFs
+    Plot annual EOFs for 3D predictors
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+    lon: predictor longitude values
+    y1,y2,m1,m2: PCA time parameters
+    n_plot: number of EOFs plotted
+
+    show plot or saves figure to p_export
     '''
 
     # PCA data
@@ -22,14 +32,14 @@ def Plot_PredictorEOFs(xds_PCA, n_plot, p_export=None):
     EOFs = np.transpose(xds_PCA['EOFs'].values)
     PCs = np.transpose(xds_PCA['PCs'].values)
 
-    years = xds_PCA['_years'].values
-    lon = xds_PCA['_longitude'].values
+    # mesh data
     len_x = len(lon)
 
-    m1 = xds_PCA.attrs['m1']
-    m2 = xds_PCA.attrs['m2']
+    # time data
+    years = range(y1, y2+1)
     l_months = [calendar.month_name[x] for x in range(1,13)]
     ylbl = l_months[m1-1:] + l_months[:m2]
+
 
     # percentage of variance each field explains
     n_percent = variance / np.sum(variance)

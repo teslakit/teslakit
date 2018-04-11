@@ -6,10 +6,10 @@ import numpy as np
 import os.path as op
 from datetime import datetime, timedelta
 
-from lib.objs.predictor import WeatherPredictor
 from lib.custom_stats import ClassificationKMA
 from lib.objs.alr_enveloper import ALR_ENV
 from lib.mjo import GetMJOCategories, DownloadMJO
+from lib.predictor import CalcPCA_Annual_latavg as CalcPCA
 from lib.custom_plot import Plot_MJOphases, Plot_MJOCategories
 
 
@@ -27,7 +27,7 @@ class Project(object):
         return {
             'case': p_case,
 
-            'predictor': op.join(p_case, 'xds_PRED.nc'),
+            'predictor': op.join(p_case, 'sst_1985_2017.nc'),
             'pred_PCA': op.join(p_case, 'xds_PCA.nc'),
             'pred_AWT': op.join(p_case, 'xds_AWT.nc'),
             'pred_AWT_ALR_sim': op.join(p_case, 'xds_AWT_ALR_sim.nc'),
@@ -61,26 +61,34 @@ class Project(object):
         '''
 
         # Load Weather predictor (SST)
-        wpred = WeatherPredictor(self.p_dict['predictor'])
+        xds_pred = xr.open_dataset(self.p_dict['predictor'])
+        lon_pred = xds_pred.longitude.values
 
 
         ## Principal Components Analysis
+        pred_name = 'SST'
         y1 = 1880
         yN = 2016
         m1 = 6
         mN = 5
-        xds_pca = wpred.CalcPCA(y1, yN, m1, mN)
-        xds_pca.to_netcdf(self.p_dict['pred_PCA'], 'w')
+
+        xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
+
+        xds_PCA.to_netcdf(self.p_dict['pred_PCA'], 'w')
 
 
         ## KMA Classification 
         num_clusters = 6
-        num_reps = 2000
         repres = 0.95
 
         # TODO: ACABAR COPULAS DENTRO
         xds_AWT = ClassificationKMA(
-            xds_pca, num_clusters, num_reps, repres)
+            xds_PCA, num_clusters, repres)
+
+        # add yearly time data to xds_AWT
+        time_yearly = [datetime(x,1,1) for x in range(y1,yN+1)]
+        xds_AWT['time']=(('n_pcacomp'), time_yearly)
+
         xds_AWT.to_netcdf(self.p_dict['pred_AWT'], 'w')
 
 

@@ -205,10 +205,19 @@ def sort_cluster_gen_corr_end(centers, dimdim):
     # print qx
     return sc.flatten('F')
 
-def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
+def ClassificationKMA(xds_PCA, num_clusters, repres):
     '''
+    KMA Classification
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+    num_clusters
+    repres
+
+    returns a xarray.Dataset containing KMA data
     '''
-    # TODO DOCUMENTAR
     # TODO: ACABAR COPULAS
 
     # PCA data
@@ -284,7 +293,6 @@ def ClassificationKMA(xds_PCA, num_clusters, num_reps, repres):
             'PC1': (('n_pcacomp'), PC1),
             'PC2': (('n_pcacomp'), PC2),
             'PC3': (('n_pcacomp'), PC3),
-            'time': (('n_pcacomp'), [datetime(x,1,1) for x in xds_PCA._years]),
         }
     )
 
