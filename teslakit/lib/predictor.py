@@ -109,3 +109,40 @@ def CalcPCA_Annual_latavg(xdset, pred_name, y1, y2, m1, m2):
         }
     )
 
+def spatial_gradient(xdset, var_name):
+    '''
+    Calculate spatial gradient
+
+    xdset:
+        (longitude, latitude, time), var_name
+
+    returns xdset with new variable "var_name_gradient"
+    '''
+
+
+    var_grad = np.zeros(xdset[var_name].shape)
+
+    Mx = len(xdset.longitude)
+    My = len(xdset.latitude)
+    lat = xdset.latitude.values
+
+    for it in range(len(xdset.time)):
+        var_val = xdset[var_name].isel(time=it).values
+
+        for i in range(1, Mx-1):
+            for j in range(1, My-1):
+                phi = np.pi*np.abs(lat[j])/180.0
+                dpx1 = (var_val[j,i]   - var_val[j,i-1]) / np.cos(phi)
+                dpx2 = (var_val[j,i+1] - var_val[j,i])   / np.cos(phi)
+                dpy1 = (var_val[j,i]   - var_val[j-1,i])
+                dpy2 = (var_val[j+1,i] - var_val[j,i])
+
+                var_grad[it, j, i] = (dpx1**2+dpx2**2)/2 + (dpy1**2+dpy2**2)/2
+
+
+    # store gradient
+    xdset['{0}_gradient'.format(var_name)]= (
+        ('time', 'latitude', 'longitude'), var_grad)
+
+    return xdset
+

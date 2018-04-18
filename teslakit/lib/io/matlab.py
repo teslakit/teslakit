@@ -3,9 +3,12 @@
 
 import scipy.io as sio
 from scipy.io.matlab.mio5_params import mat_struct
+import xarray as xr
+
+from lib.custom_dateutils import DateConverter_Mat2Py
 
 def ReadMatfile(p_mfile):
-    # Parse .mat file to nested python dictionaries
+    'Parse .mat file to nested python dictionaries'
 
     def RecursiveMatExplorer(mstruct_data):
         # Recursive function to extrat mat_struct nested contents
@@ -31,4 +34,34 @@ def ReadMatfile(p_mfile):
     for k in mdata_keys:
         dout[k] = RecursiveMatExplorer(mdata[k])
     return dout
+
+def ReadGowMat(p_mfile):
+    'Read data from gow.mat file. Return xarray.Dataset'
+
+    d_matf = ReadMatfile(p_mfile)
+
+    # parse matlab datenum to datetime
+    time = DateConverter_Mat2Py(d_matf['time'])
+
+    # return xarray.Dataset
+    return xr.Dataset(
+        {
+            'fp': (('time',), d_matf['fp']),
+            'hs': (('time',), d_matf['hs']),
+            't02': (('time',), d_matf['t02']),
+            'dir': (('time',), d_matf['dir']),
+            'spr': (('time',), d_matf['spr']),
+            'hsCal': (('time',), d_matf['hsCal']),
+        },
+        coords = {
+            'time': time
+        },
+        attrs = {
+            'lat': d_matf['lat'],
+            'lon': d_matf['lon'],
+            'bat': d_matf['bat'],
+            'forcing': d_matf['forcing'],
+            'mesh': d_matf['mesh'],
+        }
+    )
 
