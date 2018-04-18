@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA
 
 # tk libs
 from lib.custom_stats import running_mean
+from lib.util.terminal import printProgressBar as pb
 
 
 def CalcRunningMean(xdset, pred_name, window=5):
@@ -119,7 +120,6 @@ def spatial_gradient(xdset, var_name):
     returns xdset with new variable "var_name_gradient"
     '''
 
-
     var_grad = np.zeros(xdset[var_name].shape)
 
     Mx = len(xdset.longitude)
@@ -138,7 +138,6 @@ def spatial_gradient(xdset, var_name):
                 dpy2 = (var_val[j+1,i] - var_val[j,i])
 
                 var_grad[it, j, i] = (dpx1**2+dpx2**2)/2 + (dpy1**2+dpy2**2)/2
-
 
     # store gradient
     xdset['{0}_gradient'.format(var_name)]= (

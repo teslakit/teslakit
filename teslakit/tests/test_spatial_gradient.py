@@ -52,7 +52,3 @@ xds_SLP = spatial_gradient(xds_SLP, 'SLP')
 
 print xds_SLP
 
-#import matplotlib.pyplot as plt
-#xds_SLP.SLP_gradient.isel(time=0).plot()
-#plt.show()
-

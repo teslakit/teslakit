@@ -8,6 +8,7 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 import numpy as np
 import matplotlib.pyplot as plt
+import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadGowMat
@@ -25,6 +26,7 @@ p_coast = op.join(p_test, 'Costa.mat')                      # coast
 
 p_results = op.join(p_test, 'out_KWAJALEIN')
 
+p_SLP_save = op.join(p_test, 'SLP.nc')
 
 # --------------------------------------
 # load waves data
@@ -35,8 +37,14 @@ p_results = op.join(p_test, 'out_KWAJALEIN')
 
 # --------------------------------------
 # load predictor data (we use SLP and SLP gradients)
-xds_SLP = ReadSLP(p_pred_SLP)
-xds_SLP.rename({'PRMSL_L101':'SLP'}, inplace=True)
+#xds_SLP = ReadSLP(p_pred_SLP)
+#xds_SLP.rename({'PRMSL_L101':'SLP'}, inplace=True)
+# after reading from original files, save using xarray
+#xds_SLP.to_netcdf(p_SLP_save)
+
+# load and use xarray saved data (faster)
+xds_SLP = xr.open_dataset(p_SLP_save)
+
 
 
 # site coordinates 
@@ -51,15 +59,15 @@ xds_SLP_site = xds_SLP.sel(
     longitude = slice(lon1, lon2, 4),
 )
 
-print xds_SLP_site
-
 
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
 
+
 # calculate daily gradients
 xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
-print xds_SLP_day
+
+
 
 
 
