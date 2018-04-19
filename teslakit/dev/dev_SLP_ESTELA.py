@@ -52,9 +52,6 @@ ls_sea_poly = ReadCoastMat(p_coast_mat)
 xds_SLP = xr.open_dataset(p_SLP_save)
 
 
-
-
-
 # site coordinates 
 lat1 = 60.5
 lat2 = 0
@@ -78,6 +75,10 @@ xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
 xds_SLP_day = mask_from_poly(xds_SLP_day, ls_sea_poly)
 xds_SLP_day.rename({'mask':'mask_land'}, inplace=True)
 
+# test mask
+#xds_SLP_day.SLP.isel(time=0).where(xds_SLP_day.mask_land!=1).plot()
+#plt.show()
+#sys.exit()
 
 
 # TODO: GENERAR Y APLICAR MASCARA ESTELA
