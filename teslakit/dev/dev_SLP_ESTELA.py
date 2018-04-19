@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 # tk libs
-from lib.io.matlab import ReadGowMat
+from lib.io.matlab import ReadGowMat, ReadCoastMat
 from lib.io.cfs import ReadSLP
-from lib.predictor import spatial_gradient
+from lib.predictor import spatial_gradient, mask_from_poly
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -22,11 +22,17 @@ p_test = op.join(p_data, 'tests_estela', 'Roi_Kwajalein')
 p_estela = op.join(p_test, 'kwajalein_roi_obj.mat')         # mask with estela
 p_pred_SLP = op.join(p_data,'tests_estela','CFS','prmsl')   # SLP predictor
 p_gowpoint = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')   # gow point data
-p_coast = op.join(p_test, 'Costa.mat')                      # coast 
+p_coast_mat = op.join(p_test, 'Costa.mat')                      # coast 
 
 p_results = op.join(p_test, 'out_KWAJALEIN')
 
 p_SLP_save = op.join(p_test, 'SLP.nc')
+
+
+# --------------------------------------
+# load sea polygons for mask generation
+ls_sea_poly = ReadCoastMat(p_coast_mat)
+
 
 # --------------------------------------
 # load waves data
@@ -47,6 +53,8 @@ xds_SLP = xr.open_dataset(p_SLP_save)
 
 
 
+
+
 # site coordinates 
 lat1 = 60.5
 lat2 = 0
@@ -63,16 +71,16 @@ xds_SLP_site = xds_SLP.sel(
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
 
-
 # calculate daily gradients
 xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
 
+# generate land mask with land polygons 
+xds_SLP_day = mask_from_poly(xds_SLP_day, ls_sea_poly)
+xds_SLP_day.rename({'mask':'mask_land'}, inplace=True)
 
 
 
-
-
-# TODO: DESPUES GENERAR Y APLICAR MASCARA COSTA Y ESTELA
+# TODO: GENERAR Y APLICAR MASCARA ESTELA
 
 
 

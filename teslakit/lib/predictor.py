@@ -5,6 +5,7 @@ import numpy as np
 import xarray as xr
 import datetime
 from sklearn.decomposition import PCA
+from matplotlib import path
 
 # tk libs
 from lib.custom_stats import running_mean
@@ -142,6 +143,35 @@ def spatial_gradient(xdset, var_name):
     # store gradient
     xdset['{0}_gradient'.format(var_name)]= (
         ('time', 'latitude', 'longitude'), var_grad)
+
+    return xdset
+
+def mask_from_poly(xdset, ls_poly):
+    '''
+    Generate mask from list of tuples (lon, lat)
+
+    xdset dimensions:
+        (longitude, latitude, )
+
+    returns xdset with new variable "mask"
+    '''
+
+    lon = xdset.longitude.values
+    lat = xdset.latitude.values
+    mesh_lat, mesh_lon = np.meshgrid(lat, lon)
+    mask = np.zeros(mesh_lat.shape)
+
+    mesh_points = np.array(
+        [mesh_lon.flatten(), mesh_lat.flatten()]
+    ).T
+
+    for pol in ls_poly:
+        p = path.Path(pol)
+        inside = np.array(p.contains_points(mesh_points))
+        inmesh = np.reshape(inside, mask.shape)
+        mask[inmesh] = 1
+
+    xdset['mask']=(('latitude','longitude'), mask.T)
 
     return xdset
 

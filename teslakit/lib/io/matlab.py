@@ -4,6 +4,7 @@
 import scipy.io as sio
 from scipy.io.matlab.mio5_params import mat_struct
 import xarray as xr
+import numpy as np
 
 from lib.custom_dateutils import DateConverter_Mat2Py
 
@@ -64,4 +65,16 @@ def ReadGowMat(p_mfile):
             'mesh': d_matf['mesh'],
         }
     )
+
+def ReadCoastMat(p_mfile):
+    '''
+    Read coast polygons from Costa.mat file.
+    Return list of NX2 np.array [x,y]
+    '''
+
+    d_matf = ReadMatfile(p_mfile)
+    l_pol = []
+    for ms in d_matf['costa']:
+        l_pol.append(np.array([ms.x, ms.y]).T)
+    return l_pol
 
