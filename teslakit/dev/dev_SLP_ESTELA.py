@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 # tk libs
-from lib.io.matlab import ReadGowMat, ReadCoastMat
+from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.io.cfs import ReadSLP
 from lib.predictor import spatial_gradient, mask_from_poly
 
@@ -19,7 +19,7 @@ from lib.predictor import spatial_gradient, mask_from_poly
 p_data = op.join(op.dirname(__file__),'..','data')
 p_test = op.join(p_data, 'tests_estela', 'Roi_Kwajalein')
 
-p_estela = op.join(p_test, 'kwajalein_roi_obj.mat')         # mask with estela
+p_estela_mat = op.join(p_test, 'kwajalein_roi_obj.mat')         # mask with estela
 p_pred_SLP = op.join(p_data,'tests_estela','CFS','prmsl')   # SLP predictor
 p_gowpoint = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')   # gow point data
 p_coast_mat = op.join(p_test, 'Costa.mat')                      # coast 
@@ -35,9 +35,12 @@ ls_sea_poly = ReadCoastMat(p_coast_mat)
 
 
 # --------------------------------------
-# load waves data
+# load estela data 
+xds_est = ReadEstelaMat(p_estela_mat)
 
-# load from .mat gow file
+
+# --------------------------------------
+# load waves data from .mat gow file
 #xds_gow = ReadGowMat(p_gowpoint)
 
 
@@ -80,8 +83,10 @@ xds_SLP_day.rename({'mask':'mask_land'}, inplace=True)
 #plt.show()
 #sys.exit()
 
+# TODO: resample estela a resolucion xds_SLP_day y usar
+# estela.D_y1993to2012<1000000000 para generar otra mask sobre los datos SLP
 
-# TODO: GENERAR Y APLICAR MASCARA ESTELA
+# TODO: continuar con PCA estela predictor 
 
 
 

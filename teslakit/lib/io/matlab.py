@@ -3,6 +3,7 @@
 
 import scipy.io as sio
 from scipy.io.matlab.mio5_params import mat_struct
+import h5py
 import xarray as xr
 import numpy as np
 
@@ -78,3 +79,58 @@ def ReadCoastMat(p_mfile):
         l_pol.append(np.array([ms.x, ms.y]).T)
     return l_pol
 
+def ReadEstelaMat(p_mfile):
+    '''
+    Read estela data from .mat file.
+    Return xarray.Dataset
+    '''
+
+    threshold = 0
+
+    with h5py.File(p_mfile, 'r') as mf:
+
+        # mesh
+        mesh_lon = mf['TP']['fullX_centred'][:]
+        mesh_lat = mf['full']['Y'][:]
+        coast = mf['coastcntr']
+
+        mesh_lon[mesh_lon<0]=mesh_lon[mesh_lon<0] + 360
+        longitude = mesh_lon[0,:]
+        latitude = mesh_lat[:,0]
+
+        # fields
+        d_D = {}
+        d_F = {}
+        d_Fthreas = {}
+        fds = mf['C']['traveldays_interp'].keys()
+        for fd in fds:
+            d_D[fd] = mf['C']['traveldays_interp'][fd][:]
+            d_F[fd] = mf['C']['FEmedia_interp'][fd][:]
+            d_Fthreas[fd] = d_F[fd] / np.nanmax(d_F[fd])
+
+            # use threshold
+            d_D[fd][d_Fthreas[fd]<threshold/100] = np.nan
+            d_F[fd][d_Fthreas[fd]<threshold/100] = np.nan
+            d_Fthreas[fd][d_Fthreas[fd]<threshold/100] = np.nan
+
+
+    # return xarray.Dataset
+    xdset = xr.Dataset(
+        {
+        },
+        coords = {
+            'longitude': longitude,
+            'latitude': latitude,
+        },
+        attrs = {
+        }
+    )
+
+    for k in d_D.keys():
+        xdset.update({
+            'D_{0}'.format(k):(('latitude','longitude'), d_D[fd]),
+            'F_{0}'.format(k):(('latitude','longitude'), d_F[fd]),
+            'Fthreas_{0}'.format(k):(('latitude','longitude'), d_Fthreas[fd])
+        })
+
+    return xdset
