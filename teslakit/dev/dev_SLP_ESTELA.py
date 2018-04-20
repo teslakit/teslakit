@@ -39,6 +39,11 @@ ls_sea_poly = ReadCoastMat(p_coast_mat)
 xds_est = ReadEstelaMat(p_estela_mat)
 
 
+
+
+
+
+
 # --------------------------------------
 # load waves data from .mat gow file
 #xds_gow = ReadGowMat(p_gowpoint)
@@ -67,7 +72,6 @@ xds_SLP_site = xds_SLP.sel(
     longitude = slice(lon1, lon2, 4),
 )
 
-
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
 
@@ -78,13 +82,28 @@ xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
 xds_SLP_day = mask_from_poly(xds_SLP_day, ls_sea_poly)
 xds_SLP_day.rename({'mask':'mask_land'}, inplace=True)
 
-# test mask
-#xds_SLP_day.SLP.isel(time=0).where(xds_SLP_day.mask_land!=1).plot()
-#plt.show()
-#sys.exit()
 
-# TODO: resample estela a resolucion xds_SLP_day y usar
-# estela.D_y1993to2012<1000000000 para generar otra mask sobre los datos SLP
+# resample estela to site mesh
+xds_est_site = xds_est.sel(
+    longitude = xds_SLP_day.longitude,
+    latitude = xds_SLP_day.latitude,
+)
+
+# generate mask using estela
+mask_est = np.zeros(xds_est_site.D_y1993to2012.shape)
+mask_est[np.where(xds_est_site.D_y1993to2012<1000000000)]=1
+
+xds_SLP_day.update({
+    'mask_estela':(('latitude','longitude'), mask_est)
+})
+
+# test estela and coast masks
+#test = xds_SLP_day.SLP.isel(time=0).where(
+#    (xds_SLP_day.mask_estela==1) & (xds_SLP_day.mask_land!=1)
+#)
+#test.plot()
+#plt.show()
+
 
 # TODO: continuar con PCA estela predictor 
 
