@@ -175,3 +175,43 @@ def mask_from_poly(xdset, ls_poly):
 
     return xdset
 
+def dynamic_estela_predictor(xdset, var_name, estela_D):
+    '''
+    Generate dynamic predictor using estela
+
+    xdset:
+        (longitude, latitude, time), var_name
+
+    returns xdset with new variables:
+        var_name_comp, var_name_gradient_comp
+    '''
+    first_day = int(np.floor(np.nanmax(estela_D)))+1
+
+    var_comp = np.ones(xdset[var_name].shape) * np.nan
+    var_grd_comp = np.ones(xdset[var_name].shape) * np.nan
+
+    # TODO: COMENTAR CON ANA
+
+    for lat in range(len(xdset.latitude)):
+        for lon in range(len(xdset.longitude)):
+            ed = estela_D[lat, lon]
+            if not np.isnan(ed):
+                t_indexes = np.arange(
+                    first_day, len(xdset.time)) - np.int(ed)
+                xdselec= xdset.isel(
+                    time = t_indexes,
+                    latitude=lat,
+                    longitude=lon)
+
+                var_comp[t_indexes,lat,lon] = xdselec[var_name].values
+                var_grd_comp[t_indexes,lat,lon] = \
+                xdselec['{0}_gradient'.format(var_name)].values
+
+    # store estela predictor
+    xdset['{0}_comp'.format(var_name)]= (
+        ('time', 'latitude', 'longitude'), var_comp)
+    xdset['{0}_gradient_comp'.format(var_name)]= (
+        ('time', 'latitude', 'longitude'), var_grd_comp)
+
+    return xdset
+

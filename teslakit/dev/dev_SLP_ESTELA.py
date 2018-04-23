@@ -13,7 +13,8 @@ import xarray as xr
 # tk libs
 from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.io.cfs import ReadSLP
-from lib.predictor import spatial_gradient, mask_from_poly
+from lib.predictor import spatial_gradient, mask_from_poly, \
+dynamic_estela_predictor
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -37,11 +38,6 @@ ls_sea_poly = ReadCoastMat(p_coast_mat)
 # --------------------------------------
 # load estela data 
 xds_est = ReadEstelaMat(p_estela_mat)
-
-
-
-
-
 
 
 # --------------------------------------
@@ -103,6 +99,10 @@ xds_SLP_day.update({
 #)
 #test.plot()
 #plt.show()
+
+# Generate estela predictor
+xds_SLP_day = dynamic_estela_predictor(
+    xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012)
 
 
 # TODO: continuar con PCA estela predictor 
