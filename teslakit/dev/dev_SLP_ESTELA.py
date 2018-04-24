@@ -45,28 +45,24 @@ xds_est = ReadEstelaMat(p_estela_mat)
 #xds_gow = ReadGowMat(p_gowpoint)
 
 
+## --------------------------------------
+## site coordinates 
+#lat1 = 60.5
+#lat2 = 0
+#lon1 = 115
+#lon2 = 280
+#resample = 4  #2º
+
+## load predictor data (SLP) from CFSR and save to .nc 
+#xds_SLP_site = ReadSLP(
+#    p_pred_SLP,
+#    lat1, lat2, lon1, lon2, resample,
+#    p_save=p_SLP_save)
+
+
 # --------------------------------------
-# load predictor data (we use SLP and SLP gradients)
-#xds_SLP = ReadSLP(p_pred_SLP)
-#xds_SLP.rename({'PRMSL_L101':'SLP'}, inplace=True)
-# after reading from original files, save using xarray
-#xds_SLP.to_netcdf(p_SLP_save)
-
-# load and use xarray saved data (faster)
-xds_SLP = xr.open_dataset(p_SLP_save)
-
-
-# site coordinates 
-lat1 = 60.5
-lat2 = 0
-lon1 = 115
-lon2 = 280
-
-# cut data and resample to 2º lon,lat
-xds_SLP_site = xds_SLP.sel(
-    latitude = slice(lat1, lat2, 4),
-    longitude = slice(lon1, lon2, 4),
-)
+# load and use xarray saved predictor data (faster)
+xds_SLP_site = xr.open_dataset(p_SLP_save)
 
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
@@ -93,8 +89,8 @@ xds_SLP_day.update({
     'mask_estela':(('latitude','longitude'), mask_est)
 })
 
-# test estela and coast masks
-#test = xds_SLP_day.SLP.isel(time=0).where(
+## test estela and coast masks
+#test = xds_SLP_day.SLP.isel(time=400).where(
 #    (xds_SLP_day.mask_estela==1) & (xds_SLP_day.mask_land!=1)
 #)
 #test.plot()

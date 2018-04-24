@@ -190,7 +190,7 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
     var_comp = np.ones(xdset[var_name].shape) * np.nan
     var_grd_comp = np.ones(xdset[var_name].shape) * np.nan
 
-    # TODO: COMENTAR CON ANA
+     # TODO: ARREGLAR 
 
     for lat in range(len(xdset.latitude)):
         for lon in range(len(xdset.longitude)):
@@ -215,3 +215,6 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
 
     return xdset
 
+def CalcPCA_EstelaPred():
+    # TODO
+    return None
