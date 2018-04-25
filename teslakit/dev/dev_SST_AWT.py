@@ -20,7 +20,7 @@ from lib.objs.alr_wrapper import ALR_WRP
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
 p_export_figs = op.join(op.dirname(__file__),'..','data','export_figs')
-p_pred_nc = op.join(p_data, 'SST_1985_2017.nc')
+p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 
 # --------------------------------------

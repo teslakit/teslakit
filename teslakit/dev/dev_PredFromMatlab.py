@@ -17,7 +17,7 @@ from lib.custom_dateutils import DateConverter_Mat2Py
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
 p_pred_mat = op.join(p_data, 'SST_1854_2017.mat')
-p_pred_nc = op.join(p_data, 'SST_1985_2017.nc')
+p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 
 # --------------------------------------
