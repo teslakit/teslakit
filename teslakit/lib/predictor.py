@@ -180,40 +180,59 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
     Generate dynamic predictor using estela
 
     xdset:
-        (longitude, latitude, time), var_name
+        (time, latitude, longitude), var_name
 
-    returns xdset with new variables:
-        var_name_comp, var_name_gradient_comp
+    returns similar xarray.Dataset with variables:
+        (time, latitude, longitude), var_name_comp
+        (time, latitude, longitude), var_name_gradient_comp
     '''
+
+    # first day is estela max
     first_day = int(np.floor(np.nanmax(estela_D)))+1
 
-    var_comp = np.ones(xdset[var_name].shape) * np.nan
-    var_grd_comp = np.ones(xdset[var_name].shape) * np.nan
+    # output will start at time=first_day
+    shp = xdset[var_name].shape
+    comp_shape = (shp[0]-first_day, shp[1], shp[2])
+    var_comp = np.ones(comp_shape) * np.nan
+    var_grd_comp = np.ones(comp_shape) * np.nan
 
-     # TODO: ARREGLAR 
-
-    for lat in range(len(xdset.latitude)):
-        for lon in range(len(xdset.longitude)):
-            ed = estela_D[lat, lon]
+    # get data using estela for each cell
+    for i_lat in range(len(xdset.latitude)):
+        for i_lon in range(len(xdset.longitude)):
+            ed = estela_D[i_lat, i_lon]
             if not np.isnan(ed):
-                t_indexes = np.arange(
-                    first_day, len(xdset.time)) - np.int(ed)
-                xdselec= xdset.isel(
-                    time = t_indexes,
-                    latitude=lat,
-                    longitude=lon)
 
-                var_comp[t_indexes,lat,lon] = xdselec[var_name].values
-                var_grd_comp[t_indexes,lat,lon] = \
-                xdselec['{0}_gradient'.format(var_name)].values
+                # mount estela displaced time array 
+                i_times = np.arange(
+                    first_day, len(xdset.time)
+                ) - np.int(ed)
 
-    # store estela predictor
-    xdset['{0}_comp'.format(var_name)]= (
-        ('time', 'latitude', 'longitude'), var_comp)
-    xdset['{0}_gradient_comp'.format(var_name)]= (
-        ('time', 'latitude', 'longitude'), var_grd_comp)
+                # select data from displaced time array positions
+                xdselec = xdset.isel(
+                    time = i_times,
+                    latitude = i_lat,
+                    longitude = i_lon)
 
-    return xdset
+                # get estela predictor values
+                var_comp[:, i_lat, i_lon] = xdselec[var_name].values
+                var_grd_comp[:, i_lat, i_lon] = xdselec['{0}_gradient'.format(var_name)].values
+
+    # return generated estela predictor
+    return xr.Dataset(
+        {
+            '{0}_comp'.format(var_name):(
+                ('time','latitude','longitude'), var_comp),
+            '{0}_gradient_comp'.format(var_name):(
+                ('time','latitude','longitude'), var_grd_comp),
+
+        },
+        coords = {
+            'time':xdset.time.values[first_day:],
+            'latitude':xdset.latitude.values,
+            'longitude':xdset.longitude.values,
+        }
+    )
+
 
 def CalcPCA_EstelaPred():
     # TODO

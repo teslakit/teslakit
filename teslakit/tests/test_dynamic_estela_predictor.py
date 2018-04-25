@@ -20,6 +20,7 @@ p_data = op.join(op.dirname(__file__),'..','data')
 p_test = op.join(p_data, 'test_dynamic_estela_predictor')
 p_xds_slp = op.join(p_test, 'xds_SLP_day.nc')
 p_xds_estela = op.join(p_test, 'xds_estela.nc')
+p_xds_estela_pred = op.join(p_test, 'xds_estela_pred.nc')
 
 
 # --------------------------------------
@@ -28,17 +29,16 @@ xds_SLP_day = xr.open_dataset(p_xds_slp)
 xds_est_site = xr.open_dataset(p_xds_estela)
 
 
-# TODO: plot masked slp
-masked_SLP = xds_SLP_day.SLP.where(
-    (xds_SLP_day.mask_estela==1) & (xds_SLP_day.mask_land!=1)
-)
-masked_SLP.isel(time=10).plot()
-plt.show()
-sys.exit()
-
-
-
 # Generate estela predictor
-xds_SLP_day = dynamic_estela_predictor(
-    xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012.values)
+#xds_estela_SLP = dynamic_estela_predictor(
+#    xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012.values)
+#xds_estela_SLP.to_netcdf(p_xds_estela_pred)
+
+
+# plot data
+xds_estela_SLP = xr.open_dataset(p_xds_estela_pred)
+print xds_estela_SLP
+
+xds_estela_SLP.isel(time=360).SLP_comp.plot()
+plt.show()
 

@@ -96,6 +96,7 @@ xds_SLP_day.update({
 #test.plot()
 #plt.show()
 
+
 # Generate estela predictor
 xds_SLP_day = dynamic_estela_predictor(
     xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012)
