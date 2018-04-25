@@ -98,8 +98,9 @@ xds_SLP_day.update({
 
 
 # Generate estela predictor
-xds_SLP_day = dynamic_estela_predictor(
+xds_SLP_estela_pred = dynamic_estela_predictor(
     xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012)
+
 
 
 # TODO: continuar con PCA estela predictor 

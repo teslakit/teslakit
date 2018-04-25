@@ -235,5 +235,5 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
 
 
 def CalcPCA_EstelaPred():
-    # TODO
+    # TODO: RESAMPLEAR LOS DATOS A 1D Y ELIMINAR NANS ANTES DE HACER PCA
     return None
