@@ -36,8 +36,8 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
         ix_lon2 = np.where(lon==lon2)[0][0]
         ix_lat1 = np.where(lat==lat1)[0][0]
         ix_lat2 = np.where(lat==lat2)[0][0]
-        longitude = lon[ix_lon1:ix_lon2:resample]
-        latitude = lat[ix_lat1:ix_lat2:resample]
+        longitude = lon[ix_lon1:ix_lon2+resample:resample]
+        latitude = lat[ix_lat1:ix_lat2+resample:resample]
 
     # read slp file by file
     np_SLP = np.nan * np.ones((len(time), len(latitude), len(longitude)))
@@ -49,8 +49,8 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
             slp = ds.variables['PRMSL_L101'][:]
             np_SLP[ti:ti+time_len,:,:] = slp[
                 :,
-                ix_lat1:ix_lat2:resample,
-                ix_lon1:ix_lon2:resample
+                ix_lat1:ix_lat2+resample:resample,
+                ix_lon1:ix_lon2+resample:resample
             ]
             ti += time_len
 
@@ -71,4 +71,5 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
         xds_SLP.to_netcdf(p_save)
 
     return xds_SLP
+
 

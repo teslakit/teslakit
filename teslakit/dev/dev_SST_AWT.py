@@ -11,7 +11,7 @@ import xarray as xr
 from datetime import datetime, timedelta
 
 # tk libs
-from lib.custom_stats import ClassificationKMA
+from lib.classification import ClassificationKMA
 from lib.custom_plot import Plot_EOFs_Annual as PlotEOFs
 from lib.predictor import CalcPCA_Annual_latavg as CalcPCA
 from lib.objs.alr_wrapper import ALR_WRP

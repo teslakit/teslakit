@@ -146,7 +146,7 @@ def spatial_gradient(xdset, var_name):
 
     return xdset
 
-def mask_from_poly(xdset, ls_poly):
+def mask_from_poly(xdset, ls_poly, name_mask='mask'):
     '''
     Generate mask from list of tuples (lon, lat)
 
@@ -171,7 +171,7 @@ def mask_from_poly(xdset, ls_poly):
         inmesh = np.reshape(inside, mask.shape)
         mask[inmesh] = 1
 
-    xdset['mask']=(('latitude','longitude'), mask.T)
+    xdset[name_mask]=(('latitude','longitude'), mask.T)
 
     return xdset
 
@@ -180,7 +180,7 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
     Generate dynamic predictor using estela
 
     xdset:
-        (time, latitude, longitude), var_name
+        (time, latitude, longitude), var_name, mask
 
     returns similar xarray.Dataset with variables:
         (time, latitude, longitude), var_name_comp
@@ -233,7 +233,80 @@ def dynamic_estela_predictor(xdset, var_name, estela_D):
         }
     )
 
+def CalcPCA_EstelaPred(xdset, pred_name):
+    '''
+    Principal component analysis
+    Custom for estela predictor
 
-def CalcPCA_EstelaPred():
-    # TODO: RESAMPLEAR LOS DATOS A 1D Y ELIMINAR NANS ANTES DE HACER PCA
-    return None
+    xdset:
+        (time, latitude, longitude), pred_name_comp | pred_name_gradient_comp
+
+    returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
+    '''
+
+    # estela predictor and estela gradient predictor
+    pred_est_var = xdset['{0}_comp'.format(pred_name)]
+    pred_est_grad = xdset['{0}_gradient_comp'.format(pred_name)]
+
+    # use data inside timeframe
+    dp_var = pred_est_var.values
+    dp_grd = pred_est_grad.values
+
+    # unravel and join var and grad data 
+    dp_ur = np.nan * np.ones(
+        (dp_var.shape[0], 2*dp_var.shape[1]*dp_var.shape[2])
+    )
+
+    # we use .T to equal matlab
+    for ti in range(dp_ur.shape[0]):
+        dp_ur[ti,:] = np.concatenate(
+            [np.ravel(dp_var[ti].T) , np.ravel(dp_grd[ti].T)]
+        )
+
+    # remove nans from predictor    
+    data_pos = ~np.isnan(dp_ur[0,:])
+    clean_row = dp_ur[0, data_pos]
+    dp_ur_nonan = np.nan * np.ones(
+        (dp_ur.shape[0], len(clean_row))
+    )
+    for ti in range(dp_ur.shape[0]):
+        dp_ur_nonan[ti,:] = dp_ur[ti, data_pos]
+
+
+    # TODO: USAMOS DATOS MATLAB PARA EL TEST
+    from lib.io.matlab import ReadMatfile
+    dmat=ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/source/teslakit/data/tests_estela_PCA/matlab.mat')
+
+    dp_ur_nonan = dmat['SlpGrd']
+
+
+    # standarize predictor
+    pred_mean = np.mean(dp_ur_nonan, axis=0)
+    pred_std = np.std(dp_ur_nonan, axis=0)
+    pred_norm = (dp_ur_nonan[:,:] - pred_mean) / pred_std
+    pred_norm[np.isnan(pred_norm)] = 0
+
+    # TODO: SEPARATE CALIBRATION AND VALIDATION USING DATE
+    pred_norm_cal = pred_norm
+    pred_norm_val = np.array([])
+
+    # principal components analysis
+    ipca = PCA(n_components=pred_norm_cal.shape[0])
+    PCs = ipca.fit_transform(pred_norm_cal)
+
+    # return dataset
+    print 'Principal Components Analysis COMPLETE'
+    return xr.Dataset(
+        {
+            'PCs': (('n_components', 'n_components'), PCs),
+            'EOFs': (('n_components','n_features'), ipca.components_),
+            'variance': (('n_components',), ipca.explained_variance_),
+
+            'pred_mean': (('n_features',), pred_mean),
+            'pred_std': (('n_features',), pred_std),
+        },
+
+        attrs = {
+        }
+    )
+

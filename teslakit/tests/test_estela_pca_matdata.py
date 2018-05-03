@@ -27,17 +27,30 @@ p_mat_data = op.join(p_test, 'splgrd1d.mat')
 dmat = ReadMatfile(p_mat_data)
 slp_grd_1d = dmat['SlpGrd']
 
-# TODO: fof lib.predictor.CalcPCA_EstelaPred we have to parse 3d data to 1d
-# withouth nans. for this test we will use data already parsed
+# this raw data is already in [ntimeXnpoints] shape
 
 # --------------------------------------
 # PCA
 
 # standarize predictor
+print slp_grd_1d.shape
 slp_grd_mean = np.mean(slp_grd_1d, axis=0)
 slp_grd_std = np.std(slp_grd_1d, axis=0)
 slp_grd_norm = (slp_grd_1d[:,:] - slp_grd_mean) / slp_grd_std
 slp_grd_norm[np.isnan(slp_grd_norm)] = 0
+
+# TODO: PLOTEO PARA COMPARAR DATOS MATLAB CON TKIT
+xtest = xr.Dataset(
+    {'test':(('time','points'),slp_grd_norm)}
+)
+xtest.test.plot(vmin=-1,vmax=1)
+plt.show()
+sys.exit()
+
+
+
+
+
 
 # TODO: SEPARATE CALIBRATION AND VALIDATION USING DATE
 slp_grd_norm_cal = slp_grd_norm
@@ -64,3 +77,4 @@ xds_PCA = xr.Dataset(
 print xds_PCA.PCs
 
 # TODO STORE SAME DATA AS MATLAB CODE
+

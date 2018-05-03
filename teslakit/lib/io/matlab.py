@@ -88,6 +88,8 @@ def ReadEstelaMat(p_mfile):
     threshold = 0
 
     with h5py.File(p_mfile, 'r') as mf:
+        if 'obj' in mf.keys():
+            mf = mf['obj']
 
         # mesh
         mesh_lon = mf['TP']['fullX_centred'][:]

@@ -15,6 +15,7 @@ from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.io.cfs import ReadSLP
 from lib.predictor import spatial_gradient, mask_from_poly, \
 dynamic_estela_predictor
+from lib.predictor import CalcPCA_EstelaPred as CalcPCA
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -45,19 +46,19 @@ xds_est = ReadEstelaMat(p_estela_mat)
 #xds_gow = ReadGowMat(p_gowpoint)
 
 
-## --------------------------------------
-## site coordinates 
-#lat1 = 60.5
-#lat2 = 0
-#lon1 = 115
-#lon2 = 280
-#resample = 4  #2º
+# --------------------------------------
+# site coordinates 
+lat1 = 60.5
+lat2 = 0.5
+lon1 = 115
+lon2 = 279
+resample = 4  #2º
 
-## load predictor data (SLP) from CFSR and save to .nc 
-#xds_SLP_site = ReadSLP(
-#    p_pred_SLP,
-#    lat1, lat2, lon1, lon2, resample,
-#    p_save=p_SLP_save)
+# load predictor data (SLP) from CFSR and save to .nc 
+xds_SLP_site = ReadSLP(
+    p_pred_SLP,
+    lat1, lat2, lon1, lon2, resample,
+    p_save=p_SLP_save)
 
 
 # --------------------------------------
@@ -68,11 +69,11 @@ xds_SLP_site = xr.open_dataset(p_SLP_save)
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
 
 # calculate daily gradients
+# TODO: ADD ONE ROW/COL EACH SIDE
 xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
 
 # generate land mask with land polygons 
-xds_SLP_day = mask_from_poly(xds_SLP_day, ls_sea_poly)
-xds_SLP_day.rename({'mask':'mask_land'}, inplace=True)
+xds_SLP_day = mask_from_poly(xds_SLP_day, ls_sea_poly, 'mask_land')
 
 
 # resample estela to site mesh
@@ -89,21 +90,17 @@ xds_SLP_day.update({
     'mask_estela':(('latitude','longitude'), mask_est)
 })
 
-## test estela and coast masks
-#test = xds_SLP_day.SLP.isel(time=400).where(
-#    (xds_SLP_day.mask_estela==1) & (xds_SLP_day.mask_land!=1)
-#)
-#test.plot()
-#plt.show()
-
 
 # Generate estela predictor
 xds_SLP_estela_pred = dynamic_estela_predictor(
     xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012)
 
+# TODO: EXISTEN DIFERENCIAS ENTRE PREDICTOR MATLAB Y ESTE. 
+# REPASAR MONTAJE PREDICTOR
 
 
-# TODO: continuar con PCA estela predictor 
+# Calculate PCA
+xds_PCA = CalcPCA(xds_SLP_estela_pred, 'SLP')
 
 
 

@@ -28,17 +28,13 @@ p_xds_estela_pred = op.join(p_test, 'xds_estela_pred.nc')
 xds_SLP_day = xr.open_dataset(p_xds_slp)
 xds_est_site = xr.open_dataset(p_xds_estela)
 
-
 # Generate estela predictor
-#xds_estela_SLP = dynamic_estela_predictor(
-#    xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012.values)
-#xds_estela_SLP.to_netcdf(p_xds_estela_pred)
+xds_estela_SLP = dynamic_estela_predictor(
+    xds_SLP_day, 'SLP', xds_est_site.D_y1993to2012.values)
+xds_estela_SLP.to_netcdf(p_xds_estela_pred)
 
 
 # plot data
-xds_estela_SLP = xr.open_dataset(p_xds_estela_pred)
-print xds_estela_SLP
-
-xds_estela_SLP.isel(time=360).SLP_comp.plot()
+xds_estela_SLP.isel(time=0).SLP_comp.plot()
 plt.show()
 
