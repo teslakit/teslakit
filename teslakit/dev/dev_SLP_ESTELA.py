@@ -43,7 +43,7 @@ xds_est = ReadEstelaMat(p_estela_mat)
 
 # --------------------------------------
 # load waves data from .mat gow file
-#xds_gow = ReadGowMat(p_gowpoint)
+xds_GOW = ReadGowMat(p_gowpoint)
 
 
 # --------------------------------------
@@ -103,4 +103,21 @@ xds_SLP_estela_pred = dynamic_estela_predictor(
 xds_PCA = CalcPCA(xds_SLP_estela_pred, 'SLP')
 
 
+# calculate Fe (from GOW waves data)
+hs = xds_GOW.hs
+tm = xds_GOW.t02
+Fe = np.multiply(hs**2,tm)**(1.0/3)
+xds_GOW.update({
+    'Fe':(('time',), Fe)
+})
+
+# select time window and do data daily mean
+xds_GOW = xds_GOW.sel(
+    time=slice('1979-01-22','1980-12-31')
+).resample(time='1D').mean()
+
+
+# calculate regresion model between predictand and predictor
+name_vars = ['hs', 't02', 'Fe']
+xds_Yregres = SMRM(xds_PCA, xds_GOW, name_vars)
 
