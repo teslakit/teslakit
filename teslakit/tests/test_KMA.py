@@ -29,13 +29,13 @@ p_mat_GOW = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')
 # KMA SIMPLE
 
 ## Load PCA data from test file 
-#xds_PCA = xr.open_dataset(p_xds_pca_kmasimple)
+xds_PCA = xr.open_dataset(p_xds_pca_kmasimple)
 
-## KMA simple
-#num_clusters = 6
-#repres = 0.95
-#xds_KMA = KMA_simple(
-#    xds_PCA, num_clusters, repres)
+# KMA simple
+num_clusters = 6
+repres = 0.95
+xds_KMA = KMA_simple(
+    xds_PCA, num_clusters, repres)
 
 
 
@@ -65,6 +65,12 @@ xds_Yregres = SMRM(xds_PCA, xds_GOW, ['hs','t02','Fe'])
 
 # KMA Regression Guided
 num_clusters = 36
+repres = 0.95
+alpha = 0.1
 xds_KMA = KMA_regression_guided(
-    xds_PCA, xds_Yregres, num_clusters)
+    xds_PCA, xds_Yregres, num_clusters, repres, alpha)
+
+
+# TODO: EN DEV SE USA UN BUCLE DE ALPHAS
+#alpha = np.arange(0.1,1,0.1)
 

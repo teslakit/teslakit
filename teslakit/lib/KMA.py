@@ -161,10 +161,15 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     # groupsize
     _, group_size = np.unique(kma.labels_, return_counts=True)
 
-    # TODO: groups
+    # groups
+    d_groups = {}
+    for k in range(num_clusters):
+        d_groups['{0}'.format(k)] = np.where(kma.labels_==k)
+    # TODO: STORE GROUPS WITHIN OUTPUT DATASET    
 
     # centroids
     centroids = np.dot(kma.cluster_centers_, EOFsub)
+
 
     print 'KMEANS classification COMPLETE.'
     return xr.Dataset(
@@ -182,7 +187,8 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
         }
     )
 
-def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95):
+def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95,
+                          alpha=0.5):
     '''
     KMA Classification: regression guided
 
@@ -209,6 +215,8 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95):
     nterm = np.where(APEV <= repres*100)[0][-1]
 
     nterm = nterm+1
+    nterm = 173  # TODO: PARA TESTS
+
     PCsub = PCs.values[:, :nterm]
     EOFsub = EOFs.values[:nterm, :]
 
@@ -216,30 +224,40 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95):
     data = np.concatenate((PCsub, Y), axis=1)
     data_std = np.std(data, axis=0)
     data_mean = np.mean(data, axis=0)
-    data_norm = np.divide(data-data_mean, data_std)
 
-    # TODO: BUCLE SIMULACIONES
-
-    # validation scores
-    alpha = np.arange(0.1,1,0.1)
-
-    for a in alpha:
-        data_a = np.concatenate(
-            ((1-a)*data_norm[:,:nterm],
-             a*data_norm[:,nterm:]),
-            axis=1
-        )
-
-        # TODO: PROGRAMADO UN KMEANS, HACER QUE SE REPITA PARA RESPETAR TAMANO
-        # MINMINO
-        print data_a
-        import sys; sys.exit()
-
-        # KMEANS
-        kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
+    # normalize but keep PCs weigth
+    data_norm = np.ones(data.shape)*np.nan
+    for i in range(PCsub.shape[1]):
+        data_norm[:,i] = np.divide(data[:,i]-data_mean[i], data_std[0])
+    for i in range(PCsub.shape[1],data.shape[1]):
+        data_norm[:,i] = np.divide(data[:,i]-data_mean[i], data_std[i])
 
 
+    # alpha (PCs - Yregress weight)
+    data_a = np.concatenate(
+        ((1-alpha)*data_norm[:,:nterm],
+         alpha*data_norm[:,nterm:]),
+        axis=1
+    )
 
+    # TODO: INTRODUCIR BUCLE QUE REPITA KMEANS HASTA UN MIN DE DATOS
+    # KMEANS
+    kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
+
+    # groupsize
+    _, group_size = np.unique(kma.labels_, return_counts=True)
+
+    # groups
+    d_groups = {}
+    for k in range(num_clusters):
+        d_groups['{0}'.format(k)] = np.where(kma.labels_==k)
+
+    # centroids
+    centroids = np.zeros((num_clusters, data.shape[1]))
+    for k in range(num_clusters):
+        centroids[k,:] = np.mean(data[d_groups['{0}'.format(k)],:], axis=1)
+
+    # TODO: SACAR BMUS CORRECTED COMO EN KMA SIMPLE?    
 
 
     print 'KMEANS regression-guided classification COMPLETE.'
@@ -247,14 +265,11 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95):
         {
             #'order': (('n_clusters'), kma_order),
             #'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
-            #'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
-            #'bmus': (('n_pcacomp',), kma.labels_),
+            'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
+            'bmus': (('n_pcacomp',), kma.labels_),
             #'PCs': (('n_pcacomp','n_features'), PCsub),
             #'centroids': (('n_clusters','n_pcafeat'),
             #              np.dot(kma.cluster_centers_, EOFsub)),
-            #'PC1': (('n_pcacomp'), PC1),
-            #'PC2': (('n_pcacomp'), PC2),
-            #'PC3': (('n_pcacomp'), PC3),
         }
     )
     pass
