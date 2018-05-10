@@ -12,8 +12,8 @@ import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadMatfile, ReadGowMat
-from lib.classification import KMA_regression_guided as KMA_rg
-from lib.classification import SimpleMultivariateRegressionModel as SMRM
+from lib.KMA import KMA_regression_guided as KMA_RG
+from lib.KMA import SimpleMultivariateRegressionModel as SMRM
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -44,6 +44,9 @@ xds_GOW = xds_GOW.sel(
 name_vars = ['hs', 't02', 'Fe']
 xds_Yregres = SMRM(xds_PCA, xds_GOW, name_vars)
 
-print xds_Yregres.Ym
+
+# classification: KMA regresion guided
+num_clusters = 36
+xds_KMA = KMA_RG(xds_PCA, xds_Yregres, num_clusters)
 
 

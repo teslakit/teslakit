@@ -1,0 +1,341 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import xarray as xr
+from scipy import stats
+from scipy.spatial import distance_matrix
+from sklearn.cluster import KMeans
+from datetime import datetime
+from sklearn import linear_model
+
+
+def sort_cluster_gen_corr_end(centers, dimdim):
+    '''
+    SOMs alternative
+    '''
+    # TODO: DOCUMENTAR.
+
+    # get dimx, dimy
+    dimy = np.floor(np.sqrt(dimdim)).astype(int)
+    dimx = np.ceil(np.sqrt(dimdim)).astype(int)
+
+    if not np.equal(dimx*dimy, dimdim):
+        print 'ne'
+        # TODO: RAISE ERROR
+        pass
+
+    dd = distance_matrix(centers, centers)
+    qx = 0
+    sc = np.random.permutation(dimdim).reshape(dimy, dimx)
+
+    # get qx
+    for i in range(dimy):
+        for j in range(dimx):
+
+            # row F-1
+            if not i==0:
+                qx += dd[sc[i-1,j], sc[i,j]]
+
+                if not j==0:
+                    qx += dd[sc[i-1,j-1], sc[i,j]]
+
+                if not j+1==dimx:
+                    qx += dd[sc[i-1,j+1], sc[i,j]]
+
+            # row F
+            if not j==0:
+                qx += dd[sc[i,j-1], sc[i,j]]
+
+            if not j+1==dimx:
+                qx += dd[sc[i,j+1], sc[i,j]]
+
+            # row F+1
+            if not i+1==dimy:
+                qx += dd[sc[i+1,j], sc[i,j]]
+
+                if not j==0:
+                    qx += dd[sc[i+1,j-1], sc[i,j]]
+
+                if not j+1==dimx:
+                    qx += dd[sc[i+1,j+1], sc[i,j]]
+
+    # test permutations
+    q=np.inf
+    go_out = False
+    for i in range(dimdim):
+        if go_out:
+            break
+
+        go_out = True
+
+        for j in range(dimdim):
+            for k in range(dimdim):
+                if len(np.unique([i,j,k]))==3:
+
+                    u = sc.flatten('F')
+                    u[i] = sc.flatten('F')[j]
+                    u[j] = sc.flatten('F')[k]
+                    u[k] = sc.flatten('F')[i]
+                    u = u.reshape(dimy, dimx, order='F')
+
+                    f=0
+                    for ix in range(dimy):
+                        for jx in range(dimx):
+
+                            # row F-1
+                            if not ix==0:
+                                f += dd[u[ix-1,jx], u[ix,jx]]
+
+                                if not jx==0:
+                                    f += dd[u[ix-1,jx-1], u[ix,jx]]
+
+                                if not jx+1==dimx:
+                                    f += dd[u[ix-1,jx+1], u[ix,jx]]
+
+                            # row F
+                            if not jx==0:
+                                f += dd[u[ix,jx-1], u[ix,jx]]
+
+                            if not jx+1==dimx:
+                                f += dd[u[ix,jx+1], u[ix,jx]]
+
+                            # row F+1
+                            if not ix+1==dimy:
+                                f += dd[u[ix+1,jx], u[ix,jx]]
+
+                                if not jx==0:
+                                    f += dd[u[ix+1,jx-1], u[ix,jx]]
+
+                                if not jx+1==dimx:
+                                    f += dd[u[ix+1,jx+1], u[ix,jx]]
+
+                    if f<=q:
+                        q = f
+                        sc = u
+
+                        if q<=qx:
+                            qx=q
+                            go_out=False
+
+
+    # print qx
+    return sc.flatten('F')
+
+def KMA_simple(xds_PCA, num_clusters, repres=0.95):
+    '''
+    KMA Classification
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+    num_clusters
+    repres
+
+    returns a xarray.Dataset containing KMA data
+    '''
+
+    # PCA data
+    variance = xds_PCA['variance']
+    EOFs = xds_PCA['EOFs']
+    PCs = xds_PCA['PCs']
+
+    # APEV: the cummulative proportion of explained variance by ith PC
+    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    nterm = np.where(APEV <= repres*100)[0][-1]
+
+    PCsub = PCs.values[:, :nterm+1]
+    EOFsub = EOFs.values[:nterm+1, :]
+
+    # KMEANS
+    kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
+
+    # sort kmeans
+    kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+    bmus_corrected = np.zeros((len(kma.labels_),),)*np.nan
+    for i in range(num_clusters):
+        posc = np.where(kma.labels_==kma_order[i])
+        bmus_corrected[posc] = i
+
+    # groupsize
+    _, group_size = np.unique(kma.labels_, return_counts=True)
+
+    # TODO: groups
+
+    # centroids
+    centroids = np.dot(kma.cluster_centers_, EOFsub)
+
+    print 'KMEANS classification COMPLETE.'
+    return xr.Dataset(
+        {
+            'order': (('n_clusters'), kma_order),
+            'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
+            'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
+            'bmus': (('n_pcacomp',), kma.labels_),
+            'centroids': (('n_clusters','n_pcafeat'), centroids),
+            'group_size': (('n_clusters'), group_size),
+
+            # PCA data
+            'PCs': (('n_pcacomp','n_features'), PCsub),
+            'variance': (('n_pcacomp',), variance),
+        }
+    )
+
+def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95):
+    '''
+    KMA Classification: regression guided
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+    xds_Yregres:
+        (time, vars) Ym
+    num_clusters
+    repres
+    '''
+
+    # PCA data
+    variance = xds_PCA['variance']
+    EOFs = xds_PCA['EOFs']
+    PCs = xds_PCA['PCs']
+
+    # Yregres data
+    Y = xds_Yregres['Ym']
+
+    # APEV: the cummulative proportion of explained variance by ith PC
+    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    nterm = np.where(APEV <= repres*100)[0][-1]
+
+    nterm = nterm+1
+    PCsub = PCs.values[:, :nterm]
+    EOFsub = EOFs.values[:nterm, :]
+
+    # append Yregres data to PCs
+    data = np.concatenate((PCsub, Y), axis=1)
+    data_std = np.std(data, axis=0)
+    data_mean = np.mean(data, axis=0)
+    data_norm = np.divide(data-data_mean, data_std)
+
+    # TODO: BUCLE SIMULACIONES
+
+    # validation scores
+    alpha = np.arange(0.1,1,0.1)
+
+    for a in alpha:
+        data_a = np.concatenate(
+            ((1-a)*data_norm[:,:nterm],
+             a*data_norm[:,nterm:]),
+            axis=1
+        )
+
+        # TODO: PROGRAMADO UN KMEANS, HACER QUE SE REPITA PARA RESPETAR TAMANO
+        # MINMINO
+        print data_a
+        import sys; sys.exit()
+
+        # KMEANS
+        kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
+
+
+
+
+
+    print 'KMEANS regression-guided classification COMPLETE.'
+    return xr.Dataset(
+        {
+            #'order': (('n_clusters'), kma_order),
+            #'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
+            #'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
+            #'bmus': (('n_pcacomp',), kma.labels_),
+            #'PCs': (('n_pcacomp','n_features'), PCsub),
+            #'centroids': (('n_clusters','n_pcafeat'),
+            #              np.dot(kma.cluster_centers_, EOFsub)),
+            #'PC1': (('n_pcacomp'), PC1),
+            #'PC2': (('n_pcacomp'), PC2),
+            #'PC3': (('n_pcacomp'), PC3),
+        }
+    )
+    pass
+
+def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
+    '''
+    Regression model between daily predictor and predictand
+
+    xds_PCA: predictor: SLP GRD PCAS
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+
+    xds_WAVES: predictand GOW waves data
+        name_vars will be used as predictand (ex: ['hs','t02'])
+        dim: time
+
+    returns a xarray.Dataset
+    '''
+
+    repres = 0.951
+    # TODO: NO HAY SEPARACION CALIBRACION / VALIDACION 
+
+    # PREDICTOR: PCA data
+    variance = xds_PCA['variance']
+    EOFs = xds_PCA['EOFs']
+    PCs = xds_PCA['PCs']
+
+    # APEV: the cummulative proportion of explained variance by ith PC
+    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    nterm = np.where(APEV <= repres*100)[0][-1]
+
+    PCsub = PCs.values[:, :nterm-1]
+    EOFsub = EOFs.values[:nterm-1, :]
+
+    PCsub_std = np.std(PCsub, axis=0)
+    PCsub_norm = np.divide(PCsub, PCsub_std)
+
+    X = PCsub_norm  # predictor
+
+    # PREDICTAND: WAVES data
+    wd = np.array([xds_WAVES[vn].values for vn in name_vars]).T
+    wd_std = np.nanstd(wd, axis=0)
+    wd_norm = np.divide(wd, wd_std)
+
+    Y = wd_norm  # predictand
+
+    # TODO separate validation / calibration data
+    time_cal = xds_WAVES.time
+    time_val = None
+    X_cal = None
+    Y_cal = None
+    X_val = None
+    Y_val = None
+
+
+    # Adjust
+    [n, d] = Y.shape
+    X = np.concatenate((np.ones((n,1)), X), axis=1)
+    clf = linear_model.LinearRegression(fit_intercept=True)
+    Ymod = np.zeros((n,d))*np.nan
+    for i in range(d):
+        clf.fit(X, Y[:,i])
+        beta = clf.coef_
+        intercept = clf.intercept_
+        Ymod[:,i] = np.ones((n,))*intercept
+        for j in range(len(beta)):
+            Ymod[:,i] = Ymod[:,i] + beta[j]*X[:,j]
+
+    # de-scale
+    Ym = np.multiply(Ymod, wd_std)
+
+    # TODO: calculate errors
+
+    return xr.Dataset(
+        {
+            'Ym': (('time', 'vars'), Ym),
+            #'Ym_val': (('time, n_dimensions'), Ym),
+        },
+        {
+            'time': time_cal,
+            'vars': [vn for vn in name_vars],
+        }
+    )

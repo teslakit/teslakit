@@ -43,9 +43,8 @@ slp_grd_norm[np.isnan(slp_grd_norm)] = 0
 xtest = xr.Dataset(
     {'test':(('time','points'),slp_grd_norm)}
 )
-xtest.test.plot(vmin=-1,vmax=1)
-plt.show()
-sys.exit()
+#xtest.test.plot(vmin=-1,vmax=1)
+#plt.show()
 
 
 
@@ -74,7 +73,8 @@ xds_PCA = xr.Dataset(
     }
 )
 
-print xds_PCA.PCs
+print xtest
+print xds_PCA
 
 # TODO STORE SAME DATA AS MATLAB CODE
 

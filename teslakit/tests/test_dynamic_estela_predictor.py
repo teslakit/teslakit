@@ -17,10 +17,8 @@ from lib.predictor import dynamic_estela_predictor
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
 
-p_test = op.join(p_data, 'test_dynamic_estela_predictor')
-p_xds_slp = op.join(p_test, 'xds_SLP_day.nc')
-p_xds_estela = op.join(p_test, 'xds_estela.nc')
-p_xds_estela_pred = op.join(p_test, 'xds_estela_pred.nc')
+p_test = op.join(p_data, 'test_KMA')
+p_mat_pca_simple = op.join(p_test, '.nc')
 
 
 # --------------------------------------

@@ -8,9 +8,51 @@ from sklearn.decomposition import PCA
 from matplotlib import path
 
 # tk libs
-from lib.custom_stats import running_mean
 from lib.util.terminal import printProgressBar as pb
 
+
+def running_mean(x, N, mode_str='mean'):
+    '''
+    computes a running mean (also known as moving average)
+    on the elements of the vector X. It uses a window of 2*M+1 datapoints
+
+    As always with filtering, the values of Y can be inaccurate at the
+    edges. RUNMEAN(..., MODESTR) determines how the edges are treated. MODESTR can be
+    one of the following strings:
+      'edge'    : X is padded with first and last values along dimension
+                  DIM (default)
+      'zeros'   : X is padded with zeros
+      'ones'    : X is padded with ones
+      'mean'    : X is padded with the mean along dimension DIM
+
+    X should not contains NaNs, yielding an all NaN result.
+    '''
+
+    # if nan in data, return nan array
+    if np.isnan(x).any():
+        return np.full(x.shape, np.nan)
+
+    nn = 2*N+1
+
+    if mode_str == 'zeros':
+        x = np.insert(x, 0, np.zeros(N))
+        x = np.append(x, np.zeros(N))
+
+    elif mode_str == 'ones':
+        x = np.insert(x, 0, np.ones(N))
+        x = np.append(x, np.ones(N))
+
+    elif mode_str == 'edge':
+        x = np.insert(x, 0, np.ones(N)*x[0])
+        x = np.append(x, np.ones(N)*x[-1])
+
+    elif mode_str == 'mean':
+        x = np.insert(x, 0, np.ones(N)*np.mean(x))
+        x = np.append(x, np.ones(N)*np.mean(x))
+
+
+    cumsum = np.cumsum(np.insert(x, 0, 0))
+    return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
 
 def CalcRunningMean(xdset, pred_name, window=5):
     '''
