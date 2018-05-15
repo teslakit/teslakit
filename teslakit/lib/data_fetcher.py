@@ -92,10 +92,6 @@ def Download_CSIRO(p_ncfile, lonq, latq, var_names):
     l_urls = l_urls_1 + l_urls_2 + l_urls_3
 
 
-    # TODO: PODEMOS CORTAR LAS URLS PARA ACABAR DEV
-    l_urls = l_urls[:2]
-
-
     # get coordinates from first file
     ff = xr.open_dataset(l_urls_1[0])
     idx1 = (np.abs(ff.longitude.values - lonp1)).argmin()
