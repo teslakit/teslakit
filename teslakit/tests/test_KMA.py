@@ -66,7 +66,7 @@ xds_Yregres = SMRM(xds_PCA, xds_GOW, ['hs','t02','Fe'])
 # KMA Regression Guided
 num_clusters = 36
 repres = 0.95
-alpha = 0.1
+alpha = 0.3
 xds_KMA = KMA_regression_guided(
     xds_PCA, xds_Yregres, num_clusters, repres, alpha)
 

@@ -257,22 +257,25 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95,
     for k in range(num_clusters):
         centroids[k,:] = np.mean(data[d_groups['{0}'.format(k)],:], axis=1)
 
-    # TODO: SACAR BMUS CORRECTED COMO EN KMA SIMPLE?    
+    # sort kmeans
+    kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+    bmus_corrected = np.zeros((len(kma.labels_),),)*np.nan
+    for i in range(num_clusters):
+        posc = np.where(kma.labels_==kma_order[i])
+        bmus_corrected[posc] = i
 
 
     print 'KMEANS regression-guided classification COMPLETE.'
     return xr.Dataset(
         {
-            #'order': (('n_clusters'), kma_order),
-            #'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
+            'order': (('n_clusters'), kma_order),
+            'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
             'bmus': (('n_pcacomp',), kma.labels_),
             #'PCs': (('n_pcacomp','n_features'), PCsub),
-            #'centroids': (('n_clusters','n_pcafeat'),
-            #              np.dot(kma.cluster_centers_, EOFsub)),
+            'centroids': (('n_clusters','n_pcafeat'), centroids),
         }
     )
-    pass
 
 def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     '''
@@ -354,3 +357,4 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
             'vars': [vn for vn in name_vars],
         }
     )
+
