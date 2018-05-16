@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import time
 import numpy as np
+import os.path as op
+import netCDF4 as nc4
 import xarray as xr
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def Download_MJO(p_ncfile, init_year=None, log=False):
@@ -57,7 +60,7 @@ def Download_CSIRO(p_ncfile, lonq, latq, var_names):
     lonq, latq: longitude latitude query: single value or limits
     '''
 
-    code = 'aus_4m'  # 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
+    code = 'pac_4m'  # 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
 
     # long, lat query
     lonp1 = lonq[0]
@@ -93,48 +96,75 @@ def Download_CSIRO(p_ncfile, lonq, latq, var_names):
 
 
     # get coordinates from first file
-    ff = xr.open_dataset(l_urls_1[0])
-    idx1 = (np.abs(ff.longitude.values - lonp1)).argmin()
-    idy1 = (np.abs(ff.latitude.values - latp1)).argmin()
-    idx2 = (np.abs(ff.longitude.values - lonp2)).argmin()
-    idy2 = (np.abs(ff.latitude.values - latp2)).argmin()
+    with xr.open_dataset(l_urls[0]) as ff:
+        idx1 = (np.abs(ff.longitude.values - lonp1)).argmin()
+        idy1 = (np.abs(ff.latitude.values - latp1)).argmin()
+        idx2 = (np.abs(ff.longitude.values - lonp2)).argmin()
+        idy2 = (np.abs(ff.latitude.values - latp2)).argmin()
+        t1 = ff.time[0].values  # time ini
 
-    # generate mem holder
+        # store var attrs
+        d_vatrs = {}
+        for vn in var_names:
+            d_vatrs[vn] = ff[vn].attrs
+
+    # get time end from last file
+    with xr.open_dataset(l_urls[-1]) as lf:
+        t2 = lf.time[-1].values  # time end
+
+    # get time array
+    base_time = np.arange(t1, t2, timedelta(hours=1))
+
+    # get lon, lat slice
     base = ff.isel(
-        longitude=slice(idx1,idx2+1),
-        latitude=slice(idy1,idy2+1))
+        longitude = slice(idx1,idx2+1),
+        latitude = slice(idy1,idy2+1))
 
+    # generate output holder 
     xds_out = xr.Dataset({},
         coords = {
-            'time': [],
+            'time': base_time,
             'longitude': base.longitude.values,
             'latitude': base.latitude.values,
         }
     )
 
+    # add vars to output holder
+    for vn in var_names:
+        xds_out[vn] = (
+            ('time', 'latitude', 'longitude'),
+            np.nan * np.ones((
+                len(base_time),
+                len(base.latitude.values),
+                len(base.longitude.values)
+            )),
+           d_vatrs[vn]
+        )
+
+
     # download data from files
     for u in l_urls:
-        print u
-        rxds = xr.open_dataset(u)
-        cut = rxds.isel(
-            longitude=slice(idx1,idx2+1),
-            latitude=slice(idy1,idy2+1))
-        xds_step = xr.Dataset({},
-            coords = {
-                'time': cut.time,
-                'longitude': base.longitude.values,
-                'latitude': base.latitude.values,
-            }
-        )
-        for vn in var_names:
-            xds_step[vn] = cut[vn]
+        print op.basename(u)
+        #tts = time.time()
 
-        # merge
-        xds_out = xds_out.merge(xds_step)
+        # read file from url
+        with xr.open_dataset(u) as xds_u:
+            cut = xds_u.isel(
+                longitude=slice(idx1,idx2+1),
+                latitude=slice(idy1,idy2+1))
 
+            cut_time = np.array(cut.time.values, dtype='datetime64[h]')
+            ti0 = np.where(base_time==cut_time[0])[0][0]
+            ti1 = np.where(base_time==cut_time[-1])[0][0]
+
+            # fill output vars
+            for vn in var_names:
+                xds_out[vn][ti0:ti1+1,:,:] = cut[vn].values[:]
+
+        #print time.time()-tts
 
     # save to netcdf file
-    xds_out.to_netcdf(p_ncfile,'w')
+    xds_out.to_netcdf(p_ncfile, 'w')
 
     return xr.open_dataset(p_ncfile)
 

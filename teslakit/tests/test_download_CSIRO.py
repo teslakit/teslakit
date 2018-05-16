@@ -26,15 +26,15 @@ var_names = ['hs2', 'tp0']
 
 
 # download point data
-lonp = [121]
-latp = [-3]
-xds_p = Download_CSIRO(p_nc_point, lonp, latp, var_names)
-print xds_p
+lonp = [171]
+latp = [7.5]
+#xds_p = Download_CSIRO(p_nc_point, lonp, latp, var_names)
+#print xds_p
 
 
 # download mesh data 
-lonm = [110, 115]
-latm = [-1, -0.5]
+lonm = [170, 173]
+latm = [7, 8]
 xds_m = Download_CSIRO(p_nc_mesh, lonm, latm, var_names)
 print xds_m
 
