@@ -10,7 +10,8 @@ import numpy as np
 import xarray as xr
 
 # tk libs
-from lib.data_fetcher import Download_CSIRO_Grid, Download_CSIRO_Spec
+from lib.data_fetcher import Download_CSIRO_Grid, Download_CSIRO_Spec, \
+Download_CSIRO_Spec_nc4
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -24,9 +25,9 @@ p_nc_mesh = op.join(p_test, 'csiro_down_mesh.nc')
 # --------------------------------------
 
 ## download point gridded data
-#lonp = [171]
-#latp = [7.5]
-#var_names_grid = ['hs2', 'tp0']
+lonp = [171]
+latp = [7.5]
+var_names_grid = ['hs2', 'tp0']
 #xds_p_grid = Download_CSIRO_Grid(p_nc_point, lonp, latp, var_names_grid)
 #print xds_p_grid
 

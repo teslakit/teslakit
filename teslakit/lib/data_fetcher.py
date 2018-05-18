@@ -199,13 +199,17 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('spec')
 
-    # TODO: QUITAR
-    l_urls = l_urls[:2]
+    # get time limits
+    with xr.open_dataset(l_urls[0]) as ff:
+        t1 = ff.time[0].values  # time ini
+        efth_attrs = ff['Efth'].attrs  # var attrs
+    with xr.open_dataset(l_urls[-1]) as lf:
+        t2 = lf.time[-1].values  # time ini
 
     # get nearest station ID from first file
-    with xr.open_dataset(l_urls[0]) as ff:
-        slons = ff.longitude.values[0,:]
-        slats = ff.latitude.values[0,:]
+    with nc4.Dataset(l_urls[0], 'r') as ff:
+        slons = ff['longitude'][0,:]
+        slats = ff['latitude'][0,:]
 
         # TODO: DIST DIFERENTE PARA LON LATITUDE
         station_ix = (
@@ -219,19 +223,9 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             station_ix, lon_station, lat_station
         )
 
-        t1 = ff.time[0].values  # time ini
-
         # store frequench and direction
-        frequency = ff.frequency.values
-        direction = ff.direction.values
-
-        # store var attrs
-        d_vatrs = {}
-        d_vatrs['Efth'] = ff['Efth'].attrs
-
-    # get time end from last file
-    with xr.open_dataset(l_urls[-1]) as lf:
-        t2 = lf.time[-1].values  # time end
+        frequency = ff['frequency'][:]
+        direction = ff['direction'][:]
 
     # mount time array
     base_time = np.arange(t1, t2, timedelta(hours=1))
@@ -255,7 +249,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             len(frequency),
             len(direction)
         )),
-       d_vatrs['Efth']
+        efth_attrs
     )
 
     # download data from files
@@ -264,33 +258,22 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
         print op.basename(u)
 
         # read file from url
-        with xr.open_dataset(u) as xds_u:
-            cut_time = np.array(xds_u.time.values, dtype='datetime64[h]')
-            ti0 = np.where(base_time==cut_time[0])[0][0]
-            ti1 = np.where(base_time==cut_time[-1])[0][0]
+        with nc4.Dataset(u, 'r') as ncf:
 
+            # file time start index
+            time_var = ncf.variables['time']
+            dtime = nc4.num2date(time_var[:],time_var.units)
+            cut_time = np.array(dtime, dtype='datetime64[h]')
+            time_ix0 = np.where(base_time==cut_time[0])[0][0]
 
-            # TODO TESTS
-            cut = xds_u.isel(station=station_ix)
-            print cut
-
-            # TODO: PARECE QUE NO PODEMOS CARGAR ESTE DATO
-            Efth = cut['Efth'].values[:]
-            print ''
-            print Efth.shape
-
-
-            # fill output vars
-            xds_out['Efth'][ti0:ti1+1,:,:] = cut['Efth'].values[:]
-
-            print 'done'
-            print xds_out
-            import sys; sys.exit()
-
-
+            # fill output
+            for _, ct in enumerate(range(len(cut_time))):
+                xds_out['Efth'][time_ix0+ct,:,:] = \
+                ncf['Efth'][ct,station_ix,:,:]
     print 'done.'
 
     # save to netcdf file
     xds_out.to_netcdf(p_ncfile, 'w')
 
     return xr.open_dataset(p_ncfile)
+
