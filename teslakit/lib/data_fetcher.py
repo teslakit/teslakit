@@ -13,6 +13,14 @@ def Download_MJO(p_ncfile, init_year=None, log=False):
     '''
     Download MJO data and stores it on netcdf format
     init_year: optional, data before init_year will be discarded ('yyyy-mm-dd')
+    log: optional, show log
+
+    returns xarray.Dataset
+    xds_MJO:
+        (time, ) mjo
+        (time, ) phase
+        (time, ) rmm1
+        (time, ) rmm2
     '''
 
     # default parameter
@@ -59,6 +67,8 @@ def Generate_CSIRO_urls(switch_db='gridded', grid_code='pac_4m'):
     Generate URL list for downloading csiro gridded/spec data
     switch_db = gridded / spec
     grid_code = 'pac_4m', 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
+
+    returns list of URLs with monthly CSIRO data
     '''
 
     # parameters
@@ -103,8 +113,16 @@ def Download_CSIRO_Grid(p_ncfile, lonq, latq, var_names):
     Download CSIRO gridded data and stores it on netcdf format
     lonq, latq: longitude latitude query: single value or limits
     var_names: variables to extract
+
+    returns xarray.Dataset
+    xds_CSIRO_gridded:
+        (time, latitude, longitude) var_name_1
+        (time, latitude, longitude) var_name_2
+        ...
+        (time, latitude, longitude) var_name_N
     '''
 
+    # TODO: grid code as optional argument
     grid_code = 'pac_4m'  # 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
 
     # long, lat query
@@ -193,11 +211,16 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
     '''
     Download CSIRO spec data and stores it on netcdf format
     lon_p, lat_p: longitude latitude point query
-    var_names: variables to extract
+
+    returns xarray.Dataset
+    xds_CSIRO_spec:
+        (time, frequency, direction) Efth
     '''
 
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('spec')
+    l_urls = l_urls[:6]
+    # TODO: QUITAR
 
     # get time limits
     with xr.open_dataset(l_urls[0]) as ff:
@@ -223,7 +246,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             station_ix, lon_station, lat_station
         )
 
-        # store frequench and direction
+        # store frequency and direction
         frequency = ff['frequency'][:]
         direction = ff['direction'][:]
 
@@ -253,7 +276,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
     )
 
     # download data from files
-    print 'downloading CSIRO spec data...'
+    print 'downloading CSIRO spec data... {0} files'.format(len(l_urls))
     for u in l_urls:
         print op.basename(u)
 
@@ -266,14 +289,58 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             cut_time = np.array(dtime, dtype='datetime64[h]')
             time_ix0 = np.where(base_time==cut_time[0])[0][0]
 
-            # fill output
-            for _, ct in enumerate(range(len(cut_time))):
-                xds_out['Efth'][time_ix0+ct,:,:] = \
-                ncf['Efth'][ct,station_ix,:,:]
+            # TODO: fill output (24h step)
+            ndays = int((cut_time[-1]-cut_time[0])/np.timedelta64(1,'D'))
+            ct = 0
+            for di in range(ndays):
+                print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ', time_ix0+ct,':', time_ix0+ct+24, \
+                ' --- ', ct,':', ct+24
+                xds_out['Efth'][time_ix0+ct:time_ix0+ct+24,:,:] = \
+                ncf['Efth'][ct:ct+24,station_ix,:,:]
+                ct+=24
+
+            ## fill output (1h)
+            #for _, ct in enumerate(range(len(cut_time)-1)):
+            #    xds_out['Efth'][time_ix0+ct,:,:] = \
+            #    ncf['Efth'][ct,station_ix,:,:]
     print 'done.'
 
     # save to netcdf file
     xds_out.to_netcdf(p_ncfile, 'w')
 
     return xr.open_dataset(p_ncfile)
+
+def Download_CSIRO_Spec_Stations(p_ncfile):
+    '''
+    Download CSIRO stations lat, long, name and
+    store it on netcdf format.
+
+    returns xarray.Dataset
+    '''
+
+    # Generate URL list 
+    l_urls = Generate_CSIRO_urls('spec')
+
+    # get stations 
+    xds_out = None
+    print 'downloading CSIRO spec stations...'
+    with xr.open_dataset(l_urls[0]) as ff:
+
+        # generate output dataset
+        xds_out = xr.Dataset(
+            {
+                'longitude': (('station'), ff.longitude[0,:]),
+                'latitude': (('station'), ff.latitude[0,:]),
+                'station_name': (('station'), ff.station_name[:]),
+            },
+            coords = {
+                'station' : ff.station,
+            }
+        )
+    print 'done.'
+
+    # save to netcdf file
+    xds_out.to_netcdf(p_ncfile, 'w')
+
+    return xds_out
 

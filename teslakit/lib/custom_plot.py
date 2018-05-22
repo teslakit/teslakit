@@ -6,6 +6,7 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from mpl_toolkits.basemap import Basemap
 from scipy.interpolate import interp1d
 import calendar
 from datetime import datetime, timedelta
@@ -385,5 +386,47 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     # show
     plt.show()
 
+def Plot_CSIRO_Stations(xds_stations, p_export=None):
+    'Plot CSIRO spec station location over the world'
+    # TODO: mejorar, introducir variables opcionales 
+
+    # xds_station lon lat
+    lon = xds_stations.longitude.values[:]
+    lat = xds_stations.latitude.values[:]
+    nms = xds_stations.station_name[:]
+
+    # basemap
+    m = Basemap(
+        #width=12000000,
+        #height=9000000,
+        #resolution=None,
+        projection='merc',
+        llcrnrlon=110, urcrnrlon=210,
+        llcrnrlat=-40, urcrnrlat=30,
+    )
+
+    # draw parallels.
+    parallels = np.arange(-90.,90.,10.)
+    m.drawparallels(parallels, labels=[1,0,0,0],fontsize=6)
+    # draw meridians
+    meridians = np.arange(0.,360.,10.)
+    m.drawmeridians(meridians, labels=[0,0,0,1],fontsize=6)
+
+    # add stations
+    m.scatter(lon, lat, s=1, c='r', latlon=True)
+
+    # add shader
+    m.shadedrelief()
+
+    plt.show()
+    return
+
+    # TODO show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
 
 

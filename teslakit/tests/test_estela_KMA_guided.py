@@ -22,6 +22,8 @@ p_test = op.join(p_data, 'tests_estela_PCA')
 p_PCA = op.join(p_test, 'xds_SLP_PCA.nc')
 p_GOW = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')
 
+# TODO: CAMBIAR GOW A WAVES POR GENERALIZAR
+
 # load PCA and GOW WAVES data
 xds_PCA = xr.open_dataset(p_PCA)
 xds_GOW = ReadGowMat(p_GOW)
@@ -50,3 +52,4 @@ num_clusters = 36
 xds_KMA = KMA_RG(xds_PCA, xds_Yregres, num_clusters)
 
 
+# todo: PLOTEAR CLASIFICACION Y RESUÑTADPS KMA
