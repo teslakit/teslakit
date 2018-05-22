@@ -219,8 +219,6 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
 
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('spec')
-    l_urls = l_urls[:6]
-    # TODO: QUITAR
 
     # get time limits
     with xr.open_dataset(l_urls[0]) as ff:
