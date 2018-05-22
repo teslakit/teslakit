@@ -217,6 +217,9 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
         (time, frequency, direction) Efth
     '''
 
+    # days chunk size
+    ch_days = 16
+
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('spec')
 
@@ -287,20 +290,29 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             cut_time = np.array(dtime, dtype='datetime64[h]')
             time_ix0 = np.where(base_time==cut_time[0])[0][0]
 
-            # TODO: fill output (24h step)
+            # fill output (24h step)
+            #ndays = int((cut_time[-1]-cut_time[0])/np.timedelta64(1,'D'))
+            #ct = 0
+            #for di in range(ndays):
+            #    print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ', time_ix0+ct,':', time_ix0+ct+24, \
+            #    ' --- ', ct,':', ct+24
+            #    xds_out['Efth'][time_ix0+ct:time_ix0+ct+24,:,:] = \
+            #    ncf['Efth'][ct:ct+24,station_ix,:,:]
+            #    ct+=24
+
+            # fill output (chunkn_days x 24h step)
             ndays = int((cut_time[-1]-cut_time[0])/np.timedelta64(1,'D'))
             ct = 0
-            for di in range(ndays):
-                print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ', time_ix0+ct,':', time_ix0+ct+24, \
-                ' --- ', ct,':', ct+24
-                xds_out['Efth'][time_ix0+ct:time_ix0+ct+24,:,:] = \
-                ncf['Efth'][ct:ct+24,station_ix,:,:]
-                ct+=24
+            for di in range(0, ndays, ch_days):
+                print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ',\
+                        time_ix0+ct,':', min(time_ix0+ct+ch_days*24,time_ix0+ndays*24), \
+                ' --- ', ct,':', min(ct+ch_days*24, ndays*24)
+                xds_out['Efth'][
+                    time_ix0+ct:min(time_ix0+ct+ch_days*24,time_ix0+ndays*24),:,:] = \
+                ncf['Efth'][
+                    ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
+                ct+=ch_days*24
 
-            ## fill output (1h)
-            #for _, ct in enumerate(range(len(cut_time)-1)):
-            #    xds_out['Efth'][time_ix0+ct,:,:] = \
-            #    ncf['Efth'][ct,station_ix,:,:]
     print 'done.'
 
     # save to netcdf file

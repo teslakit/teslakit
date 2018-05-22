@@ -386,6 +386,7 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     # show
     plt.show()
 
+
 def Plot_CSIRO_Stations(xds_stations, p_export=None):
     'Plot CSIRO spec station location over the world'
     # TODO: mejorar, introducir variables opcionales 
@@ -401,8 +402,8 @@ def Plot_CSIRO_Stations(xds_stations, p_export=None):
         #height=9000000,
         #resolution=None,
         projection='merc',
-        llcrnrlon=110, urcrnrlon=210,
-        llcrnrlat=-40, urcrnrlat=30,
+        llcrnrlon=311, urcrnrlon=312,
+        llcrnrlat=-28, urcrnrlat=-27,
     )
 
     # draw parallels.
@@ -413,7 +414,7 @@ def Plot_CSIRO_Stations(xds_stations, p_export=None):
     m.drawmeridians(meridians, labels=[0,0,0,1],fontsize=6)
 
     # add stations
-    m.scatter(lon, lat, s=1, c='r', latlon=True)
+    m.scatter(lon, lat, s=6, c='r', latlon=True)
 
     # add shader
     m.shadedrelief()
