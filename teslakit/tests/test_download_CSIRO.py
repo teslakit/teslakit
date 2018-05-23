@@ -19,7 +19,7 @@ p_data = op.join(op.dirname(__file__),'..','data')
 
 p_test = op.join(p_data, 'test_CSIRO')
 p_nc_point = op.join(p_test, 'csiro_down_point.nc')
-p_nc_spec = op.join(p_test, 'csiro_down_spec_chunkdays_3m.nc')
+p_nc_spec = op.join(p_test, 'csiro_down_spec_tempfs.nc')
 p_nc_stations = op.join(p_test, 'csiro_down_stations.nc')
 p_nc_mesh = op.join(p_test, 'csiro_down_mesh.nc')
 

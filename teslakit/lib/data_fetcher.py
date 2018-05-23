@@ -3,6 +3,7 @@
 
 import time
 import numpy as np
+import os
 import os.path as op
 import netCDF4 as nc4
 import xarray as xr
@@ -254,69 +255,63 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
     # mount time array
     base_time = np.arange(t1, t2, timedelta(hours=1))
 
-    # generate output holder 
-    xds_out = xr.Dataset({},
-        coords = {
-            'time': base_time,
-            'longitude': lon_station,
-            'latitude': lat_station,
-            'frequency': frequency,
-            'direction': direction,
-        }
-    )
-
-    # add vars to output holder
-    xds_out['Efth'] = (
-        ('time', 'frequency', 'direction'),
-        np.nan * np.ones((
-            len(base_time),
-            len(frequency),
-            len(direction)
-        )),
-        efth_attrs
-    )
+    # temp folder
+    p_tmp = op.join(p_ncfile.replace('.nc','.tmp'))
+    if not op.isdir(p_tmp):
+        os.makedirs(p_tmp)
 
     # download data from files
     print 'downloading CSIRO spec data... {0} files'.format(len(l_urls))
     for u in l_urls:
         print op.basename(u)
 
+        # local downloaded file
+        p_u_tmp = op.join(p_tmp, op.basename(u))
+        if op.isfile(p_u_tmp):
+            continue
+
         # read file from url
-        with nc4.Dataset(u, 'r') as ncf:
+        with xr.open_dataset(u) as xds_u:
+            u_time = xds_u.time.values[:]
 
-            # file time start index
-            time_var = ncf.variables['time']
-            dtime = nc4.num2date(time_var[:],time_var.units)
-            cut_time = np.array(dtime, dtype='datetime64[h]')
-            time_ix0 = np.where(base_time==cut_time[0])[0][0]
+            # generate temp holder 
+            xds_temp = xr.Dataset(
+                {
+                    'Efth':(
+                        ('time','frequency','direction'),
+                        np.nan * np.ones((
+                            len(u_time),
+                            len(frequency),
+                            len(direction)
+                     )),
+                     efth_attrs
+                    )
+                },
+                coords = {
+                    'time': u_time,
+                    'longitude': lon_station,
+                    'latitude': lat_station,
+                    'frequency': frequency,
+                    'direction': direction,
+                }
+            )
 
-            # fill output (24h step)
-            #ndays = int((cut_time[-1]-cut_time[0])/np.timedelta64(1,'D'))
-            #ct = 0
-            #for di in range(ndays):
-            #    print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ', time_ix0+ct,':', time_ix0+ct+24, \
-            #    ' --- ', ct,':', ct+24
-            #    xds_out['Efth'][time_ix0+ct:time_ix0+ct+24,:,:] = \
-            #    ncf['Efth'][ct:ct+24,station_ix,:,:]
-            #    ct+=24
-
-            # fill output (chunkn_days x 24h step)
-            ndays = int((cut_time[-1]-cut_time[0])/np.timedelta64(1,'D'))
+            # fill temp (chunkn_days x 24h step)
+            ndays = int((u_time[-1]-u_time[0])/np.timedelta64(1,'D'))
             ct = 0
             for di in range(0, ndays, ch_days):
-                print base_time[time_ix0+ct],' - ',time_ix0, ct,' - ',\
-                        time_ix0+ct,':', min(time_ix0+ct+ch_days*24,time_ix0+ndays*24), \
-                ' --- ', ct,':', min(ct+ch_days*24, ndays*24)
-                xds_out['Efth'][
-                    time_ix0+ct:min(time_ix0+ct+ch_days*24,time_ix0+ndays*24),:,:] = \
-                ncf['Efth'][
-                    ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
+                print u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24)
+                xds_temp['Efth'][ct:min(ct+ch_days*24,ndays*24),:,:] = \
+                xds_u['Efth'][ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
                 ct+=ch_days*24
 
-    print 'done.'
+            # save temp file
+            xds_temp.to_netcdf(p_u_tmp,'w')
 
-    # save to netcdf file
-    xds_out.to_netcdf(p_ncfile, 'w')
+    # join .nc files in one file
+    xds_join = xr.open_mfdataset(op.join(p_tmp,'*.nc'))
+    xds_join.to_netcdf(p_ncfile,'w')
+    print 'done.'
 
     return xr.open_dataset(p_ncfile)
 
