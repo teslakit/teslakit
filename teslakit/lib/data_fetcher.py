@@ -226,10 +226,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
 
     # get time limits
     with xr.open_dataset(l_urls[0]) as ff:
-        t1 = ff.time[0].values  # time ini
         efth_attrs = ff['Efth'].attrs  # var attrs
-    with xr.open_dataset(l_urls[-1]) as lf:
-        t2 = lf.time[-1].values  # time ini
 
     # get nearest station ID from first file
     with nc4.Dataset(l_urls[0], 'r') as ff:
@@ -252,9 +249,6 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
         frequency = ff['frequency'][:]
         direction = ff['direction'][:]
 
-    # mount time array
-    base_time = np.arange(t1, t2, timedelta(hours=1))
-
     # temp folder
     p_tmp = op.join(p_ncfile.replace('.nc','.tmp'))
     if not op.isdir(p_tmp):
@@ -273,6 +267,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
         # read file from url
         with xr.open_dataset(u) as xds_u:
             u_time = xds_u.time.values[:]
+            vn_efth = 'Efth' if 'Efth' in xds_u.variables else 'efth'
 
             # generate temp holder 
             xds_temp = xr.Dataset(
@@ -302,7 +297,7 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             for di in range(0, ndays, ch_days):
                 print u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24)
                 xds_temp['Efth'][ct:min(ct+ch_days*24,ndays*24),:,:] = \
-                xds_u['Efth'][ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
+                xds_u[vn_efth][ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
                 ct+=ch_days*24
 
             # save temp file
