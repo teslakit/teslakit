@@ -27,12 +27,12 @@ p_nc_mesh = op.join(p_test, 'csiro_down_mesh.nc')
 # --------------------------------------
 # Gridded data
 
-## download point gridded data
-#lonp = [171]
-#latp = [7.5]
-#var_names_grid = ['hs2', 'tp0']
-#xds_p_grid = Download_CSIRO_Grid(p_nc_point, lonp, latp, var_names_grid)
-#print xds_p_grid
+# download point gridded data
+lonp = [171]
+latp = [7.5]
+var_names_grid = ['hs2', 'tp0']
+xds_p_grid = Download_CSIRO_Grid(p_nc_point, lonp, latp, var_names_grid)
+print xds_p_grid
 
 ## download mesh data 
 #lonm = [170, 173]

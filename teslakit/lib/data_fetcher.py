@@ -8,7 +8,7 @@ import os.path as op
 import netCDF4 as nc4
 import xarray as xr
 from datetime import datetime, timedelta
-from xml.etree import ElementTree
+import threddsclient
 
 
 def Download_MJO(p_ncfile, init_year=None, log=False):
@@ -73,28 +73,30 @@ def Generate_CSIRO_urls(switch_db='gridded', grid_code='pac_4m'):
     returns list of URLs with monthly CSIRO data
     '''
 
-    # TODO: get list of files from opendap catalog
-    first_year = 1979
-    first_month = 1
-    last_year = 2018
-    last_month = 4
-
     # parameters
     url_catg = 'http://data-cbr.csiro.au/thredds/catalog/catch_all/CMAR_CAWCR-Wave_archive/'
     url_dodsC = 'http://data-cbr.csiro.au/thredds/dodsC/catch_all/CMAR_CAWCR-Wave_archive/'
     url_a = 'CAWCR_Wave_Hindcast_aggregate/'
 
-    # generate .nc url list
-    yml = ['{0}{1:02d}'.format(x, y) for x in range(first_year,last_year+1) for y in range(1,13)]
-    yml = yml[yml.index('{0}{1:02d}'.format(first_year, first_month)): \
-            yml.index('{0}{1:02d}'.format(last_year, last_month))+1]
+    # mount URLs
     if switch_db == 'gridded':
-        l_urls = ['{0}{1}gridded/ww3.{2}.{3}.nc'.format(
-            url_dodsC, url_a, grid_code, ym) for ym in yml]
+        # get data available inside gridded catalog
+        url_xml = '{0}{1}gridded/catalog.xml'.format(url_catg, url_a)
+        cat = threddsclient.read_url(url_xml)
+        down_ncs = sorted([f.name for f in cat.flat_datasets()])
+        down_ncs = [x for x in down_ncs if grid_code in x]  # filter grid
+
+        l_urls = ['{0}{1}gridded/{2}'.format(
+            url_dodsC, url_a, nn) for nn in down_ncs]
 
     elif switch_db == 'spec':
-        l_urls = ['{0}{1}spec/ww3.{2}_spec.nc'.format(
-            url_dodsC, url_a, ym) for ym in yml]
+        # get data available inside spec catalog
+        url_xml = '{0}{1}spec/catalog.xml'.format(url_catg, url_a)
+        cat = threddsclient.read_url(url_xml)
+        down_ncs = sorted([f.name for f in cat.flat_datasets()])
+
+        l_urls = ['{0}{1}spec/{2}'.format(
+            url_dodsC, url_a, nn) for nn in down_ncs]
 
     return l_urls
 
@@ -164,14 +166,16 @@ def Download_CSIRO_Grid(p_ncfile, lonq, latq, var_names):
     # TODO: grid code as optional argument
     grid_code = 'pac_4m'  # 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
 
+    # Generate URL list 
+    l_urls = Generate_CSIRO_urls('gridded', grid_code)
+    for u in l_urls:
+        print u
+
     # long, lat query
     lonp1 = lonq[0]
     latp1 = latq[0]
     lonp2 = lonq[-1]
     latp2 = latq[-1]
-
-    # Generate URL list 
-    l_urls = Generate_CSIRO_urls('gridded', grid_code)
 
     # get coordinates from first file
     with xr.open_dataset(l_urls[0]) as ff:
