@@ -8,6 +8,7 @@ import os.path as op
 import netCDF4 as nc4
 import xarray as xr
 from datetime import datetime, timedelta
+from xml.etree import ElementTree
 
 
 def Download_MJO(p_ncfile, init_year=None, log=False):
@@ -66,6 +67,43 @@ def Download_MJO(p_ncfile, init_year=None, log=False):
 def Generate_CSIRO_urls(switch_db='gridded', grid_code='pac_4m'):
     '''
     Generate URL list for downloading csiro gridded/spec data
+    switch_db = gridded / spec
+    grid_code = 'pac_4m', 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
+
+    returns list of URLs with monthly CSIRO data
+    '''
+
+    # TODO: get list of files from opendap catalog
+    first_year = 1979
+    first_month = 1
+    last_year = 2018
+    last_month = 4
+
+    # parameters
+    url_catg = 'http://data-cbr.csiro.au/thredds/catalog/catch_all/CMAR_CAWCR-Wave_archive/'
+    url_dodsC = 'http://data-cbr.csiro.au/thredds/dodsC/catch_all/CMAR_CAWCR-Wave_archive/'
+    url_a = 'CAWCR_Wave_Hindcast_aggregate/'
+
+    # generate .nc url list
+    yml = ['{0}{1:02d}'.format(x, y) for x in range(first_year,last_year+1) for y in range(1,13)]
+    yml = yml[yml.index('{0}{1:02d}'.format(first_year, first_month)): \
+            yml.index('{0}{1:02d}'.format(last_year, last_month))+1]
+    if switch_db == 'gridded':
+        l_urls = ['{0}{1}gridded/ww3.{2}.{3}.nc'.format(
+            url_dodsC, url_a, grid_code, ym) for ym in yml]
+
+    elif switch_db == 'spec':
+        l_urls = ['{0}{1}spec/ww3.{2}_spec.nc'.format(
+            url_dodsC, url_a, ym) for ym in yml]
+
+    return l_urls
+
+def Generate_CSIRO_urls_splittedDBs(switch_db='gridded', grid_code='pac_4m'):
+    '''
+    OBSOLETE: USE Generate_CSIRO_urls instead
+
+    Generate URL list for downloading csiro gridded/spec data
+    using not aggregated thredds catalogs
     switch_db = gridded / spec
     grid_code = 'pac_4m', 'aus_4m', 'aus_10m', 'glob_24m', 'pac_4m', 'pac_10m'
 
@@ -224,9 +262,15 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('spec')
 
-    # get time limits
+    # get output time limits and efth attributes
     with xr.open_dataset(l_urls[0]) as ff:
+        t1 = ff.time[0].values  # time ini
         efth_attrs = ff['Efth'].attrs  # var attrs
+    with xr.open_dataset(l_urls[-1]) as lf:
+        t2 = lf.time[-1].values  # time end
+
+    # mount output time array
+    out_time = np.arange(t1, t2, timedelta(hours=1))
 
     # get nearest station ID from first file
     with nc4.Dataset(l_urls[0], 'r') as ff:
@@ -303,9 +347,41 @@ def Download_CSIRO_Spec(p_ncfile, lon_p, lat_p):
             # save temp file
             xds_temp.to_netcdf(p_u_tmp,'w')
 
+
     # join .nc files in one file
-    xds_join = xr.open_mfdataset(op.join(p_tmp,'*.nc'))
-    xds_join.to_netcdf(p_ncfile,'w')
+    xds_out = xr.Dataset(
+        {
+            'Efth':(
+                ('time','frequency','direction'),
+                np.nan * np.ones((
+                    len(out_time),
+                    len(frequency),
+                    len(direction)
+             )),
+             efth_attrs
+            )
+        },
+        coords = {
+            'time': out_time,
+            'longitude': lon_station,
+            'latitude': lat_station,
+            'frequency': frequency,
+            'direction': direction,
+        }
+    )
+
+    print 'joining CSIRO spec data...'
+    for u in l_urls:
+        p_u_tmp = op.join(p_tmp, op.basename(u))
+        with xr.open_dataset(p_u_tmp) as xds_u:
+            ti = np.where(out_time == xds_u.time.values[0])[0][0]
+            print op.basename(u), ti, xds_out.time[ti].values, \
+            xds_u.time[0].values
+            print xds_u['Efth'][:-1,:,:].shape
+            print xds_out['Efth'][ti:ti+len(xds_u.time)-1,:,:].shape
+            print xds_u.time[-1]
+            xds_out['Efth'][ti:ti+len(xds_u.time)-1,:,:] = xds_u['Efth'][:-1,:,:]
+    xds_out.to_netcdf(p_ncfile, 'w')
     print 'done.'
 
     return xr.open_dataset(p_ncfile)
