@@ -168,8 +168,6 @@ def Download_CSIRO_Grid(p_ncfile, lonq, latq, var_names):
 
     # Generate URL list 
     l_urls = Generate_CSIRO_urls('gridded', grid_code)
-    for u in l_urls:
-        print u
 
     # long, lat query
     lonp1 = lonq[0]
