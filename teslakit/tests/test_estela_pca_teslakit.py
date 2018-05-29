@@ -13,6 +13,7 @@ import xarray as xr
 # tk libs
 from lib.io.matlab import ReadMatfile
 from lib.PCA import CalcPCA_EstelaPred as CalcPCA
+from lib.custom_plot import Plot_EOFs_EstelaPred as PlotEOFs
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -25,4 +26,11 @@ xds_SLP_estela_pred = xr.open_dataset(p_estela_pred)
 # Calculate PCA
 xds_PCA = CalcPCA(xds_SLP_estela_pred, 'SLP')
 xds_PCA.to_netcdf(op.join(p_test, 'xds_SLP_PCA.nc'))
+
+print xds_PCA
+
+# Plot EOFs
+n_plot = 4
+#PlotEOFs(xds_PCA, n_plot)
+
 

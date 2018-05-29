@@ -16,6 +16,7 @@ from lib.io.cfs import ReadSLP
 from lib.estela import spatial_gradient, mask_from_poly, \
 dynamic_estela_predictor
 from lib.PCA import CalcPCA_EstelaPred as CalcPCA
+from lib.custom_plot import Plot_EOFs_EstelaPred as PlotEOFs
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
@@ -101,6 +102,10 @@ xds_SLP_estela_pred = dynamic_estela_predictor(
 
 # Calculate PCA
 xds_PCA = CalcPCA(xds_SLP_estela_pred, 'SLP')
+
+# plot EOFS
+n_plot = 3
+PlotEOFs(xds_PCA, n_plot)
 
 
 # calculate Fe (from GOW waves data)

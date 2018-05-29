@@ -10,6 +10,7 @@ from matplotlib import path
 # tk libs
 from lib.util.terminal import printProgressBar as pb
 
+
 def running_mean(x, N, mode_str='mean'):
     '''
     computes a running mean (also known as moving average)
@@ -151,6 +152,7 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
         },
 
         # store PCA algorithm metadata
+        # TODO: REPLACE Y1Y2M1M2 ATTRS FOR PRED_TIME VARIABLE?
         attrs = {
             'method': 'latitude averaged',
             'y1': y1,
@@ -199,12 +201,11 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     for ti in range(dp_ur.shape[0]):
         dp_ur_nonan[ti,:] = dp_ur[ti, data_pos]
 
-
+    # TODO: COMPARAR PYTHON-MATLAB DESDE EXTRAER SLP, CALCULAR GRD, UNRAVEL
     # TODO: USAMOS DATOS MATLAB PARA EL TEST
-    from lib.io.matlab import ReadMatfile
-    dmat=ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/source/teslakit/data/tests_estela_PCA/matlab.mat')
-
-    dp_ur_nonan = dmat['SlpGrd']
+    #from lib.io.matlab import ReadMatfile
+    #dmat=ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/source/teslakit/data/tests_estela_PCA/matlab.mat')
+    #dp_ur_nonan = dmat['SlpGrd']
 
 
     # standarize predictor
@@ -213,13 +214,9 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     pred_norm = (dp_ur_nonan[:,:] - pred_mean) / pred_std
     pred_norm[np.isnan(pred_norm)] = 0
 
-    # TODO: SEPARATE CALIBRATION AND VALIDATION USING DATE
-    pred_norm_cal = pred_norm
-    pred_norm_val = np.array([])
-
     # principal components analysis
-    ipca = PCA(n_components=pred_norm_cal.shape[0])
-    PCs = ipca.fit_transform(pred_norm_cal)
+    ipca = PCA(n_components=pred_norm.shape[0])
+    PCs = ipca.fit_transform(pred_norm)
 
     # return dataset
     print 'Principal Components Analysis COMPLETE'
@@ -231,6 +228,10 @@ def CalcPCA_EstelaPred(xdset, pred_name):
 
             'pred_mean': (('n_features',), pred_mean),
             'pred_std': (('n_features',), pred_std),
+
+            'pred_lon': (('n_lon',), xdset.longitude.values),
+            'pred_lat': (('n_lat',), xdset.latitude.values),
+            'pred_time': (('n_time',), xdset.time.values),
         },
 
         attrs = {

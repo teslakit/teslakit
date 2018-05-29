@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 import calendar
 from datetime import datetime, timedelta
 
+
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
 def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
@@ -90,6 +91,39 @@ def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
             p_expi = op.join(p_export, 'EOFs_{0}'.format(it+1))
             fig.savefig(p_expi, dpi=96)
             plt.close()
+
+def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
+    '''
+    Plot annual EOFs for 3D predictors
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+
+        (n_lon, ) pred_lon: predictor longitude values
+        (n_lat, ) pred_lat: predictor latitude values
+        (n_time, ) pred_time: predictor time values
+
+        method: gradient + estela
+
+    n_plot: number of EOFs plotted
+
+    show plot or saves figure to p_export
+    '''
+
+    # PCA data
+    variance = xds_PCA['variance'].values
+    EOFs = np.transpose(xds_PCA['EOFs'].values)
+    PCs = np.transpose(xds_PCA['PCs'].values)
+
+    # PCA latavg metadata
+    lon = xds_PCA['pred_lon'].values
+    lat = xds_PCA['pred_lat'].values
+    time = xds_PCA['pred_time'].values
+
+    # reshape
+
 
 
 def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):

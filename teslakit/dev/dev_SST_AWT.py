@@ -45,14 +45,13 @@ n_plot = 3
 p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
-import sys; sys.exit()
 
 # --------------------------------------
 # KMA Classification 
 num_clusters = 6
 repres = 0.95
 
-# TODO: SACAR COPULAS DENTRO y poner aqui fuera
+# TODO: SACAR COPULAS de DENTRO y poner aqui fuera
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 
