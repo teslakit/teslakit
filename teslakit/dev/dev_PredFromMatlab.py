@@ -11,7 +11,7 @@ import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadMatfile
-from lib.predictor import CalcRunningMean
+from lib.PCA import CalcRunningMean
 from lib.custom_dateutils import DateConverter_Mat2Py
 
 # data storage

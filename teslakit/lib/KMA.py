@@ -187,8 +187,7 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
         }
     )
 
-def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95,
-                          alpha=0.5):
+def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha=0.5):
     '''
     KMA Classification: regression guided
 
@@ -215,7 +214,6 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95,
     nterm = np.where(APEV <= repres*100)[0][-1]
 
     nterm = nterm+1
-    nterm = 173  # TODO: PARA TESTS
 
     PCsub = PCs.values[:, :nterm]
     EOFsub = EOFs.values[:nterm, :]
@@ -286,7 +284,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
         (n_components, n_features) EOFs
         (n_components, ) variance
 
-    xds_WAVES: predictand GOW waves data
+    xds_WAVES: predictand waves data
         name_vars will be used as predictand (ex: ['hs','t02'])
         dim: time
 
@@ -320,15 +318,6 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
 
     Y = wd_norm  # predictand
 
-    # TODO separate validation / calibration data
-    time_cal = xds_WAVES.time
-    time_val = None
-    X_cal = None
-    Y_cal = None
-    X_val = None
-    Y_val = None
-
-
     # Adjust
     [n, d] = Y.shape
     X = np.concatenate((np.ones((n,1)), X), axis=1)
@@ -350,10 +339,9 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     return xr.Dataset(
         {
             'Ym': (('time', 'vars'), Ym),
-            #'Ym_val': (('time, n_dimensions'), Ym),
         },
         {
-            'time': time_cal,
+            'time': xds_WAVES.time,
             'vars': [vn for vn in name_vars],
         }
     )

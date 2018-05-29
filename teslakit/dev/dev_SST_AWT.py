@@ -14,8 +14,8 @@ import numpy as np
 # tk libs
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF
-from lib.custom_plot import Plot_EOFs_Annual as PlotEOFs
-from lib.predictor import CalcPCA_Annual_latavg as CalcPCA
+from lib.custom_plot import Plot_EOFs_latavg as PlotEOFs
+from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.objs.alr_wrapper import ALR_WRP
 
 
@@ -27,10 +27,7 @@ p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 # --------------------------------------
 # load predictor
-
 xds_pred = xr.open_dataset(p_pred_nc)
-lon_pred = xds_pred.longitude.values
-
 
 # --------------------------------------
 # Principal Components Analysis
@@ -45,9 +42,10 @@ xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
 
 # plot EOFs
 n_plot = 3
-p_export = op.join(p_export_figs, 'annual_EOFs')  # if only show: None
-PlotEOFs(xds_PCA, lon_pred, y1, yN, m1, mN, n_plot, p_export)
+p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
+PlotEOFs(xds_PCA, n_plot, p_export)
 
+import sys; sys.exit()
 
 # --------------------------------------
 # KMA Classification 

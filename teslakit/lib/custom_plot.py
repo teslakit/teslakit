@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
-def Plot_EOFs_Annual(xds_PCA, lon, y1, y2, m1, m2, n_plot, p_export=None):
+def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
     '''
     Plot annual EOFs for 3D predictors
 
@@ -21,8 +21,12 @@ def Plot_EOFs_Annual(xds_PCA, lon, y1, y2, m1, m2, n_plot, p_export=None):
         (n_components, n_components) PCs
         (n_components, n_features) EOFs
         (n_components, ) variance
-    lon: predictor longitude values
-    y1,y2,m1,m2: PCA time parameters
+
+        (n_lon, ) pred_lon: predictor longitude values
+
+        attrs: y1, y2, m1, m2: PCA time parameters
+        method: latitude averaged
+
     n_plot: number of EOFs plotted
 
     show plot or saves figure to p_export
@@ -32,6 +36,13 @@ def Plot_EOFs_Annual(xds_PCA, lon, y1, y2, m1, m2, n_plot, p_export=None):
     variance = xds_PCA['variance'].values
     EOFs = np.transpose(xds_PCA['EOFs'].values)
     PCs = np.transpose(xds_PCA['PCs'].values)
+
+    # PCA latavg metadata
+    y1 = xds_PCA.attrs['y1']
+    y2 = xds_PCA.attrs['y2']
+    m1 = xds_PCA.attrs['m1']
+    m2 = xds_PCA.attrs['m2']
+    lon = xds_PCA['pred_lon'].values
 
     # mesh data
     len_x = len(lon)

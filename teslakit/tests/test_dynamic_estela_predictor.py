@@ -12,7 +12,7 @@ import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadMatfile
-from lib.predictor import dynamic_estela_predictor
+from lib.estela import dynamic_estela_predictor
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')

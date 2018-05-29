@@ -12,7 +12,7 @@ import xarray as xr
 
 # tk libs
 from lib.io.matlab import ReadMatfile
-from lib.predictor import CalcPCA_EstelaPred as CalcPCA
+from lib.PCA import CalcPCA_EstelaPred as CalcPCA
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
