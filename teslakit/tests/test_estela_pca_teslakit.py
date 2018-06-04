@@ -23,6 +23,10 @@ p_test = op.join(p_data, 'tests_estela_PCA')
 p_estela_pred = op.join(p_test, 'xds_SLP_estela_pred.nc')
 xds_SLP_estela_pred = xr.open_dataset(p_estela_pred)
 
+test = xds_SLP_estela_pred.isel(time=10)['SLP_comp'].plot()
+plt.show()
+sys.exit()
+
 # Calculate PCA
 xds_PCA = CalcPCA(xds_SLP_estela_pred, 'SLP')
 xds_PCA.to_netcdf(op.join(p_test, 'xds_SLP_PCA.nc'))
@@ -30,7 +34,7 @@ xds_PCA.to_netcdf(op.join(p_test, 'xds_SLP_PCA.nc'))
 print xds_PCA
 
 # Plot EOFs
-n_plot = 4
-#PlotEOFs(xds_PCA, n_plot)
+n_plot = 1
+PlotEOFs(xds_PCA, n_plot)
 
 

@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 # tk libs
-from lib.data_fetcher import Download_MJO
+from lib.data_fetcher.MJO import Download_MJO
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')

@@ -193,6 +193,7 @@ def CalcPCA_EstelaPred(xdset, pred_name):
         )
 
     # remove nans from predictor    
+    # TODO: STORE NAN SI LO QUIERO PLOTEAR DESPUES
     data_pos = ~np.isnan(dp_ur[0,:])
     clean_row = dp_ur[0, data_pos]
     dp_ur_nonan = np.nan * np.ones(

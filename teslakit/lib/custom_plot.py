@@ -12,6 +12,7 @@ import calendar
 from datetime import datetime, timedelta
 
 
+# TODO: IR MOVIENDO A lib/plotting/
 # TODO: CREAR FUNCION CustomColormap con datos y el interp
 
 def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
@@ -122,8 +123,29 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
     lat = xds_PCA['pred_lat'].values
     time = xds_PCA['pred_time'].values
 
-    # reshape
+    # percentage of variance each field explains
+    n_percent = variance / np.sum(variance)
 
+    for it in range(n_plot):
+
+        # plot figure
+        fig = plt.figure(figsize=(16,9))
+
+        # map of the spatial field
+        spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
+
+        # reshape from vector to lon, lat matrix 
+        C = np.reshape(spatial_fields, (len(lon), len(lat))).transpose()
+
+        # eof cmap
+        ax1 = plt.subplot2grid((6, 6), (0, 0), colspan=6, rowspan=4)
+        plt.pcolormesh(np.transpose(C), cmap='RdBu', shading='gouraud')
+        plt.clim(-1,1)
+        plt.title('EOF #{0}  ---  {1:.2f}%'.format(it+1,n_percent[it]*100))
+        #ax1.set_xticklabels([str(x) for x in lon])
+        #ax1.set_yticklabels(ylbl)
+         
+        # TODO: PARA CONTINUAR NECESITO LA POSICION DE LOS NANS PARA EL UNRAVEL 
 
 
 def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
@@ -430,49 +452,5 @@ def Plot_ARL_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
 
     # show
     plt.show()
-
-
-def Plot_CSIRO_Stations(xds_stations, p_export=None):
-    'Plot CSIRO spec station location over the world'
-    # TODO: mejorar, introducir variables opcionales 
-
-    # xds_station lon lat
-    lon = xds_stations.longitude.values[:]
-    lat = xds_stations.latitude.values[:]
-    nms = xds_stations.station_name[:]
-
-    # basemap
-    m = Basemap(
-        #width=12000000,
-        #height=9000000,
-        #resolution=None,
-        projection='merc',
-        llcrnrlon=311, urcrnrlon=312,
-        llcrnrlat=-28, urcrnrlat=-27,
-    )
-
-    # draw parallels.
-    parallels = np.arange(-90.,90.,10.)
-    m.drawparallels(parallels, labels=[1,0,0,0],fontsize=6)
-    # draw meridians
-    meridians = np.arange(0.,360.,10.)
-    m.drawmeridians(meridians, labels=[0,0,0,1],fontsize=6)
-
-    # add stations
-    m.scatter(lon, lat, s=6, c='r', latlon=True)
-
-    # add shader
-    m.shadedrelief()
-
-    plt.show()
-    return
-
-    # TODO show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=128)
-        plt.close()
 
 
