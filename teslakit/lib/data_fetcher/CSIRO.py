@@ -10,6 +10,7 @@ import xarray as xr
 from datetime import datetime, timedelta
 import threddsclient
 
+
 def Generate_URLs(switch_db='gridded', grid_code='pac_4m'):
     '''
     Generate URL list for downloading csiro gridded/spec data
@@ -60,15 +61,21 @@ def Download_Gridded(p_ncfile, lonq, latq, grid_code='glob_24m'):
         (time, latitude, longitude) var_name_N
     '''
 
-
-    # Generate URL list 
-    l_urls = Generate_URLs('gridded', grid_code)
-
     # long, lat query
     lonp1 = lonq[0]
     latp1 = latq[0]
     lonp2 = lonq[-1]
     latp2 = latq[-1]
+
+    # Generate URL list 
+    l_urls = Generate_URLs('gridded', grid_code)
+
+    # get coordinates from first file
+    with xr.open_dataset(l_urls[0]) as ff:
+        idx1 = (np.abs(ff.longitude.values - lonp1)).argmin()
+        idy1 = (np.abs(ff.latitude.values - latp1)).argmin()
+        idx2 = (np.abs(ff.longitude.values - lonp2)).argmin()
+        idy2 = (np.abs(ff.latitude.values - latp2)).argmin()
 
     # temp folder
     p_tmp = op.join(p_ncfile.replace('.nc','.tmp'))
