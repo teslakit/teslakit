@@ -16,7 +16,7 @@ import os
 import os.path as op
 
 from lib.util.terminal import printProgressBar as pb
-from lib.custom_plot import Plot_ARL_PValues, Plot_ARL_Params
+from lib.plotting.ALR import Plot_PValues, Plot_Params
 
 # fix library
 from scipy import stats
@@ -230,15 +230,6 @@ class ALR_WRP(object):
         X = np.concatenate(self.terms_fit.values(), axis=1)
         y = self.evbmus_values
 
-
-        # TODO: PRUEBAS SOBRE EL X
-        #np.set_printoptions(threshold=np.nan)
-        #print np.amax(X,axis=0)
-        #print np.amin(X,axis=0)
-        #import sys; sys.exit()
-
-
-
         # fit model
         print "\nFitting autoregressive logistic model ..."
         start_time = time.time()
@@ -288,8 +279,6 @@ class ALR_WRP(object):
 
     def Report_pvalue(self, p_save):
         'Report containing pvalues and params info'
-
-        # TODO: OPCION PARA GUARDAR EN FICHERO.PNG
 
         # report folder
         if not op.isdir(p_save):

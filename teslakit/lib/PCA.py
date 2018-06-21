@@ -89,6 +89,7 @@ def CalcRunningMean(xdset, pred_name, window=5):
 
     return xdset
 
+
 def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     '''
     Principal component analysis
@@ -180,6 +181,7 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     # use data inside timeframe
     dp_var = pred_est_var.values
     dp_grd = pred_est_grad.values
+    shape_grid = dp_var[0].shape  # needed to handle data after PCs
 
     # unravel and join var and grad data 
     dp_ur = np.nan * np.ones(
@@ -193,7 +195,6 @@ def CalcPCA_EstelaPred(xdset, pred_name):
         )
 
     # remove nans from predictor    
-    # TODO: STORE NAN SI LO QUIERO PLOTEAR DESPUES
     data_pos = ~np.isnan(dp_ur[0,:])
     clean_row = dp_ur[0, data_pos]
     dp_ur_nonan = np.nan * np.ones(
@@ -201,12 +202,6 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     )
     for ti in range(dp_ur.shape[0]):
         dp_ur_nonan[ti,:] = dp_ur[ti, data_pos]
-
-    # TODO: COMPARAR PYTHON-MATLAB DESDE EXTRAER SLP, CALCULAR GRD, UNRAVEL
-    # TODO: USAMOS DATOS MATLAB PARA EL TEST
-    #from lib.io.matlab import ReadMatfile
-    #dmat=ReadMatfile('/Users/ripollcab/Projects/TESLA-kit/source/teslakit/data/tests_estela_PCA/matlab.mat')
-    #dp_ur_nonan = dmat['SlpGrd']
 
 
     # standarize predictor
@@ -232,10 +227,13 @@ def CalcPCA_EstelaPred(xdset, pred_name):
 
             'pred_lon': (('n_lon',), xdset.longitude.values),
             'pred_lat': (('n_lat',), xdset.latitude.values),
-            'pred_time': (('n_time',), xdset.time.values),
+            'pred_time': (('n_components',), xdset.time.values),
+            'pred_data_pos':(('n_points',), data_pos)
         },
 
         attrs = {
-            'method':'gradient + estela'
+            'method': 'gradient + estela',
+            'pred_name': pred_name,
         }
     )
+

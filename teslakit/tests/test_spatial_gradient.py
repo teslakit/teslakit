@@ -17,8 +17,8 @@ from lib.estela import spatial_gradient
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
 
-p_mat_mg = op.join(p_data, 'tests_spatial_gradient', 'meshgrid.mat')
-p_mat_slp = op.join(p_data, 'tests_spatial_gradient', 'slp.mat')
+p_mat_mg = op.join(p_data, 'tests', 'tests_spatial_gradient', 'meshgrid.mat')
+p_mat_slp = op.join(p_data, 'tests', 'tests_spatial_gradient', 'slp.mat')
 
 
 # --------------------------------------

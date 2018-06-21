@@ -42,6 +42,7 @@ def WorldMap(bk='simple'):
     # return basemap
     return m
 
+
 def WorldMap_Stations(xds_stations, bk='simple', p_export=None):
     '''
     Plot mercator world map with CSIRO spec stations
@@ -269,3 +270,4 @@ def WorldMap_GriddedCoords(xds_gridded, bk='simple', p_export=None):
     else:
         fig.savefig(p_export, dpi=96)
         plt.close()
+

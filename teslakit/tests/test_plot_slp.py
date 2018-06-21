@@ -13,7 +13,7 @@ import xarray as xr
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
-p_test = op.join(p_data, 'tests_estela', 'Roi_Kwajalein')
+p_test = op.join(p_data,'tests', 'tests_estela', 'Roi_Kwajalein')
 p_SLP_save = op.join(p_test, 'SLP.nc')
 
 

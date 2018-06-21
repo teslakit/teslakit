@@ -1,0 +1,64 @@
+
+Resumen datos CAWCR_Wave_Hindcast_aggregate/spec/
+
+hay datos para estaciones en una malla 10x10º
+y existen zonas con mayor densidad de datos en Australia, el Pacífico, y parece que cerca de UK
+
+adjunto el png con el mapa mundi de las estaciones.
+
+Parece que hay una de las del grid 10x10 justo encima de Fortaleza
+
+
+
+MÁS INFORMACIÓN SOBRE DATOS SPEC
+existen datos desde 197901 hasta 201804 PERO faltan 201706 hasta 201712
+
+las variables que contienen y metadata (atributos) se pueden visualizar bien con xarray.Dataset
+
+<xarray.Dataset>
+Dimensions:       (direction: 24, frequency: 29, station: 3683, string16: 16, time: 745)
+Coordinates:
+  * time          (time) datetime64[ns] 1979-01-01 ...
+  * station       (station) int32 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 ...
+  * string16      (string16) int32 -2147483647 -2147483647 -2147483647 ...
+  * frequency     (frequency) float32 0.035 0.0385 0.042349998 0.046585 ...
+  * direction     (direction) float32 82.5 67.5 52.5 37.5 22.5 7.5 352.5 ...
+Data variables:
+    station_name  (station) |S64 ...
+    frequency1    (frequency) float64 ...
+    frequency2    (frequency) float64 ...
+    longitude     (time, station) float64 ...
+    latitude      (time, station) float64 ...
+    Efth          (time, station, frequency, direction) float64 ...
+    depth         (time, station) float64 ...
+    u10m          (time, station) float64 ...
+    udir          (time, station) float64 ...
+    curr          (time, station) float64 ...
+    currdir       (time, station) float64 ...
+Attributes:
+    product_name:                    ww3.197901_spec.nc
+    area:                            spectral resolution for points
+    data_type:                       OCO spectra 2D
+    format_version:                  1.1
+    southernmost_latitude:           -70.0000000°
+    northernmost_latitude:           71.5999985°
+    latitude_resolution:             n/a
+    westernmost_longitude:           -178.0000000°
+    easternmost_longitude:           350.0000000°
+    longitude_resolution:            n/a
+    minimum_altitude:                n/a
+    maximum_altitude:                n/a
+    altitude_resolution:             n/a
+    start_date:                      1979-01-01T00:00:00Z
+    stop_date:                       1979-02-01T00:00:00Z
+    field_type:                      hourly
+    date_created:                    2012-09-10T21:32:00Z
+    author:                          Durrant, Hemer, Trenham and Greenslade
+    contact:                         Mark.Hemer@csiro.au,T.Durrant@bom.gov.au
+    DOI:                             http://dx.doi.org/10.4225/08/523168703DCC5
+    related_materials:               Centre for Australian Weather and Climat...
+    creation_method:                 The hindcast was performed using the WAV...
+    license:                         Please note that the licensee is require...
+    DODS.strlen:                     16
+    DODS.dimName:                    string16
+    DODS_EXTRA.Unlimited_Dimension:  time

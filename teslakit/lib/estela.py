@@ -20,6 +20,7 @@ def spatial_gradient(xdset, var_name):
     returns xdset with new variable "var_name_gradient"
     '''
 
+    # TODO:check/ ADD ONE ROW/COL EACH SIDE
     var_grad = np.zeros(xdset[var_name].shape)
 
     Mx = len(xdset.longitude)

@@ -12,15 +12,16 @@ import xarray as xr
 from datetime import date, timedelta, datetime
 
 # tk libs
-from lib.mjo import GetMJOCategories, DownloadMJO
-from lib.custom_plot import Plot_MJOphases, Plot_MJOCategories
+from lib.mjo import GetMJOCategories
+from lib.plotting.MJO import Plot_MJOphases, Plot_MJOCategories
 from lib.objs.alr_wrapper import ALR_WRP
 
 # data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_export_figs = op.join(op.dirname(__file__),'..','data','export_figs')
-p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
+p_data = op.join(op.dirname(__file__), '..', 'data')
+p_test = op.join(p_data, 'tests', 'tests_MJO')
 
+p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
+p_export_figs = op.join(p_test, 'export_figs')
 
 
 # --------------------------------------
@@ -88,26 +89,24 @@ evbmus_sim = np.squeeze(evbmus_sim)
 
 # Generate mjo_sim list using random mjo from each category
 # TODO: MUY LENTO, ACELERAR
+print 'parte avisada como muy lenta'
 mjo_sim = np.empty((len(evbmus_sim),2)) * np.nan
 for c, m in enumerate(evbmus_sim):
     options = d_rmm_categ['cat_{0}'.format(int(m))]
     r = np.random.randint(options.shape[0])
     mjo_sim[c,:] = options[r,:]
 
-# TODO COMO OBTENGO MJO SIMULATED PHASE?
+# TODO COMO OBTENGO MJO SIMULATED PHASE? RMM1? RMM2?
 
 
 # TODO: GUARDAR MJO SIMULADO EN XARRAY 
-
-
-# save to .mat file
-#import h5py
-#p_mat_output = op.join(
-#    p_data, 'MJO_SIM_500y.mat')
-#with h5py.File(p_mat_output, 'w') as hf:
-#    hf['categ'] = evbmus_sim
-#    hf['dates'] = np.vstack(
-#        ([d.year for d in dates_sim],
-#        [d.month for d in dates_sim],
-#        [d.day for d in dates_sim])).T
+xds_MJO_sim = xr.Dataset(
+    {
+        'mjo'   :(('time',), mjo_sim),
+        #'phase' :(('time',), phase_sim),
+        #'rmm1'  :(('time',), rmm1_sim),
+        #'rmm2'  :(('time',), rmm2_sim),
+    },
+    {'time' : dates_sim}
+)
 

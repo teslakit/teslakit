@@ -18,13 +18,13 @@ WorldMap_GriddedCoords
 
 
 # data storage
-p_data = op.join(op.dirname(__file__),'..','data')
+p_data = op.join(op.dirname(__file__), '..', 'data')
+p_test = op.join(p_data, 'tests', 'test_CSIRO')
 
-p_test = op.join(p_data, 'test_CSIRO')
 p_nc_stations = op.join(p_test, 'csiro_down_stations.nc')
 p_nc_allgrids = op.join(p_test, 'csiro_down_allgrids')
 
-p_savefigs = op.join(p_data,'export_figs','CSIRO')
+p_savefigs = op.join(p_test, 'export_figs')
 
 
 # --------------------------------------
@@ -33,18 +33,18 @@ p_savefigs = op.join(p_data,'export_figs','CSIRO')
 xds_spec_stations = xr.open_dataset(p_nc_stations)
 
 # plot spec stations world map
-#bk = 'simple' # 'simple', 'shaderelief', 'etopo', 'bluemarble'
-#name_export = 'WorldMap_Stations_{0}.png'.format(bk)
-#p_export = op.join(p_savefigs, name_export)
-#WorldMap_Stations(xds_spec_stations, bk, p_export)
+bk = 'simple' # 'simple', 'shaderelief', 'etopo', 'bluemarble'
+name_export = 'WorldMap_Stations_{0}.png'.format(bk)
+p_export = op.join(p_savefigs, name_export)
+WorldMap_Stations(xds_spec_stations, bk, p_export)
 
 # plot spec stations world globe
-#bk = 'simple' # 'simple', 'shaderelief', 'etopo', 'bluemarble'
-#name_export = 'WorldGlobe_Stations_{0}.png'.format(bk)
-#p_export = op.join(p_savefigs, name_export)
-#lon_center = 130
-#lat_center = 0
-#WorldGlobe_Stations(xds_spec_stations, bk, lon_center, lat_center, p_export)
+bk = 'simple' # 'simple', 'shaderelief', 'etopo', 'bluemarble'
+name_export = 'WorldGlobe_Stations_{0}.png'.format(bk)
+p_export = op.join(p_savefigs, name_export)
+lon_center = 130
+lat_center = 0
+WorldGlobe_Stations(xds_spec_stations, bk, lon_center, lat_center, p_export)
 
 
 # --------------------------------------

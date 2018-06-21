@@ -136,6 +136,8 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     returns a xarray.Dataset containing KMA data
     '''
 
+    # TODO SACAR EL ORDER COMO EN KMA REGRESION GUIDED
+
     # PCA data
     variance = xds_PCA['variance']
     EOFs = xds_PCA['EOFs']
@@ -169,7 +171,6 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
 
     # centroids
     centroids = np.dot(kma.cluster_centers_, EOFsub)
-
 
     print 'KMEANS classification COMPLETE.'
     return xr.Dataset(
@@ -214,9 +215,7 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
     nterm = np.where(APEV <= repres*100)[0][-1]
 
     nterm = nterm+1
-
     PCsub = PCs.values[:, :nterm]
-    EOFsub = EOFs.values[:nterm, :]
 
     # append Yregres data to PCs
     data = np.concatenate((PCsub, Y), axis=1)
@@ -230,8 +229,7 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
     for i in range(PCsub.shape[1],data.shape[1]):
         data_norm[:,i] = np.divide(data[:,i]-data_mean[i], data_std[i])
 
-
-    # alpha (PCs - Yregress weight)
+    # apply alpha (PCs - Yregress weight)
     data_a = np.concatenate(
         ((1-alpha)*data_norm[:,:nterm],
          alpha*data_norm[:,nterm:]),
@@ -249,6 +247,7 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
     d_groups = {}
     for k in range(num_clusters):
         d_groups['{0}'.format(k)] = np.where(kma.labels_==k)
+    # TODO: STORE GROUPS WITHIN OUTPUT DATASET    
 
     # centroids
     centroids = np.zeros((num_clusters, data.shape[1]))
@@ -257,21 +256,35 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
 
     # sort kmeans
     kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
+
     bmus_corrected = np.zeros((len(kma.labels_),),)*np.nan
     for i in range(num_clusters):
         posc = np.where(kma.labels_==kma_order[i])
         bmus_corrected[posc] = i
 
+    # reorder centroids
+    sorted_cenEOFs = kma.cluster_centers_[kma_order,:]
+    sorted_centroids = centroids[kma_order,:]
 
     print 'KMEANS regression-guided classification COMPLETE.'
     return xr.Dataset(
         {
-            'order': (('n_clusters'), kma_order),
-            'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
+            # KMA data
+            'bmus': (('n_components',), kma.labels_),
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
-            'bmus': (('n_pcacomp',), kma.labels_),
-            #'PCs': (('n_pcacomp','n_features'), PCsub),
-            'centroids': (('n_clusters','n_pcafeat'), centroids),
+            'centroids': (('n_clusters','n_features'), centroids),
+            'group_size': (('n_clusters'), group_size),
+
+            # sorted KMA data
+            'sorted_order': (('n_clusters'), kma_order),
+            'sorted_bmus': (('n_components'), bmus_corrected.astype(int)),
+            'sorted_cenEOFs': (('n_clusters', 'n_features'), sorted_cenEOFs),
+            'sorted_centroids': (('n_clusters','n_features'), sorted_centroids),
+
+        },
+        attrs = {
+            'method': 'regression guided',
+            'alpha': alpha,
         }
     )
 
@@ -291,8 +304,8 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     returns a xarray.Dataset
     '''
 
+    # TODO: POR QUE ESTE PARAMETRO?
     repres = 0.951
-    # TODO: NO HAY SEPARACION CALIBRACION / VALIDACION 
 
     # PREDICTOR: PCA data
     variance = xds_PCA['variance']
@@ -303,7 +316,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
 
-    PCsub = PCs.values[:, :nterm-1]
+    PCsub = PCs.values[:, :nterm-1]  # TODO: POR QUE MENOS 1 ?
     EOFsub = EOFs.values[:nterm-1, :]
 
     PCsub_std = np.std(PCsub, axis=0)

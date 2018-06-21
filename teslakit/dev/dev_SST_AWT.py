@@ -14,20 +14,23 @@ import numpy as np
 # tk libs
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF
-from lib.custom_plot import Plot_EOFs_latavg as PlotEOFs
+from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.objs.alr_wrapper import ALR_WRP
 
 
 # data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_export_figs = op.join(op.dirname(__file__),'..','data','export_figs')
+p_data = op.join(op.dirname(__file__), '..', 'data')
+p_export_figs = op.join(p_data, 'export_figs')
 p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 
 # --------------------------------------
 # load predictor
 xds_pred = xr.open_dataset(p_pred_nc)
+
+# TODO: ACABAR EL PROCESO PCA-KMA-CALCULOS
+# Y EMPAQUETARLO EN lib/objs/predictor.py
 
 # --------------------------------------
 # Principal Components Analysis
@@ -51,7 +54,6 @@ PlotEOFs(xds_PCA, n_plot, p_export)
 num_clusters = 6
 repres = 0.95
 
-# TODO: SACAR COPULAS de DENTRO y poner aqui fuera
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 
@@ -89,6 +91,8 @@ for i in []:  #range(num_clusters):
     U = np.column_stack((cdf_PC1.T, cdf_PC2.T, cdf_PC3.T))
 
     # TODO COPULAFIT. fit u to a student t copula. leer la web que compara
+    #  lib incompleta: https://github.com/stochasticresearch/copula-py/blob/master/copulafit.py
+    #  lib con buena pinta: https://pypi.org/project/copulalib/
 
     # TODO COPULARND para crear USIMULADO
 

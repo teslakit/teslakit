@@ -93,6 +93,7 @@ def Download_Gridded(p_ncfile, lonq, latq, grid_code='glob_24m'):
             continue
 
         # read file from url
+        # TODO: INTRODUCIR TRY/CATCH PARA BORRAR ARCHIVO INCOMPLETO
         with xr.open_dataset(u) as xds_u:
             xds_temp = xds_u.isel(
                 longitude=slice(idx1,idx2+1),
@@ -170,6 +171,7 @@ def Download_Spec(p_ncfile, lon_p, lat_p):
             continue
 
         # read file from url
+        # TODO: INTRODUCIR TRY/CATCH PARA BORRAR ARCHIVO INCOMPLETO
         with xr.open_dataset(u) as xds_u:
             u_time = xds_u.time.values[:]
             vn_efth = 'Efth' if 'Efth' in xds_u.variables else 'efth'

@@ -21,7 +21,7 @@ from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
-p_data = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
+p_data = op.join(p_data, 'tests', 'tests_ALR', 'tests_ALR_statsmodel')
 
 
 # --------------------------------------

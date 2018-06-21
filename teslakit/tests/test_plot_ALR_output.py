@@ -9,12 +9,12 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 # tk libs
 from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import datevec2datetime
-from lib.custom_plot import Plot_ARL_PerpYear
+from lib.plotting.ALR import Plot_PerpYear
 
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')
-p_tests = op.join(p_data, 'tests_ALR', 'tests_ALR_statsmodel')
+p_tests = op.join(p_data, 'tests', 'tests_ALR', 'tests_ALR_statsmodel')
 
 
 # TODO: TEST CON UN .h5 de los tests_alr_covars
@@ -40,5 +40,5 @@ num_wts = 42
 num_sims = 1  # TODO: los datos historicos 1 simulacion
 
 # Plot perpetual year
-Plot_ARL_PerpYear(bmus_hist, dates_hist, num_wts, num_sims)
+Plot_PerpYear(bmus_hist, dates_hist, num_wts, num_sims)
 

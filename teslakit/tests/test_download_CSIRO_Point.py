@@ -13,9 +13,9 @@ import xarray as xr
 from lib.data_fetcher.CSIRO import Download_Gridded, Download_Spec
 
 # data storage
-p_data = op.join(op.dirname(__file__),'..','data')
+p_data = op.join(op.dirname(__file__), '..', 'data')
+p_test = op.join(p_data, 'tests', 'test_CSIRO')
 
-p_test = op.join(p_data, 'test_CSIRO')
 p_site = op.join(p_test, 'Fortaleza')
 p_nc_grid = op.join(p_site, 'gridded.nc')
 p_nc_spec = op.join(p_site, 'spec.nc')
@@ -33,5 +33,4 @@ print xds_p_grid
 # download point spec data
 xds_p_spec = Download_Spec(p_nc_spec, lonp, latp)
 print xds_p_spec
-
 

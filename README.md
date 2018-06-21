@@ -1,29 +1,24 @@
-# README #
+# TESLA-KIT #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+Python library for statistical calculations and methodologies for global climate data.
 
-### What is this repository for? ###
+* n/a
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+- - -
 
-### How do I get set up? ###
+### Install ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+he source code is currently hosted on bitbucket at: https://bitbucket.org/ripolln/teslakit/src/master/
 
-### Contribution guidelines ###
+* Install from sources
 
-* Writing tests
-* Code review
-* Other guidelines
+Navigate to root folder and execute:
 
-### Who do I talk to? ###
+	pip install -r requirements/default.txt
 
-* Repo owner or admin
-* Other community or team contact
+then install teslakit
+
+	python setup.py install
+
+- - -
+
