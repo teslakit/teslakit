@@ -92,7 +92,7 @@ class Predictor(object):
 
         Plot_EOFs_EstelaPred(self.PCA, n_plot, p_export)
 
-    def Plot_KMArg_clusters_datamean(self, var_name, show=False):
+    def Plot_KMArg_clusters_datamean(self, var_name, show=False, mask_name=None):
         '''
         Plot KMA clusters generated in PCA_EstelaPred
         uses database means at cluster location (bmus corrected)
@@ -107,5 +107,9 @@ class Predictor(object):
 
         bmus = self.KMA['sorted_bmus'].values
         var_data = self.data[var_name]
+
+        if mask_name:
+            var_data = var_data.where(self.data[mask_name]==1)
+
         Plot_KMArg_clusters_datamean(var_data, bmus, p_export)
 
