@@ -78,6 +78,14 @@ xds_est_site = xds_est.sel(
 estela_D = xds_est_site.D_y1993to2012
 
 
+# generate SLP mask using estela
+mask_est = np.zeros(estela_D.shape)
+mask_est[np.where(estela_D<1000000000)]=1
+
+xds_SLP_day.update({
+    'mask_estela':(('latitude','longitude'), mask_est)
+})
+
 
 # --------------------------------------
 # Use a tesla-kit predictor
@@ -101,7 +109,8 @@ pred.Calc_KMA_regressionguided(
     num_clusters,
     xds_WAVES, ['hs','t02','Fe'],
     alpha)
+pred.Save()
 
 # plot KMA clusters
-pred.Plot_KMArg_clusters_datamean('SLP', show=False)
+pred.Plot_KMArg_clusters_datamean('SLP', show=True, mask_name='mask_estela')
 
