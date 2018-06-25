@@ -61,7 +61,7 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
         ax.set_yticks([])
 
         grid_row += 1
-        if grid_row >= 6:
+        if grid_row >= n_rows:
             grid_row = 0
             grid_col += 1
 
