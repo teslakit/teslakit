@@ -4,6 +4,7 @@
 import os
 import os.path as op
 import numpy as np
+from math import sqrt
 import matplotlib.pyplot as plt
 
 import matplotlib.gridspec as gridspec
@@ -13,13 +14,13 @@ import calendar
 from datetime import datetime, timedelta
 
 from lib.custom_dateutils import xds2datetime
+from lib.util.operations import GetDivisors
 
 
 def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     '''
     TODO
     '''
-    # TODO: AUTOMATIZAR TAMANO GRID
 
     # get some data
     clusters = sorted(set(bmus))
@@ -30,8 +31,17 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     # prepare figure
     fig = plt.figure(figsize=(16,9))
 
-    # TODO: N CLUSTERS AUTO
-    gs = gridspec.GridSpec(6, 6, wspace=0.0, hspace=0.0)
+    # Get number of rows and cols for gridplot 
+    sqrt_clusters = sqrt(n_clusters)
+    if sqrt_clusters.is_integer():
+        n_rows = int(sqrt_clusters)
+        n_cols = int(sqrt_clusters)
+    else:
+        l_div = GetDivisors(n_clusters)
+        n_rows = l_div[len(l_div)/2]
+        n_cols = n_clusters/n_rows
+
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
 
     grid_row = 0
     grid_col = 0
