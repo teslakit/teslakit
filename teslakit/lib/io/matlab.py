@@ -45,27 +45,28 @@ def ReadGowMat(p_mfile):
     # parse matlab datenum to datetime
     time = DateConverter_Mat2Py(d_matf['time'])
 
-    # return xarray.Dataset
-    return xr.Dataset(
+    # separate keys
+    ks_coords = ['time']
+    ks_attrs = ['lat','lon','bat','forcing','mesh']
+
+    # generate dataset
+    xds_out = xr.Dataset(
         {
-            'fp': (('time',), d_matf['fp']),
-            'hs': (('time',), d_matf['hs']),
-            't02': (('time',), d_matf['t02']),
-            'dir': (('time',), d_matf['dir']),
-            'spr': (('time',), d_matf['spr']),
-            'hsCal': (('time',), d_matf['hsCal']),
         },
         coords = {
             'time': time
         },
         attrs = {
-            'lat': d_matf['lat'],
-            'lon': d_matf['lon'],
-            'bat': d_matf['bat'],
-            'forcing': d_matf['forcing'],
-            'mesh': d_matf['mesh'],
         }
     )
+    # fill dataset
+    for k in d_matf.keys():
+        if k in ks_attrs:
+            xds_out.attrs[k] = d_matf[k]
+        else:
+            xds_out[k] =(('time',), d_matf[k])
+
+    return xds_out
 
 def ReadCoastMat(p_mfile):
     '''
