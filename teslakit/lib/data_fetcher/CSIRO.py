@@ -247,6 +247,7 @@ def Join_NCs(p_ncs_folder, p_out_nc):
         p_pack = op.join(p_ncs_folder, 'xds_packed_{0:03d}.nc'.format(c))
         print 'pack {0}'.format(op.basename(p_pack))
         xds_pack.to_netcdf(p_pack,'w')
+        xds_pack.close()
         c+=1
 
     # join pakcs
