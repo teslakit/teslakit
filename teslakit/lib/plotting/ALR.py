@@ -15,15 +15,15 @@ def Plot_PValues(p_values, term_names, p_export=None):
     # plot figure
     fig, ax = plt.subplots(1,1, figsize=(16,9))
 
-    # TODO: DESACHER
-    #c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
-    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=1)
+    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
+    #c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=1)
     c.cmap.set_over('w')
     fig.colorbar(c, ax=ax)
 
     # axis
     ax.set_title('p-value', fontweight='bold')
     ax.set_ylabel('WT')
+    ax.xaxis.tick_bottom()
     plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
     [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
 
@@ -32,7 +32,7 @@ def Plot_PValues(p_values, term_names, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=96)
+        fig.savefig(p_export, dpi=128)
         plt.close()
 
 def Plot_Params(params, term_names, p_export=None):
@@ -64,7 +64,8 @@ def Plot_Params(params, term_names, p_export=None):
         fig.savefig(p_export, dpi=128)
         plt.close()
 
-def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
+def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims,
+                  p_export=None):
     'Plots ARL bmus simulated in a perpetual_year stacked bar chart'
 
     # parameters for custom plot
@@ -122,6 +123,9 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     xi = np.arange(num_clusters)
     np_colors_int =  itp(xi)
 
+    # bmus_values has to be 1D
+    bmus_values = np.squeeze(bmus_values)
+
     # generate perpetual year list
     dp1 = datetime(1981,1,1)
     dp2 = datetime(1981,12,31)
@@ -144,10 +148,8 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
 
             m_plot[j,i] = float(len(bb))/len(s)
 
-
     # plot figure
-    plt.figure(1)
-    ax = plt.subplot(111)
+    fig, ax = plt.subplots(1,1, figsize=(16,12))
 
     bottom_val = np.zeros(m_plot[1,:].shape)
     for r in range(num_clusters):
@@ -166,6 +168,10 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims):
     plt.xlabel('Perpetual year')
     plt.ylabel('')
 
-    # show
-    plt.show()
+    # show / export
+    if not p_export:
+        plt.show()
 
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
