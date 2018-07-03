@@ -55,7 +55,8 @@ class ALR_WRP(object):
             'constant' : False,
             'long_term' : False,
             'seasonality': (False, []),
-            'covariates': (False, [])
+            'covariates': (False, []),
+            'covariates_seasonality': (False, [])
         }
 
         # join user and default input
@@ -113,13 +114,27 @@ class ALR_WRP(object):
                 c+=2
             terms['seasonality'] = temp_seas
 
-        # Covariables term (normalized)
+        # Covariates term (normalized)
         if d_terms_settings['covariates'][0]:
             cov_norm = d_terms_settings['covariates'][1]
             for i in range(cov_norm.shape[1]):
-                terms['cov_{0}'.format(i+1)] = np.transpose(
-                    np.asmatrix(cov_norm[:,i]))
-                terms_names.append('cov_{0}'.format(i+1))
+                cn = 'cov_{0}'.format(i+1)
+                terms[cn] = np.transpose(np.asmatrix(cov_norm[:,i]))
+                terms_names.append(cn)
+
+                # TODO Covariates seasonality
+                # TODO: METER LA OPCION OMEGAT, (ahora default 2pit)
+                # la amplitud se coge de la propia covariate
+                if d_terms_settings['covariates_seasonality'][0]:
+                    if d_terms_settings['covariates_seasonality'][1][i]:
+                        terms['{0}_cos'.format(cn)] = np.multiply(
+                            terms[cn].T, np.cos(2*np.pi*time_yfrac)
+                        ).T
+                        terms['{0}_sin'.format(cn)] = np.multiply(
+                            terms[cn].T, np.sin(2*np.pi*time_yfrac)
+                        ).T
+                        terms_names.append('{0}_cos'.format(cn))
+                        terms_names.append('{0}_sin'.format(cn))
 
         # markov term
         if d_terms_settings['mk_order'] > 0:
@@ -291,11 +306,11 @@ class ALR_WRP(object):
 
         # plot p-values
         p_plot = op.join(p_save, 'pval.png')
-        Plot_ARL_PValues(pval_df.values, name_terms, p_plot)
+        Plot_PValues(pval_df.values, name_terms, p_plot)
 
         # plot parameters
         p_plot = op.join(p_save, 'params.png')
-        Plot_ARL_Params(params_df.values, name_terms, p_plot)
+        Plot_Params(params_df.values, name_terms, p_plot)
 
     def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
         'Launch ARL model simulations'
