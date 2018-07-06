@@ -8,24 +8,38 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from datetime import datetime, timedelta
 
+from lib.plotting.util import MidpointNormalize
+
 
 def Plot_PValues(p_values, term_names, p_export=None):
     'Plot ARL/BMUS p-values'
 
+    n_wts = p_values.shape[0]
+    n_terms = p_values.shape[1]
+
     # plot figure
     fig, ax = plt.subplots(1,1, figsize=(16,9))
 
-    c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=0.1)
-    #c = ax.pcolor(p_values, cmap='inferno', vmin=0, vmax=1)
-    c.cmap.set_over('w')
+    c = ax.pcolor(p_values, cmap='coolwarm_r', clim=(0,1),
+                  norm=MidpointNormalize(midpoint=0.1, vmin=0, vmax=1))
+    #c.cmap.set_over('w')
     fig.colorbar(c, ax=ax)
 
     # axis
     ax.set_title('p-value', fontweight='bold')
     ax.set_ylabel('WT')
+
     ax.xaxis.tick_bottom()
-    plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
-    [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
+    ax.set_xticks(np.arange(n_terms), minor=True)
+    ax.set_xticks(np.arange(n_terms)+0.5, minor=False)
+    ax.set_xticklabels(term_names, minor=False, rotation=90)
+
+    ax.set_yticks(np.arange(n_wts), minor=True)
+    ax.set_yticks(np.arange(n_wts)+0.5, minor=False)
+    ax.set_yticklabels(np.arange(n_wts)+1, minor=False)
+
+    # add grid
+    ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
 
     # show / export
     if not p_export:
@@ -37,6 +51,9 @@ def Plot_PValues(p_values, term_names, p_export=None):
 
 def Plot_Params(params, term_names, p_export=None):
     'Plot ARL/BMUS params'
+
+    n_wts = params.shape[0]
+    n_terms = params.shape[1]
 
     # plot figure
     fig, ax = plt.subplots(1,1, figsize=(16,12))
@@ -52,9 +69,15 @@ def Plot_Params(params, term_names, p_export=None):
     # axis
     ax.set_title('params', fontweight='bold')
     ax.set_ylabel('WT')
+
     ax.xaxis.tick_bottom()
-    plt.xticks(np.arange(len(term_names))+0.5, term_names, rotation=90)
-    [t.label.set_fontsize(8) for t in ax.xaxis.get_major_ticks()]
+    #ax.set_xticks(np.arange(n_terms), minor=True)
+    ax.set_xticks(np.arange(n_terms), minor=False)
+    ax.set_xticklabels(term_names, minor=False, rotation=90)
+
+    #ax.set_yticks(np.arange(n_wts), minor=True)
+    ax.set_yticks(np.arange(n_wts), minor=False)
+    ax.set_yticklabels(np.arange(n_wts)+1, minor=False)
 
     # show / export
     if not p_export:
@@ -175,3 +198,4 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sims,
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
