@@ -12,11 +12,15 @@ import scipy.stats as stat
 from datetime import datetime, date, timedelta
 import xarray as xr
 import pickle
+import sys
 import os
 import os.path as op
 
+from lib.custom_dateutils import xds2datetime as x2d
 from lib.util.terminal import printProgressBar as pb
 from lib.plotting.ALR import Plot_PValues, Plot_Params
+from lib.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
+
 
 # fix library
 from scipy import stats
@@ -28,9 +32,8 @@ class ALR_WRP(object):
 
     def __init__(self, xds_bmus_fit, cluster_size):
 
-        # evbmus series
-        self.evbmus_values = xds_bmus_fit.values
-        self.evbmus_time = xds_bmus_fit.time.values
+        # bmus dataset (vars: bmus, dims: time)
+        self.xds_bmus_fit = xds_bmus_fit
 
         # cluster data
         self.cluster_size = cluster_size
@@ -39,6 +42,11 @@ class ALR_WRP(object):
         self.d_terms_settings = {}
         self.terms_fit = {}
         self.terms_fit_names = []
+
+        # temporal data storage
+        self.mk_order = 0
+        self.cov_names = []
+
 
         # ALR model core
         self.model = None
@@ -56,7 +64,7 @@ class ALR_WRP(object):
             'long_term' : False,
             'seasonality': (False, []),
             'covariates': (False, []),
-            'covariates_seasonality': (False, [])
+            'covariates_seasonality': (False, []),
         }
 
         # join user and default input
@@ -65,12 +73,12 @@ class ALR_WRP(object):
                 d_terms_settings[k] = default_settings[k]
 
         # generate ALR terms
-        bmus = self.evbmus_values
-        time = self.evbmus_time
+        bmus_fit = self.xds_bmus_fit.bmus.values
+        time_fit = self.xds_bmus_fit.time.values
         cluster_size = self.cluster_size
 
         self.terms_fit, self.terms_fit_names = self.GenerateALRTerms(
-            d_terms_settings, bmus, time, cluster_size, time2yfrac=True)
+            d_terms_settings, bmus_fit, time_fit, cluster_size, time2yfrac=True)
 
         # store data
         self.mk_order = d_terms_settings['mk_order']
@@ -114,19 +122,33 @@ class ALR_WRP(object):
                 c+=2
             terms['seasonality'] = temp_seas
 
-        # Covariates term (normalized)
+        # Covariates term
         if d_terms_settings['covariates'][0]:
-            cov_norm = d_terms_settings['covariates'][1]
+
+            # covariates dataset (vars: cov_values, dims: time, cov_names)
+            xds_cov = d_terms_settings['covariates'][1]
+            cov_names = xds_cov.cov_names.values
+            self.cov_names = cov_names  # storage
+
+            # normalize covars
+            if not 'cov_norm' in xds_cov.keys():
+                cov_values = xds_cov.cov_values.values
+                cov_norm = (cov_values - cov_values.mean(axis=0)) / cov_values.std(axis=0)
+            else:
+                # simulation covars are previously normalized
+                cov_norm = xds_cov.cov_norm.values
+
+            # generate covar terms
             for i in range(cov_norm.shape[1]):
-                cn = 'cov_{0}'.format(i+1)
+                cn = cov_names[i]
                 terms[cn] = np.transpose(np.asmatrix(cov_norm[:,i]))
                 terms_names.append(cn)
 
-                # TODO Covariates seasonality
-                # TODO: METER LA OPCION OMEGAT, (ahora default 2pit)
-                # la amplitud se coge de la propia covariate
+                # Covariates seasonality
                 if d_terms_settings['covariates_seasonality'][0]:
-                    if d_terms_settings['covariates_seasonality'][1][i]:
+                    cov_season = d_terms_settings['covariates_seasonality'][1]
+
+                    if cov_season[i]:
                         terms['{0}_cos'.format(cn)] = np.multiply(
                             terms[cn].T, np.cos(2*np.pi*time_yfrac)
                         ).T
@@ -241,9 +263,10 @@ class ALR_WRP(object):
     def FitModel(self, max_iter=1000):
         'Fits ARL model using sklearn'
 
+
         # get fitting data
         X = np.concatenate(self.terms_fit.values(), axis=1)
-        y = self.evbmus_values
+        y = self.xds_bmus_fit.bmus.values
 
         # fit model
         print "\nFitting autoregressive logistic model ..."
@@ -255,12 +278,16 @@ class ALR_WRP(object):
             X = pd.DataFrame(X, columns=self.terms_fit_names)
             y = pd.DataFrame(y, columns=['bmus'])
 
-            # statsmodel multinominal logit model
+            # TODO: CAPTURAR LA EVOLUCION DE LOS VALORES DURANTE LAS ITERS
+
             self.model = sm.MNLogit(y,X).fit(
                 method='lbfgs',
                 maxiter=max_iter,
+                retall=True,
+                full_output=1,
+                disp=2,
             )
-            # TODO: problemas en summary() con maxiter?
+
 
         elif self.model_library == 'sklearn':
 
@@ -292,17 +319,18 @@ class ALR_WRP(object):
         self.model = pickle.load(open(p_load, 'rb'))
         print 'ALR model loaded from {0}'.format(p_load)
 
-    def Report_pvalue(self, p_save):
-        'Report containing pvalues and params info'
+    def Report_Fit(self, p_save):
+        'Report containing model fitting info'
 
         # report folder
         if not op.isdir(p_save):
             os.mkdir(p_save)
 
-        # get pvalues dataframe
+        # get data 
         pval_df = self.model.pvalues.transpose()
         params_df = self.model.params.transpose()
         name_terms = pval_df.columns.tolist()
+        summ = self.model.summary()
 
         # plot p-values
         p_plot = op.join(p_save, 'pval.png')
@@ -312,7 +340,80 @@ class ALR_WRP(object):
         p_plot = op.join(p_save, 'params.png')
         Plot_Params(params_df.values, name_terms, p_plot)
 
-    def Simulate(self, num_sims, list_sim_dates, sim_covars_T=None):
+        # write summary
+        p_summ = op.join(p_save, 'summary.txt')
+        with open(p_summ, 'w') as fW:
+            fW.write(summ.as_text())
+
+        # plot terms used for fitting
+        p_terms_png = op.join(p_save, 'terms_fit')
+        if not op.isdir(p_terms_png):
+            os.mkdir(p_terms_png)
+        self.Report_Terms_Fit()
+
+    def Report_Terms_Fit(self):
+        # TODO mostrar los terminos pc1, pc2, pc3 y season
+        #terms_i = self.terms_fit
+        #ss = terms_i['seasonality']
+        #pc1 = terms_i['cov_1']
+        #pc2 = terms_i['cov_2']
+        #pc3 = terms_i['cov_3']
+        #pc1_cos=terms_i['cov_1_cos']
+        #pc1_sin=terms_i['cov_1_sin']
+        #pc2_cos=terms_i['cov_2_cos']
+        #pc2_sin=terms_i['cov_2_sin']
+        #pc3_cos=terms_i['cov_3_cos']
+        #pc3_sin=terms_i['cov_3_sin']
+
+        #print pc1.shape
+        #print ss.shape
+        #ss1_cos = ss[:,0]
+        #ss1_sin = ss[:,1]
+        #ss2_cos = ss[:,2]
+        #ss2_sin = ss[:,3]
+        ##x = range(len(pc1))
+        #x = terms_i['long_term']
+
+        #import matplotlib.pyplot as plt
+        #plt.figure(1)
+        #plt.subplot(411)
+        #plt.plot(
+        #    x, pc1, 'k',
+        #    x, pc1_cos, 'r--',
+        #    x, pc1_sin, 'b--',
+        #)
+        #plt.title('pc1 (cos red, sin blue)')
+        #plt.xlim(x[0], x[-1])
+        #plt.subplot(412)
+        #plt.plot(
+        #    x, pc2, 'k',
+        #    x, pc2_cos, 'r--',
+        #    x, pc2_sin, 'b--',
+        #)
+        #plt.title('pc2')
+        #plt.xlim(x[0], x[-1])
+        #plt.subplot(413)
+        #plt.plot(
+        #    x, pc3, 'k',
+        #    x, pc3_cos, 'r--',
+        #    x, pc3_sin, 'b--',
+        #)
+        #plt.title('pc3')
+        #plt.xlim(x[0], x[-1])
+        #plt.subplot(414)
+        #plt.plot(
+        #    x, ss1_cos, 'r-',
+        #    x, ss1_sin, 'r.',
+        #    x, ss2_cos, 'b--',
+        #    x, ss2_sin, 'b.',
+        #)
+        #plt.title('season 2pit (red) & 4pit (blue)')
+        #plt.xlim(x[0], x[-1])
+        #plt.show()
+
+        pass
+
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -326,13 +427,22 @@ class ALR_WRP(object):
             )
             sys.exit()
 
-
         # get needed data
-        evbmus_values = self.evbmus_values
+        evbmus_values = self.xds_bmus_fit.bmus.values
+        time_fit = self.xds_bmus_fit.time.values
         mk_order = self.mk_order
 
+        # print some info
+        print 'ALR model fit   : {0} --- {1}'.format(
+            time_fit[0], time_fit[-1])
+        print 'ALR model sim   : {0} --- {1}'.format(
+            time_sim[0], time_sim[-1])
+
         # generate time yearly fractional array
-        time_yfrac = self.GetFracYears(list_sim_dates)
+        time_yfrac = self.GetFracYears(time_sim)
+
+        # use a d_terms_settigs copy 
+        d_terms_settings_sim = self.d_terms_settings.copy()
 
         # start simulations
         print "\nLaunching simulations...\n"
@@ -343,23 +453,33 @@ class ALR_WRP(object):
             evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
 
-                # handle optional covars
-                # TODO: optimizar manejo covars
-                # seria perfecto no tener que alterar self.d_term_settings aqui
-                if self.d_terms_settings['covariates'][0]:
+                # handle simulation covars
+                if d_terms_settings_sim['covariates'][0]:
+
+                    # simulation covariates
+                    sim_covars_T = xds_covars_sim.cov_values.values
+
+                    # normalize step covars
                     sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
                     sim_cov_norm = (
                         sim_covars_evbmus - sim_covars_T.mean(axis=0)
                     ) / sim_covars_T.std(axis=0)
 
-                    self.d_terms_settings['covariates']=(
-                        True,
-                        sim_cov_norm
+                    # mount step xr.dataset for sim covariates
+                    xds_cov_sim_step = xr.Dataset(
+                        {
+                            'cov_norm': (('time','cov_names'), sim_cov_norm),
+                        },
+                        coords = {
+                            'cov_names': self.cov_names,
+                        }
                     )
+
+                    d_terms_settings_sim['covariates']=(True, xds_cov_sim_step)
 
                 # generate time step ALR terms
                 terms_i, _ = self.GenerateALRTerms(
-                    self.d_terms_settings,
+                    d_terms_settings_sim,
                     np.append(evbmus[ i : i + mk_order], 0),
                     time_yfrac[i : i + mk_order + 1],
                     self.cluster_size, time2yfrac=False)
@@ -395,7 +515,73 @@ class ALR_WRP(object):
             },
 
             coords = {
-                'time' : [np.datetime64(d) for d in list_sim_dates],
+                'time' : [np.datetime64(d) for d in time_sim],
             },
         )
+
+    def Report_Sim(self, xds_ALR_sim, p_save, xds_cov_sim=None):
+        '''
+        Report containing model fitting report.
+        Compares fitting data to simulated output (xds_ALR_sim)
+        '''
+
+        # report folder and files
+        if not op.isdir(p_save):
+            os.mkdir(p_save)
+
+        # get data 
+        # TODO: LAS CONVERSIONES DE DATETIME SON MUY LENTAS
+        cluster_size = self.cluster_size
+        bmus_values_sim = xds_ALR_sim.evbmus_sims.values
+        bmus_dates_sim = [x2d(t) for t in xds_ALR_sim.time]
+        bmus_values_hist = np.reshape(self.xds_bmus_fit.bmus.values,[-1,1])
+        bmus_dates_hist = [x2d(t) for t in self.xds_bmus_fit.time]
+        num_sims = bmus_values_sim.shape[1]
+
+        # Plot Perpetual Year - bmus wt
+        p_rep_PP = op.join(p_save, 'perp_year.png')
+        Plot_Compare_PerpYear(
+            cluster_size,
+            bmus_values_sim, bmus_dates_sim,
+            bmus_values_hist, bmus_dates_hist,
+            n_sim = num_sims, p_export=p_rep_PP
+        )
+
+        if self.d_terms_settings['covariates'][0]:
+
+            # TODO comprobar esto de tiempos duplicados
+            time_hist_covars = bmus_dates_hist
+            time_sim_covars = bmus_dates_sim
+
+            # covars fit
+            xds_cov_fit = self.d_terms_settings['covariates'][1]
+            cov_names = xds_cov_fit.cov_names.values
+            cov_fit_values = xds_cov_fit.cov_values.values
+
+            # covars sim
+            cov_sim_values = xds_cov_sim.cov_values.values
+
+            # TODO: QUITAR
+            cov_names = ['PC1', 'PC2', 'PC3']
+
+            for ic, cn in enumerate(cov_names):
+
+                # get covariate data
+                cf_val = cov_fit_values[:,ic]
+                cs_val = cov_sim_values[:,ic]
+
+                # plot covariate - bmus wt
+                # TODO: NO ESTOY SEGURO QUE LO ESTE HACIENDO BIEN
+                # CUANDO ESTE MAS TRANQUILO MIRAR LO DE LOS YEARS DE LAS DOS
+                # FECHAS DENTRO
+                p_rep_cn = op.join(p_save, '{0}_comp.png'.format(cn))
+                Plot_Compare_Covariate(
+                    cluster_size,
+                    bmus_values_sim, bmus_dates_sim,
+                    bmus_values_hist, bmus_dates_hist,
+                    cs_val, time_sim_covars,
+                    cf_val, time_hist_covars,
+                    cn,
+                    n_sim = num_sims, p_export = p_rep_cn
+                )
 
