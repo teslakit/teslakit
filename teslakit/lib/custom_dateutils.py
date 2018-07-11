@@ -54,19 +54,26 @@ def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
         method = 'pad',
     )
 
-def xds_common_dates_daily(xds1, xds2):
+def xds_common_dates_daily(xds_list):
     '''
     returns daily datetime array between 2 xarray.Dataset common dates
     '''
 
-    # parse xds times to python datetime
-    xds1_dt1 = xds2datetime(xds1.time[0])
-    xds1_dt2 = xds2datetime(xds1.time[-1])
-    xds2_dt1 = xds2datetime(xds2.time[0])
-    xds2_dt2 = xds2datetime(xds2.time[-1])
+    d1 = None
+    d2 = None
 
-    d1 = max(xds1_dt1, xds2_dt1)
-    d2 = min(xds1_dt2, xds2_dt2)
+    for xds_e in xds_list:
+
+        # parse xds times to python datetime
+        xds_e_dt1 = xds2datetime(xds_e.time[0])
+        xds_e_dt2 = xds2datetime(xds_e.time[-1])
+
+        if d1 == None:
+            d1 = xds_e_dt1
+            d2 = xds_e_dt2
+
+        d1 = max(xds_e_dt1, d1)
+        d2 = min(xds_e_dt2, d2)
 
     return [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
