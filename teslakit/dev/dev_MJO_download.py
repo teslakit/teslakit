@@ -18,5 +18,4 @@ p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
 y1 = '1979-01-01'
 xds_mjo_hist = Download_MJO(
     p_mjo_hist, init_year=y1, log=True)
-xds_mjo_hist.to_netcdf(p_mjo_hist)
 
