@@ -5,6 +5,7 @@ import os
 import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from scipy.interpolate import interp1d
 from datetime import datetime, timedelta
 
@@ -175,17 +176,15 @@ def Plot_Params(params, term_names, p_export=None):
 
 def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1):
     'Calculates and returns matrix for stacked bar plotting'
+    # TODO: doc: bmus_values has to be 2D (time, nsim)
 
     # TODO BMUS_DATES HAS TO BE DATETIME 
-    # TODO: RALENTIZA MUCHO, CAMBIAR ESTO PARA QUE FUNCIONE CON DATETIME Y CON
-    # NUMPY.DATETIME64 RAPIDO. afecta a sacar el mes y el dia
-
-    # TODO: doc: bmus_values has to be 2D (time, nsim)
 
     # generate perpetual year list
     list_pyear = GenOneYearDaily()
 
     # generate aux arrays
+    # TODO: TESTEAR TIEMPO COMPUTACION DE ESTO
     m_plot = np.zeros((num_clusters, len(list_pyear))) * np.nan
     bmus_dates_months = np.array([d.month for d in bmus_dates])
     bmus_dates_days = np.array([d.day for d in bmus_dates])
@@ -221,18 +220,29 @@ def Generate_Covariate_Matrix(
         _, s = np.where(
             [(covar_values >= covar_rng[i]) & (covar_values <= covar_rng[i+1])]
         )
-        ys = [covar_dates[x].year for x in s]
+
+        # TODO: usando alr_wrapper las fechas covar y bmus coinciden
+        b = bmus_values[s,:]
+        b = b.flatten()
+
+        # TODO: no me gusta esto de usar los years en vez de misma fecha y
+        # posicion directa. Se usa en el test de laura por como son los datos
+        #ys = [covar_dates[x].year for x in s]
 
         # find data inside years found
-        sb = np.where(np.in1d(bmus_years, ys))[0]
+        #sb = np.where(np.in1d(bmus_years, ys))[0]
 
-        b = bmus_values[sb,:]
-        b = b.flatten()
+        #b = bmus_values[sb,:]
+        #b = b.flatten()
 
         for j in range(num_clusters):
             _, bb = np.where([(j+1 == b)])
-            if len(sb) > 0:
-                m_plot[j,i] = float(len(bb)/float(num_sim))/len(sb)
+            #if len(sb) > 0:
+            if len(s) > 0:
+                m_plot[j,i] = float(len(bb)/float(num_sim))/len(s)
+
+                # TODO sb se utiliza para el test de laura
+                #m_plot[j,i] = float(len(bb)/float(num_sim))/len(sb)
             else:
                 m_plot[j,i] = 0
 
@@ -290,15 +300,8 @@ def Plot_Covariate(bmus_values, covar_values,
     np_colors_int = GetClusterColors(num_clusters)
 
     # generate common covar_rng
-    delta = 5
-    n_rng = 7
-
-    covar_rng = np.linspace(
-        np.min(covar_values)-delta,
-        np.max(covar_values)+delta,
-        n_rng
-    )
-    interval = covar_rng[1]-covar_rng[0]
+    covar_rng, interval = Generate_Covariate_rng(
+        name_covar, np.concatenate((cov_values_sim, cov_values_hist)))
 
     # generate plot matrix
     m_plot = Generate_Covariate_Matrix(
@@ -353,8 +356,9 @@ def Plot_Compare_PerpYear(num_clusters,
 
     # plot figure
     fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(16,9))
-    #x_val = GenOneYearDaily()
-    x_val = range(365)
+
+    # use dateticks
+    x_val = GenOneYearDaily()
 
     # plot sim
     bottom_val = np.zeros(m_plot_sim[1,:].shape)
@@ -381,15 +385,32 @@ def Plot_Compare_PerpYear(num_clusters,
         bottom_val += row_val
 
     # axis
-    ax_sim.set_xlim(1, 365)
+    months = mdates.MonthLocator()
+    monthsFmt = mdates.DateFormatter('%b')
+    years = mdates.YearLocator()
+    yearsFmt = mdates.DateFormatter('')
+
+    #ax_sim.set_xlim(1, 365)
+    ax_sim.set_xlim(x_val[0], x_val[-1])
+    ax_sim.xaxis.set_major_locator(years)
+    ax_sim.xaxis.set_major_formatter(yearsFmt)
+    ax_sim.xaxis.set_minor_locator(months)
+    ax_sim.xaxis.set_minor_formatter(monthsFmt)
     ax_sim.set_ylim(0, 1)
     ax_sim.set_title('Simulation')
     ax_sim.set_ylabel('')
 
-    ax_hist.set_xlim(1, 365)
+    #ax_hist.set_xlim(1, 365)
+    ax_hist.set_xlim(x_val[0], x_val[-1])
+    ax_hist.xaxis.set_major_locator(years)
+    ax_hist.xaxis.set_major_formatter(yearsFmt)
+    ax_hist.xaxis.set_minor_locator(months)
+    ax_hist.xaxis.set_minor_formatter(monthsFmt)
     ax_hist.set_ylim(0, 1)
     ax_hist.set_title('Historical')
     ax_hist.set_ylabel('')
+
+    fig.suptitle('Perpetual Year', fontweight='bold', fontsize=12)
 
     # show / export
     if not p_export:
@@ -398,6 +419,35 @@ def Plot_Compare_PerpYear(num_clusters,
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
+def Generate_Covariate_rng(covar_name, cov_values):
+    'Returns covar_rng and interval depending on covar_name'
+
+    if covar_name.startswith('PC'):
+        delta = 5
+        n_rng = 7
+
+        covar_rng = np.linspace(
+            np.min(cov_values)-delta,
+            np.max(cov_values)+delta,
+            n_rng
+        )
+
+    elif covar_name.startswith('MJO'):
+        print 'MJO plot not implemented'
+        # TODO
+
+        return None, None
+    else:
+        print 'Cant plot {0}, missing rng params in plotting library'.format(
+            name_covar
+        )
+        return None, None
+
+    # interval
+    interval = covar_rng[1]-covar_rng[0]
+
+    return covar_rng, interval
 
 def Plot_Compare_Covariate(num_clusters,
                            bmus_values_sim, bmus_dates_sim,
@@ -412,15 +462,12 @@ def Plot_Compare_Covariate(num_clusters,
     np_colors_int = GetClusterColors(num_clusters)
 
     # generate common covar_rng
-    delta = 5
-    n_rng = 7
+    covar_rng, interval = Generate_Covariate_rng(
+        name_covar, np.concatenate((cov_values_sim, cov_values_hist)))
 
-    covar_rng = np.linspace(
-        np.min([np.min(cov_values_hist), np.min(cov_values_sim)])-delta,
-        np.max([np.max(cov_values_hist), np.max(cov_values_sim)])+delta,
-        n_rng
-    )
-    interval = covar_rng[1]-covar_rng[0]
+    # TODO: QUITAR AL FINALIZAR PLOT MJO
+    if name_covar.startswith('MJO'):
+        return
 
     # generate plot matrix
     m_plot_sim = Generate_Covariate_Matrix(
@@ -467,13 +514,15 @@ def Plot_Compare_Covariate(num_clusters,
     ax_sim.set_ylim(0, 1)
     ax_sim.set_title('Simulation')
     ax_sim.set_ylabel('')
-    ax_sim.set_xlabel(name_covar)
+    ax_sim.set_xlabel('')
 
     ax_hist.set_xlim(np.min(x_val)-interval/2, np.max(x_val)+interval/2)
     ax_hist.set_ylim(0, 1)
     ax_hist.set_title('Historical')
     ax_hist.set_ylabel('')
-    ax_sim.set_xlabel(name_covar)
+    ax_sim.set_xlabel('')
+
+    fig.suptitle(name_covar, fontweight='bold', fontsize=12)
 
     # show / export
     if not p_export:
@@ -482,3 +531,4 @@ def Plot_Compare_Covariate(num_clusters,
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
