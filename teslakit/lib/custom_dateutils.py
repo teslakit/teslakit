@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+import numpy as np
 
 def datematlab2datetime(datenum_matlab):
     'Return python datetime for matlab datenum. Transform and adjust from matlab.'
@@ -26,9 +27,16 @@ def DateConverter_Mat2Py(datearray_matlab):
     return [datematlab2datetime(x) for x in datearray_matlab]
 
 def xds2datetime(d64):
-    'converts np.datetime64[ns] into datetime'
+    'converts xr.Dataset np.datetime64[ns] into datetime'
+    # TODO: MUY INEFICIENTE
 
     return datetime(d64.dt.year, d64.dt.month, d64.dt.day)
+
+def npdt64todatetime(dt64):
+    'converts np.datetime64[ns] into datetime'
+
+    ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+    return datetime.utcfromtimestamp(ts)
 
 def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
