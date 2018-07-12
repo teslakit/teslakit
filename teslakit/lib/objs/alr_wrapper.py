@@ -16,7 +16,7 @@ import sys
 import os
 import os.path as op
 
-from lib.custom_dateutils import xds2datetime as x2d
+from lib.custom_dateutils import npdt64todatetime as npdt2dt
 from lib.util.terminal import printProgressBar as pb
 from lib.plotting.ALR import Plot_PValues, Plot_Params
 from lib.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
@@ -111,10 +111,10 @@ class ALR_WRP(object):
 
         # seasonality term
         if d_terms_settings['seasonality'][0]:
-            amplitudes  = d_terms_settings['seasonality'][1]
-            temp_seas = np.zeros((len(time_yfrac), 2*len(amplitudes)))
+            phases  = d_terms_settings['seasonality'][1]
+            temp_seas = np.zeros((len(time_yfrac), 2*len(phases)))
             c = 0
-            for a in amplitudes:
+            for a in phases:
                 temp_seas [:,c]   = np.cos(a * np.pi * time_yfrac)
                 temp_seas [:,c+1] = np.sin(a * np.pi * time_yfrac)
                 terms_names.append('ss_cos_{0}'.format(a))
@@ -530,12 +530,11 @@ class ALR_WRP(object):
             os.mkdir(p_save)
 
         # get data 
-        # TODO: LAS CONVERSIONES DE DATETIME SON MUY LENTAS
         cluster_size = self.cluster_size
         bmus_values_sim = xds_ALR_sim.evbmus_sims.values
-        bmus_dates_sim = [x2d(t) for t in xds_ALR_sim.time]
+        bmus_dates_sim = [npdt2dt(t) for t in xds_ALR_sim.time.values]
         bmus_values_hist = np.reshape(self.xds_bmus_fit.bmus.values,[-1,1])
-        bmus_dates_hist = [x2d(t) for t in self.xds_bmus_fit.time]
+        bmus_dates_hist = [npdt2dt(t) for t in self.xds_bmus_fit.time.values]
         num_sims = bmus_values_sim.shape[1]
 
         # Plot Perpetual Year - bmus wt
@@ -560,9 +559,6 @@ class ALR_WRP(object):
 
             # covars sim
             cov_sim_values = xds_cov_sim.cov_values.values
-
-            # TODO: QUITAR
-            cov_names = ['PC1', 'PC2', 'PC3']
 
             for ic, cn in enumerate(cov_names):
 
