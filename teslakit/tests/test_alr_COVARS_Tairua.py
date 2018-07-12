@@ -17,7 +17,6 @@ from lib.objs.alr_wrapper import ALR_WRP
 from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
 from lib.custom_dateutils import xds_reindex_daily as xr_daily
-from lib.custom_dateutils import xds2datetime as x2d
 
 
 # data storage
@@ -133,7 +132,6 @@ xds_cov_sim = xr.Dataset(
 
 
 
-
 # --------------------------------------
 # Autoregressive Logistic Regression
 
@@ -149,14 +147,15 @@ xds_cov_fit = xds_cov_fit.sel(
 
 
 # TEST parameters
-name_test = 'test3'
+name_test = 'test_season_24_alrRF'
 num_clusters = 16
-fit_and_save = True
-sim_and_save = True
 num_sims = 4
+fit_and_save = False
+sim_and_save = False
+p_test_ALR = op.join(p_output, name_test)
 
 # ALR terms
-#cov_season = [True, True, True, False, False]
+cov_season = [True, True, True, False, False]
 d_terms_settings = {
     #'mk_order'  : 1,
     'constant' : True,
@@ -168,38 +167,27 @@ d_terms_settings = {
 
 
 # Autoregressive logistic wrapper
-ALRW = ALR_WRP(xds_bmus_fit, num_clusters)
-ALRW.SetFittingTerms(d_terms_settings)
+ALRW = ALR_WRP(p_test_ALR)
+ALRW.SetFitData(
+    num_clusters, xds_bmus_fit, d_terms_settings)
+
 
 # ALR model fitting
-p_output_folder = op.join(p_output, name_test)
-p_save = op.join(p_output_folder, '{0}.sav'.format(name_test))
 if fit_and_save:
-    if not op.isdir(p_output_folder):
-        os.makedirs(p_output_folder)
     ALRW.FitModel(max_iter=20000)
-    ALRW.SaveModel(p_save)
 else:
-    ALRW.LoadModel(p_save)
+    ALRW.LoadModel()
 
 # Plot model p-values and params
-p_report = op.join(p_output_folder, 'report_fitting')
-ALRW.Report_Fit(p_report)
+ALRW.Report_Fit()
 
 
 # ALR model simulations 
-p_xds_output = op.join(
-    p_output_folder, '{0}_s{1}.nc'.format(
-        name_test, num_sims))
 if sim_and_save:
     xds_ALR = ALRW.Simulate(num_sims, d_covars_sim, xds_cov_sim)
-
-    # save results to netcdf
-    xds_ALR.to_netcdf(p_xds_output, 'w')
 else:
-    xds_ALR = xr.open_dataset(p_xds_output)
+    xds_ALR = ALRW.Load_SimOutput()
 
 # report SIM
-p_report = op.join(p_output_folder, 'report_sim')
-ALRW.Report_Sim(xds_ALR, p_report, xds_cov_sim)
+ALRW.Report_Sim(xds_ALR, xds_cov_sim)
 
