@@ -30,13 +30,11 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 class ALR_WRP(object):
     'AutoRegressive Logistic Enveloper'
 
-    def __init__(self, xds_bmus_fit, cluster_size):
+    def __init__(self, p_base):
 
-        # bmus dataset (vars: bmus, dims: time)
-        self.xds_bmus_fit = xds_bmus_fit
-
-        # cluster data
-        self.cluster_size = cluster_size
+        # data needed for ALR fitting 
+        self.xds_bmus_fit = None
+        self.cluster_size = None
 
         # ALR terms
         self.d_terms_settings = {}
@@ -53,6 +51,26 @@ class ALR_WRP(object):
 
         # config
         self.model_library = 'statsmodels'  # sklearn / statsmodels
+
+        # paths
+        self.p_base = p_base
+        self.p_save_model = op.join(p_base, 'model.sav')
+        self.p_save_sim_xds = op.join(p_base, 'xds_output.nc')
+        self.p_report_fit = op.join(p_base, 'report_fit')
+        self.p_report_sim = op.join(p_base, 'report_sim')
+
+
+    def SetFitData(self, cluster_size, xds_bmus_fit, d_terms_settings):
+        '''
+        Sets data needed for ALR fitting
+        cluster_size - number of clusters in classification
+        xds_bmus_fit - xarray.Dataset vars: bmus, dims: time
+        d_terms_settings - terms settings. See "SetFittingTerms"
+        '''
+
+        self.cluster_size = cluster_size
+        self.xds_bmus_fit = xds_bmus_fit
+        self.SetFittingTerms(d_terms_settings)
 
     def SetFittingTerms(self, d_terms_settings):
         'Set terms settings that will be used for fitting'
@@ -307,22 +325,29 @@ class ALR_WRP(object):
         elapsed_time = time.time() - start_time
         print "Optimization done in {0:.2f} seconds\n".format(elapsed_time)
 
-    def SaveModel(self, p_save):
+        # save fitted model
+        self.SaveModel()
+
+    def SaveModel(self):
         'Saves fitted model for future use'
 
-        pickle.dump(self.model, open(p_save, 'wb'))
-        print 'ALR model saved at {0}'.format(p_save)
+        if not op.isdir(self.p_base):
+            os.makedirs(self.p_base)
 
-    def LoadModel(self, p_load):
+        pickle.dump(self.model, open(self.p_save_model, 'wb'))
+        print 'ALR model saved at {0}'.format(self.p_save_model)
+
+    def LoadModel(self):
         'Load fitted model'
 
-        self.model = pickle.load(open(p_load, 'rb'))
-        print 'ALR model loaded from {0}'.format(p_load)
+        self.model = pickle.load(open(self.p_save_model, 'rb'))
+        print 'ALR model loaded from {0}'.format(self.p_save_model)
 
-    def Report_Fit(self, p_save):
+    def Report_Fit(self):
         'Report containing model fitting info'
 
         # report folder
+        p_save = self.p_report_fit
         if not op.isdir(p_save):
             os.mkdir(p_save)
 
@@ -508,7 +533,7 @@ class ALR_WRP(object):
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
         # return ALR simulation data in a xr.Dataset
-        return xr.Dataset(
+        xds_out = xr.Dataset(
             {
                 'evbmus_sims': (('time', 'n_sim'), evbmus_sims),
                 'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
@@ -519,13 +544,22 @@ class ALR_WRP(object):
             },
         )
 
-    def Report_Sim(self, xds_ALR_sim, p_save, xds_cov_sim=None):
+        # save output
+        xds_out.to_netcdf(self.p_save_sim_xds, 'w')
+
+        return xds_out
+
+    def Load_SimOutput(self):
+        return xr.open_dataset(self.p_save_sim_xds)
+
+    def Report_Sim(self, xds_ALR_sim, xds_cov_sim=None):
         '''
         Report containing model fitting report.
         Compares fitting data to simulated output (xds_ALR_sim)
         '''
 
         # report folder and files
+        p_save = self.p_report_sim
         if not op.isdir(p_save):
             os.mkdir(p_save)
 
