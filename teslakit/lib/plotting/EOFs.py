@@ -184,3 +184,76 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
             p_expi = op.join(p_export, 'EOFs_{0}'.format(it+1))
             fig.savefig(p_expi, dpi=96)
             plt.close()
+
+def Plot_PCvsPC(xds_PC123, text=[], p_export = None):
+    '''
+    Plot PC1 vs PC2 vs PC3
+
+    xds_PD123
+        (dim,) PC1
+        (dim,) PC2
+        (dim,) PC3
+
+        (dim,) text
+
+    show plot or saves figure to p_export
+    '''
+
+    # get data
+    pc1_val = xds_PC123.PC1.values
+    pc2_val = xds_PC123.PC2.values
+    pc3_val = xds_PC123.PC3.values
+
+    # delta axis
+    pc1_d = np.max([np.absolute(np.max(pc1_val)), np.absolute(np.min(pc1_val))])
+    pc2_d = np.max([np.absolute(np.max(pc2_val)), np.absolute(np.min(pc2_val))])
+    pc3_d = np.max([np.absolute(np.max(pc3_val)), np.absolute(np.min(pc3_val))])
+
+    pf = 1.05
+    pc1_d = pc1_d * pf
+    pc2_d = pc2_d * pf
+    pc3_d = pc3_d * pf
+
+    # create figure
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(14,14))
+
+    ax1.plot(pc2_val, pc1_val, '.r')
+    ax2.plot(pc3_val, pc1_val, '.r')
+    ax4.plot(pc3_val, pc2_val, '.r')
+    ax3.remove()
+
+    # text
+    for p1,p2,p3,t in zip(pc1_val,pc2_val,pc3_val,text):
+        ax1.text(p2,p1,t)
+        ax2.text(p3,p1,t)
+        ax4.text(p3,p2,t)
+
+    # labels and customize
+    fw = 'bold'
+    ax1.set_xlabel('PC2', fontweight=fw)
+    ax1.set_ylabel('PC1', fontweight=fw)
+    ax2.set_xlabel('PC3', fontweight=fw)
+    ax2.set_ylabel('PC1', fontweight=fw)
+    ax4.set_xlabel('PC3', fontweight=fw)
+    ax4.set_ylabel('PC2', fontweight=fw)
+
+    ax1.set_xlim(-pc2_d, pc2_d)
+    ax1.set_ylim(-pc1_d, pc1_d)
+    ax2.set_xlim(-pc3_d, pc3_d)
+    ax2.set_ylim(-pc1_d, pc1_d)
+    ax4.set_xlim(-pc3_d, pc3_d)
+    ax4.set_ylim(-pc2_d, pc2_d)
+
+    lc = 'k'
+    lls = '--'
+    for ax in [ax1, ax2, ax4]:
+        ax.axhline(y=0, color=lc, linestyle=lls)
+        ax.axvline(x=0, color=lc, linestyle=lls)
+
+    # show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=96)
+        plt.close()
