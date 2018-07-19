@@ -63,7 +63,7 @@ def ReadGowMat(p_mfile):
     for k in d_matf.keys():
         if k in ks_attrs:
             xds_out.attrs[k] = d_matf[k]
-        else:
+        elif k not in ['time']:
             xds_out[k] =(('time',), d_matf[k])
 
     return xds_out
