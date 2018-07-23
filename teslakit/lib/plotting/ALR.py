@@ -112,6 +112,14 @@ def Plot_PValues(p_values, term_names, p_export=None):
     #c.cmap.set_over('w')
     fig.colorbar(c, ax=ax)
 
+    # Pval text
+    for i in xrange(p_values.shape[1]):
+        for j in xrange(p_values.shape[0]):
+            v = p_values[j,i]
+            if v<=0.1:
+                ax.text(i+0.5, j+0.5, '{0:.4f}'.format(v),
+                        va='center', ha='center', size=8, fontweight='bold')
+
     # axis
     ax.set_title('p-value', fontweight='bold')
     ax.set_ylabel('WT')
@@ -143,28 +151,32 @@ def Plot_Params(params, term_names, p_export=None):
     n_terms = params.shape[1]
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(16,12))
+    fig, ax = plt.subplots(1,1, figsize=(16,9))
 
     # text table and color
-    ax.matshow(params, cmap=plt.cm.bwr, origin='lower')
+    c = ax.pcolor(params, cmap=plt.cm.bwr)
     for i in xrange(params.shape[1]):
         for j in xrange(params.shape[0]):
-            c = params[j,i]
-            ax.text(i, j, '{0:.1f}'.format(c),
-                    va='center', ha='center', size=6, fontweight='bold')
+            v = params[j,i]
+            ax.text(i+0.5, j+0.5, '{0:.1f}'.format(v),
+                    va='center', ha='center', size=8)
+    fig.colorbar(c, ax=ax)
 
     # axis
     ax.set_title('params', fontweight='bold')
     ax.set_ylabel('WT')
 
     ax.xaxis.tick_bottom()
-    #ax.set_xticks(np.arange(n_terms), minor=True)
-    ax.set_xticks(np.arange(n_terms), minor=False)
+    ax.set_xticks(np.arange(n_terms), minor=True)
+    ax.set_xticks(np.arange(n_terms)+0.5, minor=False)
     ax.set_xticklabels(term_names, minor=False, rotation=90)
 
-    #ax.set_yticks(np.arange(n_wts), minor=True)
-    ax.set_yticks(np.arange(n_wts), minor=False)
+    ax.set_yticks(np.arange(n_wts), minor=True)
+    ax.set_yticks(np.arange(n_wts)+0.5, minor=False)
     ax.set_yticklabels(np.arange(n_wts)+1, minor=False)
+
+    # add grid
+    ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
 
     # show / export
     if not p_export:
@@ -211,7 +223,7 @@ def Generate_Covariate_Matrix(
     'Calculates and returns matrix for stacked bar plotting'
 
     # generate aux arrays
-    bmus_years = [d.year for d in bmus_dates]
+    #bmus_years = [d.year for d in bmus_dates]
     m_plot = np.zeros((num_clusters, len(covar_rng)-1)) * np.nan
 
     for i in range(len(covar_rng)-1):
@@ -228,21 +240,18 @@ def Generate_Covariate_Matrix(
         # TODO: no me gusta esto de usar los years en vez de misma fecha y
         # posicion directa. Se usa en el test de laura por como son los datos
         #ys = [covar_dates[x].year for x in s]
-
         # find data inside years found
         #sb = np.where(np.in1d(bmus_years, ys))[0]
-
         #b = bmus_values[sb,:]
         #b = b.flatten()
 
         for j in range(num_clusters):
             _, bb = np.where([(j+1 == b)])
+            # TODO sb se utiliza para el test de laura
             #if len(sb) > 0:
+                #m_plot[j,i] = float(len(bb)/float(num_sim))/len(sb)
             if len(s) > 0:
                 m_plot[j,i] = float(len(bb)/float(num_sim))/len(s)
-
-                # TODO sb se utiliza para el test de laura
-                #m_plot[j,i] = float(len(bb)/float(num_sim))/len(sb)
             else:
                 m_plot[j,i] = 0
 
@@ -338,6 +347,34 @@ def Plot_Covariate(bmus_values, covar_values,
         fig.savefig(p_export, dpi=128)
         plt.close()
 
+def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
+    'Plot terms used for ALR fitting'
+
+    # number of terms
+    n_sps = terms_matrix.shape[1]
+
+    # plot figure
+    fig, ax_list = plt.subplots(n_sps,1, figsize=(16,14))
+
+    x = terms_dates
+    for i in range(n_sps):
+        y = terms_matrix[:,i]
+        n = terms_names[i]
+        ax = ax_list[i]
+        ax.plot(x, y, 'b')
+        ax.set_title(n, fontweight='bold')
+        ax.set_xlim(x[0], x[-1])
+
+    # adjust layout
+    plt.tight_layout()
+
+    # show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
 
 def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
@@ -434,10 +471,15 @@ def Generate_Covariate_rng(covar_name, cov_values):
         )
 
     elif covar_name.startswith('MJO'):
-        print 'MJO plot not implemented'
-        # TODO
+        delta = 0.5
+        n_rng = 7
 
-        return None, None
+        covar_rng = np.linspace(
+            np.min(cov_values)-delta,
+            np.max(cov_values)+delta,
+            n_rng
+        )
+
     else:
         print 'Cant plot {0}, missing rng params in plotting library'.format(
             name_covar
@@ -464,10 +506,6 @@ def Plot_Compare_Covariate(num_clusters,
     # generate common covar_rng
     covar_rng, interval = Generate_Covariate_rng(
         name_covar, np.concatenate((cov_values_sim, cov_values_hist)))
-
-    # TODO: QUITAR AL FINALIZAR PLOT MJO
-    if name_covar.startswith('MJO'):
-        return
 
     # generate plot matrix
     m_plot_sim = Generate_Covariate_Matrix(
