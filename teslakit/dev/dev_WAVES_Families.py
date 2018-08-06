@@ -29,7 +29,24 @@ xds_waves_parts = ReadGowMat(p_waves_parts_p1)
 sectors = [(210, 22.5), (22.5, 135)]
 xds_waves_fam = GetDistribution(xds_waves_parts, sectors)
 print xds_waves_fam
+print ''
 
+# TODO: VAMOS A COMPROBAR LOS RESULTADOS FRENTE A MATLAB Y SEGUIMOS
+
+p_temp = op.join(p_waves, 'test')
+for var in ['Hs','Tp','Dir']:
+    np.savetxt(
+        op.join(p_temp,'sea_{0}.txt'.format(var)),
+        xds_waves_fam['sea_{0}'.format(var)].values[:]
+    )
+    np.savetxt(
+        op.join(p_temp,'swell_1_{0}.txt'.format(var)),
+        xds_waves_fam['swell_1_{0}'.format(var)].values[:]
+    )
+    np.savetxt(
+        op.join(p_temp,'swell_2_{0}.txt'.format(var)),
+        xds_waves_fam['swell_2_{0}'.format(var)].values[:]
+    )
 
 
 # TODO: USAR EL ARCHIVO DE HURACANES PARA SEPARAR WAVES-CYCLONES
