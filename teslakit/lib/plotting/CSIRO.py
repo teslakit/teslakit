@@ -9,22 +9,26 @@ import matplotlib.patches as patches
 from mpl_toolkits.basemap import Basemap
 from datetime import datetime, timedelta
 
-def WorldMap(bk='simple'):
+def WorldMap(
+    bk='simple',
+    lon_1=-180, lat_1=-70,
+    lon_2=180, lat_2=70,
+    d_parallel=10., d_meridian=10.):
     'Returns customized world map (mercator)'
 
     # basemap: mercator
     m = Basemap(
         projection='merc',
-        llcrnrlat=-70,urcrnrlat=70,
-        llcrnrlon=-180,urcrnrlon=180,
+        llcrnrlat=lat_1, urcrnrlat=lat_2,
+        llcrnrlon=lon_1, urcrnrlon=lon_2,
         lat_ts=20,
         resolution='c')
 
     # draw parallels.
-    parallels = np.arange(-90.,90.,10.)
+    parallels = np.arange(-90.,90.,d_parallel)
     m.drawparallels(parallels, labels=[1,0,0,0],fontsize=6)
     # draw meridians
-    meridians = np.arange(0.,360.,10.)
+    meridians = np.arange(0.,360.,d_meridian)
     m.drawmeridians(meridians, labels=[0,0,0,1],fontsize=6)
 
     # draw background
@@ -43,10 +47,17 @@ def WorldMap(bk='simple'):
     return m
 
 
-def WorldMap_Stations(xds_stations, bk='simple', p_export=None):
+def WorldMap_Stations(
+    xds_stations, bk='simple',
+    lon_1=-180, lat_1=-70,
+    lon_2=180, lat_2=70,
+    d_parallel = 10., d_meridian=10.,
+    p_export=None):
     '''
     Plot mercator world map with CSIRO spec stations
     bk (background)= 'simple', 'shaderelief', 'etopo', 'bluemarble'
+    lonlat1, lonlat2: basemap limits
+    d_parallel, d_meridian: parallels and meridians interval
     '''
 
     # xds_station lon lat
@@ -58,10 +69,14 @@ def WorldMap_Stations(xds_stations, bk='simple', p_export=None):
     fig = plt.figure(figsize=(16,9))
 
     # Get customized basemap
-    m = WorldMap(bk)
+    m = WorldMap(
+        bk,
+        lon_1, lat_1,
+        lon_2, lat_2,
+        d_parallel, d_meridian)
 
     # add stations
-    m.scatter(lon, lat, s=6, c='r', latlon=True)
+    m.scatter(lon, lat, s=4, c='r', latlon=True)
 
     # more info
     plt.title('CSIRO spec stations')
@@ -71,15 +86,22 @@ def WorldMap_Stations(xds_stations, bk='simple', p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=96)
+        fig.savefig(p_export, dpi=300)
         plt.close()
 
-def WorldGlobe_Stations(xds_stations, bk='simple', lon0=0, lat0=0, p_export=None):
+def WorldGlobe_Stations(
+    xds_stations, bk='simple',
+    lon_0=0, lat_0=0,
+    lon_1=None, lat_1=None,
+    lon_2=None, lat_2=None,
+    p_export=None):
     '''
     Plot orthogonal world globe with CSIRO spec stations
     bk (background): 'simple', 'shaderelief', 'etopo', 'bluemarble'
-    lonlat0: center focus, tuple (lon0, lat0)
+    lonlat0: center focus
+    lonlat1, lonlat2: basemap limits
     '''
+    # TODO: area zoom not working
 
     # xds_station lon lat
     lon = xds_stations.longitude.values[:]
@@ -92,8 +114,12 @@ def WorldGlobe_Stations(xds_stations, bk='simple', lon0=0, lat0=0, p_export=None
     # basemap: ortho
     m = Basemap(
         projection='ortho',
-        lon_0=lon0,
-        lat_0=lat0,
+        lon_0=lon_0,
+        lat_0=lat_0,
+        lon_1=lon_1,
+        lat_1=lat_1,
+        lon_2=lon_2,
+        lat_2=lat_2,
         resolution='l',
     )
 
