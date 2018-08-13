@@ -1,24 +1,60 @@
-# TESLA-KIT #
+# TESLA-KIT 
 
-Python library for statistical calculations and methodologies for global climate data.
+Python library for statistical calculations and methodologies for handling global climate data.
 
-* n/a
+## Getting Started
 
+Source code is currently hosted on Bitbucket at: https://bitbucket.org/ripolln/teslakit/src/master/
+
+### Requirements
+
+* h5py
+* matplotlib
+* netCDF4
+* numpy
+* pandas
+* python-dateutil
+* scikit-learn
+* scipy
+* seaborn
+* statsmodel
+* xarray
+
+### Installing
 - - -
 
-### Install ###
+Installation available from sources
 
-he source code is currently hosted on bitbucket at: https://bitbucket.org/ripolln/teslakit/src/master/
+clone source code:
 
-* Install from sources
+```
+git clone git@bitbucket.org:ripolln/teslakit.git
+```
 
-Navigate to root folder and execute:
+navigate to root folder and execute:
 
-	pip install -r requirements/default.txt
+```
+pip install -r requirements/default.txt
+```
 
-then install teslakit
+then install teslakit:
 
-	python setup.py install
+```
+python setup.py install
+```
 
-- - -
+## Running the tests 
+
+TODO
+
+## Authors
+
+TODO
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
+
+
+
 
