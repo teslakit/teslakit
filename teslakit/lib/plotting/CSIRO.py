@@ -51,7 +51,7 @@ def WorldMap_Stations(
     xds_stations, bk='simple',
     lon_1=-180, lat_1=-70,
     lon_2=180, lat_2=70,
-    d_parallel = 10., d_meridian=10.,
+    d_parallel=10., d_meridian=10.,
     p_export=None):
     '''
     Plot mercator world map with CSIRO spec stations
@@ -230,7 +230,12 @@ def WorldGlobeZoom_Stations(xds_stations, bk='simple', lon0=0, lat0=0, p_export=
         plt.close()
 
 
-def WorldMap_GriddedCoords(xds_gridded, bk='simple', p_export=None):
+def WorldMap_GriddedCoords(
+    xds_gridded, bk='simple',
+    lon_1=-180, lat_1=-70,
+    lon_2=180, lat_2=70,
+    d_parallel=10.,d_meridian=10.,
+    p_export=None):
     '''
     Plot mercator world map with CSIRO gridded coordinates
     bk (background)= 'simple', 'shaderelief', 'etopo', 'bluemarble'
@@ -247,7 +252,11 @@ def WorldMap_GriddedCoords(xds_gridded, bk='simple', p_export=None):
     fig = plt.figure(figsize=(16,9))
 
     # Get customized basemap
-    m = WorldMap(bk)
+    m = WorldMap(
+        bk,
+        lon_1, lat_1,
+        lon_2, lat_2,
+        d_parallel, d_meridian)
 
     # add stations
     xx,yy = np.meshgrid(lon, lat)
@@ -264,7 +273,7 @@ def WorldMap_GriddedCoords(xds_gridded, bk='simple', p_export=None):
         fig.savefig(p_export, dpi=96)
         plt.close()
 
-def WorldMap_GriddedCoords(xds_gridded, bk='simple', p_export=None):
+def WorldMap_GriddedCoords2(xds_gridded, bk='simple', p_export=None):
     '''
     Plot mercator world map with all CSIRO gridded coordinates
     bk (background)= 'simple', 'shaderelief', 'etopo', 'bluemarble'
