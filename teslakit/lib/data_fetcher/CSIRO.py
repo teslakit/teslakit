@@ -47,7 +47,7 @@ def Generate_URLs(switch_db='gridded', grid_code='pac_4m'):
 
     return l_urls
 
-def Download_Gridded(p_ncfile, lonq, latq, grid_code='glob_24m'):
+def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
     '''
     Download CSIRO gridded data and stores it on netcdf format
     lonq, latq: longitude latitude query: single value or limits
@@ -69,6 +69,9 @@ def Download_Gridded(p_ncfile, lonq, latq, grid_code='glob_24m'):
 
     # Generate URL list 
     l_urls = Generate_URLs('gridded', grid_code)
+
+    # TODO: QUITAR DESPUES DE TESTEO
+    l_urls = l_urls[:4]
 
     # get coordinates from first file
     with xr.open_dataset(l_urls[0]) as ff:
@@ -108,7 +111,7 @@ def Download_Gridded(p_ncfile, lonq, latq, grid_code='glob_24m'):
 
     return xds_out
 
-def Download_Spec(p_ncfile, lon_p, lat_p):
+def Download_Spec_Point(p_ncfile, lon_p, lat_p):
     '''
     Download CSIRO spec data and stores it on netcdf format
     lon_p, lat_p: longitude latitude point query
@@ -215,6 +218,130 @@ def Download_Spec(p_ncfile, lon_p, lat_p):
 
     return xds_out
 
+def Download_Spec_Area(p_ncfile, lonq, latq):
+    '''
+    Download CSIRO spec data and stores it on netcdf format
+    uses stations inside area
+    lonq, latq: longitude latitude query: single value or limits
+
+    returns xarray.Dataset
+    xds_CSIRO_spec:
+        (time, station, frequency, direction) Efth
+    '''
+
+    # days chunk size
+    ch_days = 11
+
+    # long, lat query
+    lonp1 = lonq[0]
+    latp1 = latq[0]
+    lonp2 = lonq[-1]
+    latp2 = latq[-1]
+
+    # Generate URL list 
+    l_urls = Generate_URLs('spec')
+
+    # get output time limits and efth attributes
+    with xr.open_dataset(l_urls[0]) as ff:
+        t1 = ff.time[0].values  # time ini
+        efth_attrs = ff['Efth'].attrs  # var attrs
+
+    with xr.open_dataset(l_urls[-1]) as lf:
+        t2 = lf.time[-1].values  # time end
+
+    # mount output time array
+    out_time = np.arange(t1, t2, timedelta(hours=1))
+
+    # find station IDs inside area
+    with nc4.Dataset(l_urls[0], 'r') as ff:
+        sid_raw = ff['station'][:]
+        lon_raw = ff['longitude'][0,:]
+        lat_raw = ff['latitude'][0,:]
+
+        p_stas = np.where(
+            (lon_raw >= lonp1) & (lon_raw <= lonp2) & \
+            (lat_raw >= latp1) & (lat_raw <= latp2)
+        )
+
+        # stations selected
+        lon_stas = lon_raw[p_stas]
+        lat_stas = lat_raw[p_stas]
+        sid_stas = sid_raw[p_stas]
+
+        # print stations to download
+        for s,lo,la in zip(sid_stas, lon_stas, lat_stas):
+            print 'station ix: {0}. Longitude: {1}, Latitude: {2}'.format(
+                s, lo, la
+            )
+
+        # store frequency and direction
+        frequency = ff['frequency'][:]
+        direction = ff['direction'][:]
+
+    # temp folder
+    p_tmp = op.join(p_ncfile.replace('.nc','.tmp'))
+    if not op.isdir(p_tmp):
+        os.makedirs(p_tmp)
+
+    # download data from files
+    print 'downloading CSIRO spec data... {0} files'.format(len(l_urls))
+    for u in l_urls:
+        print op.basename(u)
+
+        # local downloaded file
+        p_u_tmp = op.join(p_tmp, op.basename(u))
+        if op.isfile(p_u_tmp):
+            continue
+
+        # read file from url
+        # TODO: INTRODUCIR TRY/CATCH PARA BORRAR ARCHIVO INCOMPLETO
+        with xr.open_dataset(u) as xds_u:
+            u_time = xds_u.time.values[:]
+            vn_efth = 'Efth' if 'Efth' in xds_u.variables else 'efth'
+
+            # generate temp holder 
+            xds_temp = xr.Dataset(
+                {
+                    'Efth':(
+                        ('time','station','frequency','direction'),
+                        np.nan * np.ones((
+                            len(u_time),
+                            len(sid_stas),
+                            len(frequency),
+                            len(direction)
+                     )),
+                     efth_attrs
+                    )
+                },
+                coords = {
+                    'time': u_time,
+                    'station': sid_stas,
+                    'longitude': lon_stas,
+                    'latitude': lat_stas,
+                    'frequency': frequency,
+                    'direction': direction,
+                }
+            )
+
+            # fill temp (chunkn_days x 24h step)
+            ndays = int((u_time[-1]-u_time[0])/np.timedelta64(1,'D'))
+            ct = 0
+            for di in range(0, ndays, ch_days):
+                print u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24)
+                ct2 = min(ct+ch_days*24,ndays*24)
+                xds_temp['Efth'][ct:ct2,:,:,:] = \
+                xds_u.sel(station=sid_stas)[vn_efth][ct:ct2,:,:,:]
+                ct+=ch_days*24
+
+            # save temp file
+            xds_temp.to_netcdf(p_u_tmp,'w')
+    print 'done.'
+
+    # join .nc files in one file
+    xds_out = Join_NCs(p_tmp, p_ncfile)
+
+    return xds_out
+
 def Join_NCs(p_ncs_folder, p_out_nc):
     '''
     Join .nc files downloaded from CSIRO
@@ -279,8 +406,6 @@ def Download_Spec_Stations(p_ncfile):
     # get stations 
     print 'downloading CSIRO spec stations...'
     with xr.open_dataset(l_urls[0]) as ff:
-        print ff
-        import sys; sys.exit()
 
         # generate output dataset
         xds_out = xr.Dataset(
