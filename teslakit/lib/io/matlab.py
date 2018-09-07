@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import scipy.io as sio
+import os.path as op
 from scipy.io.matlab.mio5_params import mat_struct
 import h5py
 import xarray as xr
@@ -139,4 +140,53 @@ def ReadEstelaMat(p_mfile):
         })
 
     return xdset
+
+def ReadNakajoMats(p_mfiles):
+    '''
+    Read Nakajo simulated hurricanes data from .mat files folder.
+    Return xarray.Dataset
+    '''
+
+    n_sim = 10
+    max_ts_end = 0
+    n_storms = 0
+    var_names = [
+        'yts', 'ylon_TC' , 'ylat_TC', 'yDIR', 'ySPEED','yCPRES','del_reason'
+    ]
+
+    # generate var holder dict
+    d_vars = {}
+    for vn in var_names:
+        d_vars[vn] = np.array([])
+
+    # find number and time length of synthetic storms
+    for i in range(n_sim):
+
+        # read sim file
+        p_matf = op.join(p_mfiles, 'YCAL{0}.mat'.format(i+1))
+        d_matf = ReadMatfile(p_matf)
+
+        # count storms
+        n_storms += len(d_matf[var_names[0]])
+
+        # append data to var holder
+        for vn in var_names:
+            d_vars[vn] = np.concatenate((d_vars[vn], d_matf[vn]))
+
+    # add to xarray dataset
+    xds_out = xr.Dataset(
+        {
+            'yts':(('storm',), d_vars['yts']),
+            'ylon_TC':(('storm',), d_vars['ylon_TC']),
+            'ylat_TC':(('storm',), d_vars['ylat_TC']),
+            'yDIR':(('storm',), d_vars['yDIR']),
+            'ySPEED':(('storm',), d_vars['ySPEED']),
+            'yCPRES':(('storm',), d_vars['yCPRES']),
+            'del_reason':(('storm',), d_vars['del_reason']),
+        },
+        coords = {
+            'storm':range(n_storms)
+        }
+    )
+    return xds_out
 
