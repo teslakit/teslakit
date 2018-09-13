@@ -32,6 +32,7 @@ class Predictor(object):
         self.p_data = op.join(p_store, 'data.nc')
         self.p_pca = op.join(p_store, 'pca.nc')
         self.p_kma = op.join(p_store, 'kma.nc')
+        self.p_kma_storms = op.join(p_store, 'kma_storms.nc')
         self.p_plots = op.join(p_store, 'figs')
 
         # data (xarray.Dataset)
@@ -81,6 +82,23 @@ class Predictor(object):
         repres = 0.95
         self.KMA = KMA_regression_guided(
             self.PCA, xds_Yregres, num_clusters, repres, alpha)
+
+    def Mod_KMA_AddStorms(self, storm_dates, storm_categories):
+        '''
+        Modify KMA bmus series adding storm category (6 new groups)
+        '''
+
+        n_clusters = len(self.KMA.n_clusters.values[:])
+        kma_dates = self.PCA.pred_time.values[:]
+        bmus_storms = self.KMA.sorted_bmus.values[:]
+
+        for sd, sc in zip(storm_dates, storm_categories):
+            pos_date = np.where(kma_dates==sd)[0]
+            if pos_date:
+                bmus_storms[pos_date[0]] = n_clusters + sc + 1
+
+        # copy kma and add bmus_storms
+        self.KMA['sorted_bmus_storms'] = (('n_components',), bmus_storms)
 
     def Plot_EOFs_EstelaPred(self, n_plot, show=False):
         'Plot EOFs generated in PCA_EstelaPred'
