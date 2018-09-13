@@ -112,5 +112,30 @@ pred.Calc_KMA_regressionguided(
 pred.Save()
 
 # plot KMA clusters
-pred.Plot_KMArg_clusters_datamean('SLP', show=True, mask_name='mask_estela')
+#pred.Plot_KMArg_clusters_datamean('SLP', show=True, mask_name='mask_estela')
+
+
+
+# --------------------------------------
+# load storms, find inside circle and modify predictor KMA 
+from lib.hurricanes import Extract_Circle
+
+p_data_hurr = op.join(p_data, 'HURR')
+p_hurr_noaa_fix = op.join(p_data_hurr, 'Allstorms.ibtracs_wmo.v03r10_fix.nc')
+
+xds_wmo_fix = xr.open_dataset(p_hurr_noaa_fix)
+
+p_lon = 178
+p_lat = -17.5
+r = 4
+
+xds_storms_r, xds_inside = Extract_Circle(
+    xds_wmo_fix, p_lon, p_lat, r)
+
+storm_dates = xds_inside.inside_date.values[:]
+storm_categs = xds_inside.inside_category.values[:]
+
+# modify predictor KMA with circle storms data
+pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
+pred.Save()
 
