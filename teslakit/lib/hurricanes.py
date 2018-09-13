@@ -6,11 +6,11 @@ import xarray as xr
 from scipy.spatial import distance
 
 
-def Extract_Circle(xds_hurr, p_lon, p_lat, r):
+def Extract_Circle(xds_storms, p_lon, p_lat, r):
     '''
-    Extracts hurricanes inside circle
+    Extracts storms inside circle
 
-    xds_hurr: storms database with tracks lon,lat variables and storm dimension
+    xds_storms: storms database with tracks lon,lat,pressure variables and storm dimension
 
     circle defined by:
         p_lon, p_lat  -  circle center
@@ -19,34 +19,78 @@ def Extract_Circle(xds_hurr, p_lon, p_lat, r):
 
     lonlat_p = np.array([[p_lon, p_lat]])
 
-    lon_hurr = xds_hurr.lon.values[:]
-    lat_hurr = xds_hurr.lat.values[:]
+    lon = xds_storms.lon.values[:]
+    lat = xds_storms.lat.values[:]
+    press = xds_storms.pressure.values[:]
+
+    store_date = 'dates' in xds_storms.variables
+    if store_date:
+        time = xds_storms.dates.values[:]
 
     # get storms inside circle area
-    n_storms = xds_hurr.storm.shape[0]
+    n_storms = xds_storms.storm.shape[0]
     l_storms_area = []
-    l_pos_in = []
+    l_pos_in = []  # inside circle position
+    l_press_in = []  # inside circle pressure
+    l_min_press_in = []  # inside circle min pressure
+    l_categ_in = []  # inside circle storm category
+    l_date_in = []  # inside circle date (day)
 
     for i_storm in range(n_storms):
         lonlat_s = np.column_stack(
-            (lon_hurr[i_storm], lat_hurr[i_storm])
+            (lon[i_storm], lat[i_storm])
         )
+        press_s = press[i_storm]
 
         # TODO: cambiar de distancia euclidea a arclen great circle
         dist = distance.cdist(lonlat_s, lonlat_p)
         pos_in = np.where(dist<r)[0][:]
         if pos_in.any():
             l_storms_area.append(i_storm)
-            l_pos_in.append(np.array(pos_in))
+            l_pos_in.append(pos_in)
+
+            # pressure, min pressure and category inside
+            press_s_in = press_s[pos_in]
+            press_s_min = np.min(press_s_in)
+
+            l_press_in.append(press_s_in)
+            l_min_press_in.append(np.array(press_s_min))
+            l_categ_in.append(np.array(GetStormCategory(press_s_min)))
+
+            if store_date:
+                time_s_in = time[i_storm][pos_in]
+                dist_in = dist[pos_in]
+                p_dm = np.where((dist_in==np.min(dist_in)))[0]
+                l_date_in.append(np.datetime64(time_s_in[p_dm][0],'D'))
 
     # cut storm dataset to selection
-    xds_area = xds_hurr.isel(storm=l_storms_area)
-    xds_area['pos_inside'] =(('storm',), np.array(l_pos_in))
-    return xds_area
+    xds_area = xds_storms.isel(storm=l_storms_area)
+
+    # add data from inside the circle to a dataset
+    xds_inside = xr.Dataset(
+        {
+            'inside_pos':(('storm',), np.array(l_pos_in)),
+            'inside_pressure':(('storm',), np.array(l_press_in)),
+            'inside_pressure_min':(('storm',), np.array(l_min_press_in)),
+            'inside_category':(('storm',), np.array(l_categ_in)),
+        },
+        coords = {
+            'storm':xds_area.storm.values[:]
+        },
+        attrs = {
+            'point_lon' : p_lon,
+            'point_lat' : p_lat,
+            'point_r' : r,
+        }
+    )
+    if store_date:
+        xds_inside['inside_date'] = (('storm',), np.array(l_date_in))
+
+    return xds_area, xds_inside
 
 def Extract_Square(xds_wmo):
     '''
-    Extracts hurricanes inside square
+    Extracts storms inside square
 
     xds_wmo: all storms database downlaoded from
     ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r10/wmo/netcdf/Allstorms.ibtracs_wmo.v03r10.nc.gz
@@ -59,7 +103,7 @@ def Extract_Square(xds_wmo):
 
 def Extract_Polygon(xds_wmo):
     '''
-    Extracts hurricanes inside polygon
+    Extracts storms inside polygon
 
     xds_wmo: all storms database downlaoded from
     ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r10/wmo/netcdf/Allstorms.ibtracs_wmo.v03r10.nc.gz
@@ -95,7 +139,6 @@ def SortCategoryCount(np_categ, nocat=9):
     Sort category change - count matrix
     np_categ = [[category1, category2, count], ...]
     '''
-
 
     categs = [0,1,2,3,4,5,9]
 
