@@ -29,7 +29,13 @@ p_hurr_nakajo_pk = op.join(p_data_hurr, 'Nakajo_tracks','Nakajo_tracks.nc')
 xds_Nakajo = ReadNakajoMats(p_hurr_nakajo_mats)
 
 # rename lon,lat variables 
-xds_Nakajo.rename({'ylon_TC':'lon', 'ylat_TC':'lat'}, inplace=True)
+xds_Nakajo.rename(
+    {
+        'ylon_TC':'lon',
+        'ylat_TC':'lat',
+        'yCPRES':'pressure',
+        'ySPEED':'wind_speed',  # TODO es wind speed?
+    }, inplace=True)
 
 
 # Select hurricanes that crosses a circular area 
@@ -38,37 +44,30 @@ p_lat = 9.5
 r1 = 14  # degree
 r2 = 4  # degree
 
-# Extract storms inside R=14
-xds_storms_r1 = Extract_Circle(
+# Extract storms inside R=14 and positions
+xds_storms_r1, xds_inside_r1 = Extract_Circle(
     xds_Nakajo, p_lon, p_lat, r1)
 
-# Extract storms inside R=4
-xds_storms_r2 = Extract_Circle(
+# Extract storms inside R=4 and positions
+xds_storms_r2, xds_inside_r2 = Extract_Circle(
     xds_Nakajo, p_lon, p_lat, r2)
 
 
 # Get min pressure and storm category inside both circles
-n_storms = len(xds_storms_r1.storm)
+n_storms = len(xds_inside_r1.storm)
 categ_r1r2 = np.empty((n_storms, 2))
-for i in range(len(xds_storms_r1.storm)):
+for i in range(len(xds_inside_r1.storm)):
 
     # min pressure inside R1
-    storm_r1 = xds_storms_r1.isel(storm=[i])
-    storm_id = storm_r1.storm.values[0]
-    storm_pres_r1 = storm_r1.yCPRES.values[:][0]
-    storm_posin_r1 = storm_r1.pos_inside.values[:][0]
-    storm_pres_min_r1 = np.min(storm_pres_r1[storm_posin_r1])
-    storm_cat_r1 = GetStormCategory(storm_pres_min_r1)
+    storm_in_r1 = xds_inside_r1.isel(storm=[i])
+    storm_id = storm_in_r1.storm.values[0]
+    storm_cat_r1 = storm_in_r1.inside_category
 
     # min pressure inside R2
-    if storm_id in xds_storms_r2.storm.values[:]:
-        storm_r2 = xds_storms_r2.sel(storm=[storm_id])
-        storm_pres_r2 = storm_r2.yCPRES.values[:][0]
-        storm_posin_r2 = storm_r2.pos_inside.values[:][0]
-        storm_pres_min_r2 = np.min(storm_pres_r2[storm_posin_r2])
-        storm_cat_r2 = GetStormCategory(storm_pres_min_r2)
+    if storm_id in xds_inside_r2.storm.values[:]:
+        storm_in_r2 = xds_inside_r2.sel(storm=[storm_id])
+        storm_cat_r2 = storm_in_r2.inside_category
     else:
-        storm_pres_min_r2 = np.nan
         storm_cat_r2 = 9  # no category 
 
     # store categories
@@ -86,6 +85,9 @@ m_sum = np.sum(m_count,axis=0)
 probs = m_count.astype(float)/m_sum.astype(float)
 probs_cs = np.cumsum(probs, axis=0)
 
+
+print m_count
+print ''
 print probs
 print ''
 print probs_cs
