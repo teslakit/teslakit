@@ -12,21 +12,19 @@ import xarray as xr
 from datetime import date, timedelta, datetime
 
 # tk libs
+from lib.objs.tkpaths import PathControl
 from lib.mjo import GetMJOCategories
 from lib.plotting.MJO import Plot_MJOphases, Plot_MJOCategories
 from lib.objs.alr_wrapper import ALR_WRP
 
-# data storage
+# data storage and path control
 p_data = op.join(op.dirname(__file__), '..', 'data')
-p_test = op.join(p_data, 'tests', 'tests_MJO')
-
-p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
-p_export_figs = op.join(p_test, 'export_figs')
+pc = PathControl(p_data)
 
 
 # --------------------------------------
 # Load MJO data (previously downloaded)
-xds_mjo_hist = xr.open_dataset(p_mjo_hist)
+xds_mjo_hist = xr.open_dataset(pc.p_db_MJO_hist)
 
 
 # --------------------------------------
@@ -40,11 +38,11 @@ xds_mjo_hist['categ'] = (('time',), categ)
 
 
 # plot MJO phases
-p_export = op.join(p_export_figs, 'mjo_phases')  # if only show: None
+p_export = op.join(pc.p_export_figs, 'mjo_phases')  # if only show: None
 Plot_MJOphases(rmm1, rmm2, phase, p_export)
 
 # plot MJO categories
-p_export = op.join(p_export_figs, 'mjo_categ')  # if only show: None
+p_export = op.join(pc.p_export_figs, 'mjo_categ')  # if only show: None
 Plot_MJOCategories(rmm1, rmm2, categ, p_export)
 
 

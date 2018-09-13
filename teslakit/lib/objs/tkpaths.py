@@ -27,11 +27,20 @@ class PathControl(object):
         self.p_db_NOAA = op.join(self.p_db_storms, 'Allstorms.ibtracs_wmo.v03r10.nc')
         self.p_db_NOAA_fix = op.join(self.p_db_storms, 'Allstorms.ibtracs_wmo.v03r10_fix.nc')
 
+        # MJO
+        self.p_db_MJO_hist = op.join(p_data, 'MJO_hist.nc')
+
+        # SST   
+        self.p_db_SST = op.join(p_data, 'SST_1854_2017.nc')
+
         # waves
         self.p_db_waves = op.join(p_data, 'WAVES')
 
         # slp
         self.p_db_slp = op.join(p_data, 'CFS', 'prmsl')  # CFS SLP database
+
+        # temp
+        self.p_export_figs = op.join(p_data, 'export_figs')
 
         # -----------------------------------------------
         # site paths

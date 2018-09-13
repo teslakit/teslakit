@@ -7,15 +7,16 @@ import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 # tk libs
+from lib.objs.tkpaths import PathControl
 from lib.data_fetcher.MJO import Download_MJO
 
-# data storage
+# data storage and path control
 p_data = op.join(op.dirname(__file__), '..', 'data')
-p_mjo_hist = op.join(p_data, 'MJO_hist.nc')
+pc = PathControl(p_data)
 
 
 # Download mjo and save xarray.dataset to netcdf
 y1 = '1979-01-01'
 xds_mjo_hist = Download_MJO(
-    p_mjo_hist, init_year=y1, log=True)
+    pc.p_db_MJO_hist, init_year=y1, log=True)
 

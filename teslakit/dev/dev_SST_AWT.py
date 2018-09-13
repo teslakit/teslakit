@@ -12,22 +12,25 @@ from datetime import datetime, timedelta
 import numpy as np
 
 # tk libs
+from lib.objs.tkpaths import PathControl
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.objs.alr_wrapper import ALR_WRP
 
+# data storage and path control
+p_data = op.join(op.dirname(__file__), '..', 'data')
+pc = PathControl(p_data)
 
 # data storage
 p_data = op.join(op.dirname(__file__), '..', 'data')
-p_export_figs = op.join(p_data, 'export_figs')
 p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 
 # --------------------------------------
 # load predictor
-xds_pred = xr.open_dataset(p_pred_nc)
+xds_pred = xr.open_dataset(pc.p_db_SST)
 
 # TODO: ACABAR EL PROCESO PCA-KMA-CALCULOS
 # Y EMPAQUETARLO EN lib/objs/predictor.py
@@ -41,11 +44,11 @@ m1 = 6
 mN = 5
 
 xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
-# TODO: ESTE OUTPUT SE USA EN TEST_ALR_COVARS
+# TODO: save this for ALR
 
 # plot EOFs
 n_plot = 3
-p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
+p_export = op.join(pc.p_export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
 
