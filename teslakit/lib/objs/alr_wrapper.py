@@ -18,7 +18,7 @@ import os.path as op
 
 from lib.custom_dateutils import npdt64todatetime as npdt2dt
 from lib.util.terminal import printProgressBar as pb
-from lib.plotting.ALR import Plot_PValues, Plot_Params
+from lib.plotting.ALR import Plot_PValues, Plot_Params, Plot_Terms
 from lib.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
 
 
@@ -295,6 +295,23 @@ class ALR_WRP(object):
             # mount data with pandas
             X = pd.DataFrame(X, columns=self.terms_fit_names)
             y = pd.DataFrame(y, columns=['bmus'])
+            
+            # TODO: PLOTEAR TERMINOS PARA VER CON FER
+            #print X
+            
+            #b0 = 2
+            #b1 = 1
+            #b2 = 0.5
+            #b3 = 0.7
+
+            #YY = b0*X['intercept'] +b1*X['PC1']+b2*X['ss_cos_2']+b3*X['PC1_cos']
+
+            #import matplotlib.pyplot as plt
+            #YY.plot()
+            #plt.show()
+            #import sys; sys.exit()
+
+
 
             # TODO: CAPTURAR LA EVOLUCION DE LOS VALORES DURANTE LAS ITERS
 
@@ -371,72 +388,19 @@ class ALR_WRP(object):
             fW.write(summ.as_text())
 
         # plot terms used for fitting
-        p_terms_png = op.join(p_save, 'terms_fit')
-        if not op.isdir(p_terms_png):
-            os.mkdir(p_terms_png)
         self.Report_Terms_Fit()
 
     def Report_Terms_Fit(self):
-        # TODO mostrar los terminos pc1, pc2, pc3 y season
-        #terms_i = self.terms_fit
-        #ss = terms_i['seasonality']
-        #pc1 = terms_i['cov_1']
-        #pc2 = terms_i['cov_2']
-        #pc3 = terms_i['cov_3']
-        #pc1_cos=terms_i['cov_1_cos']
-        #pc1_sin=terms_i['cov_1_sin']
-        #pc2_cos=terms_i['cov_2_cos']
-        #pc2_sin=terms_i['cov_2_sin']
-        #pc3_cos=terms_i['cov_3_cos']
-        #pc3_sin=terms_i['cov_3_sin']
+        'Plot terms used for model fitting'
 
-        #print pc1.shape
-        #print ss.shape
-        #ss1_cos = ss[:,0]
-        #ss1_sin = ss[:,1]
-        #ss2_cos = ss[:,2]
-        #ss2_sin = ss[:,3]
-        ##x = range(len(pc1))
-        #x = terms_i['long_term']
+        # get data for plotting
+        term_mx = np.concatenate(self.terms_fit.values(), axis=1)
+        term_ds = [npdt2dt(t) for t in self.xds_bmus_fit.time.values]
+        term_ns = self.terms_fit_names
 
-        #import matplotlib.pyplot as plt
-        #plt.figure(1)
-        #plt.subplot(411)
-        #plt.plot(
-        #    x, pc1, 'k',
-        #    x, pc1_cos, 'r--',
-        #    x, pc1_sin, 'b--',
-        #)
-        #plt.title('pc1 (cos red, sin blue)')
-        #plt.xlim(x[0], x[-1])
-        #plt.subplot(412)
-        #plt.plot(
-        #    x, pc2, 'k',
-        #    x, pc2_cos, 'r--',
-        #    x, pc2_sin, 'b--',
-        #)
-        #plt.title('pc2')
-        #plt.xlim(x[0], x[-1])
-        #plt.subplot(413)
-        #plt.plot(
-        #    x, pc3, 'k',
-        #    x, pc3_cos, 'r--',
-        #    x, pc3_sin, 'b--',
-        #)
-        #plt.title('pc3')
-        #plt.xlim(x[0], x[-1])
-        #plt.subplot(414)
-        #plt.plot(
-        #    x, ss1_cos, 'r-',
-        #    x, ss1_sin, 'r.',
-        #    x, ss2_cos, 'b--',
-        #    x, ss2_sin, 'b.',
-        #)
-        #plt.title('season 2pit (red) & 4pit (blue)')
-        #plt.xlim(x[0], x[-1])
-        #plt.show()
-
-        pass
+        # Plot terms
+        p_terms_png = op.join(self.p_report_fit, 'terms_fit.png')
+        Plot_Terms(term_mx, term_ds, term_ns, p_terms_png)
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
         'Launch ARL model simulations'
@@ -582,7 +546,7 @@ class ALR_WRP(object):
 
         if self.d_terms_settings['covariates'][0]:
 
-            # TODO comprobar esto de tiempos duplicados
+            # TODO eliminar tiempos duplicados
             time_hist_covars = bmus_dates_hist
             time_sim_covars = bmus_dates_sim
 
@@ -593,6 +557,9 @@ class ALR_WRP(object):
 
             # covars sim
             cov_sim_values = xds_cov_sim.cov_values.values
+            print xds_cov_sim.time
+            print ''
+            print xds_cov_sim.time
 
             for ic, cn in enumerate(cov_names):
 
@@ -601,9 +568,6 @@ class ALR_WRP(object):
                 cs_val = cov_sim_values[:,ic]
 
                 # plot covariate - bmus wt
-                # TODO: NO ESTOY SEGURO QUE LO ESTE HACIENDO BIEN
-                # CUANDO ESTE MAS TRANQUILO MIRAR LO DE LOS YEARS DE LAS DOS
-                # FECHAS DENTRO
                 p_rep_cn = op.join(p_save, '{0}_comp.png'.format(cn))
                 Plot_Compare_Covariate(
                     cluster_size,

@@ -24,6 +24,9 @@ p_data = op.join(op.dirname(__file__),'..','data')
 p_data = op.join(p_data, 'tests', 'tests_ALR', 'tests_ALR_statsmodel')
 
 
+# TODO CON TAIRUA MEJORAMOS EL CODIGO, COMPROBAR COMPATIBILIDAD
+
+
 # --------------------------------------
 # Get data used to FIT ALR model and preprocess
 
@@ -146,7 +149,6 @@ xds_cov_fit = xr.Dataset(
     }
 )
 
-
 # covariates: SIMULATION
 d_covars_sim = xcd_daily(xds_MJO_sim, xds_PCs_sim)
 
@@ -215,6 +217,7 @@ fit_and_save = True # False for loading
 
 # ALR model fitting
 p_save = op.join(p_data, '{0}.sav'.format(name_test))
+fit_and_save = False
 if fit_and_save:
     ALRW.FitModel(max_iter=20000)
     ALRW.SaveModel(p_save)
@@ -224,7 +227,6 @@ else:
 # Plot model p-values and params
 p_report = op.join(p_data, 'r_{0}'.format(name_test))
 ALRW.Report_pvalue(p_report)
-
 
 # ALR model simulations 
 sim_num = 2

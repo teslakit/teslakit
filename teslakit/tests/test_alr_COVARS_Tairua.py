@@ -17,6 +17,7 @@ from lib.objs.alr_wrapper import ALR_WRP
 from lib.io.matlab import ReadMatfile as rmat
 from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
 from lib.custom_dateutils import xds_reindex_daily as xr_daily
+from lib.plotting.EOFs import Plot_PCvsPC
 
 
 # data storage
@@ -25,6 +26,8 @@ p_tests_Tairua = op.join(p_data,'tests','tests_ALR','tests_Tairua')
 p_tairua_KMA = op.join(p_tests_Tairua, 'data','DWT_NZ_16.mat')
 p_covars = op.join(p_tests_Tairua, 'covars')
 p_output = op.join(p_tests_Tairua, 'output')
+p_PCvsPC = op.join(p_output, 'PCvsPC.png')
+
 
 
 # --------------------------------------
@@ -65,8 +68,12 @@ xds_PCs = xr.Dataset(
     },
     coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
+xds_PCs_year = xds_PCs
 # reindex annual data to daily data
 xds_PCs = xr_daily(xds_PCs)
+
+
+
 
 
 # --------------------------------------
@@ -104,6 +111,7 @@ xds_cov_fit = xr.Dataset(
 
 # SIMULATION (1979-2016)
 d_covars_sim = xcd_daily([xds_MJO, xds_PCs])
+# TODO: TAMBIEN PUEDO HACER D_COVAR_SIM = D_FIT_SIM
 
 # PCs covar 
 cov_PCs = xds_PCs.sel(time=slice(d_covars_sim[0],d_covars_sim[-1]))
@@ -145,13 +153,23 @@ xds_cov_fit = xds_cov_fit.sel(
     time=slice(d_covars_fit[0], d_covars_fit[-1])
 )
 
+# Plot PCs vs PCs (fit)
+tp = xds_PCs_year.time.dt.year.values
+Plot_PCvsPC(
+    xds_PCs_year.sel(
+        time=slice(d_covars_fit[0], d_covars_fit[-1])
+    ),
+    text=tp,
+    p_export=p_PCvsPC
+)
+
 
 # TEST parameters
-name_test = 'test_season_24_alrRF'
+name_test = 'test_7_globs'
 num_clusters = 16
-num_sims = 4
-fit_and_save = False
-sim_and_save = False
+num_sims = 10
+fit_and_save = True
+sim_and_save = True
 p_test_ALR = op.join(p_output, name_test)
 
 # ALR terms
@@ -161,7 +179,7 @@ d_terms_settings = {
     'constant' : True,
     #'long_term' : False,
     'seasonality': (True, [2, 4]),
-    'covariates': (True, xds_cov_fit),
+    #'covariates': (True, xds_cov_fit),
     #'covariates_seasonality': (True, cov_season),
 }
 
@@ -178,16 +196,23 @@ if fit_and_save:
 else:
     ALRW.LoadModel()
 
+
 # Plot model p-values and params
 ALRW.Report_Fit()
 
 
 # ALR model simulations 
 if sim_and_save:
-    xds_ALR = ALRW.Simulate(num_sims, d_covars_sim, xds_cov_sim)
+    #xds_ALR = ALRW.Simulate(num_sims, d_covars_sim, xds_cov_sim)
+
+    # validate: simulate fitting period
+    xds_ALR = ALRW.Simulate(num_sims, d_covars_fit, xds_cov_fit)
 else:
     xds_ALR = ALRW.Load_SimOutput()
 
 # report SIM
-ALRW.Report_Sim(xds_ALR, xds_cov_sim)
+#ALRW.Report_Sim(xds_ALR, xds_cov_sim)
+
+# report validation (sim=fit)
+ALRW.Report_Sim(xds_ALR, xds_cov_fit)
 

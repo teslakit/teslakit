@@ -56,6 +56,7 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
             np.flipud(mean_cluster.values),
             cmap='RdBu', shading='gouraud',
         )
+
         # TODO: plot with same climits
         ax.set_xticks([])
         ax.set_yticks([])
