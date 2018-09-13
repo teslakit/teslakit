@@ -11,20 +11,18 @@ import numpy as np
 import xarray as xr
 
 # tk libs
+from lib.objs.tkpaths import PathControl
 from lib.objs.predictor import Predictor
-from lib.hurricanes import Extract_Circle
+from lib.storms import Extract_Circle
 
-# data storage
+# data storage and path control
 p_data = op.join(op.dirname(__file__), '..', 'data')
-p_data_hurr = op.join(p_data, 'HURR')
-
-p_hurr_noaa_fix = op.join(p_data_hurr, 'Allstorms.ibtracs_wmo.v03r10_fix.nc')
-p_test = op.join(p_data, 'tests', 'tests_estela', 'Roi_Kwajalein')
+pc = PathControl(p_data)
 
 
 # --------------------------------------
 # load storms and select inside circle
-xds_wmo_fix = xr.open_dataset(p_hurr_noaa_fix)
+xds_wmo_fix = xr.open_dataset(pc.p_db_NOAA_fix)
 
 p_lon = 178
 p_lat = -17.5
@@ -39,13 +37,11 @@ storm_categs = xds_inside.inside_category.values[:]
 
 # --------------------------------------
 # Load tesla-kit predictor
-p_SLP_pred = op.join(p_test, 'pred_SLP')
-pred = Predictor(p_SLP_pred)
+pred = Predictor(pc.p_st_PRED_SLP)
 pred.Load()
 
 # modify predictor KMA with circle storms data
 pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
-pred.Save()
 
 print pred.KMA.sorted_bmus_storms
 

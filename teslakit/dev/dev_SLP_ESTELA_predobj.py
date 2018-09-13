@@ -11,36 +11,29 @@ import numpy as np
 import xarray as xr
 
 # tk libs
+from lib.objs.tkpaths import PathControl
 from lib.objs.predictor import Predictor
 from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.estela import spatial_gradient, mask_from_poly
 
-# data storage
+# data storage and path control
 p_data = op.join(op.dirname(__file__), '..', 'data')
-p_test = op.join(p_data, 'tests', 'tests_estela', 'Roi_Kwajalein')
-
-# input data
-p_estela_mat = op.join(p_test, 'kwajalein_roi_obj.mat')  # mask with estela
-p_gowpoint = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')  # gow point data
-p_coast_mat = op.join(p_test, 'Costa.mat')  # coast 
-
-# teslakit files
-p_SLP_data = op.join(p_test, 'SLP.nc')  # extracted SLP
+pc = PathControl(p_data)
 
 
 # --------------------------------------
 # load sea polygons for mask generation
-ls_sea_poly = ReadCoastMat(p_coast_mat)
+ls_sea_poly = ReadCoastMat(pc.p_st_coast_mat)
 
 
 # --------------------------------------
 # load estela data 
-xds_est = ReadEstelaMat(p_estela_mat)
+xds_est = ReadEstelaMat(pc.p_st_estela_mat)
 
 
 # --------------------------------------
 # load waves data from .mat gow file
-xds_WAVES = ReadGowMat(p_gowpoint)
+xds_WAVES = ReadGowMat(pc.p_st_gow_point)
 
 # calculate Fe (from GOW waves data)
 hs = xds_WAVES.hs
@@ -58,7 +51,7 @@ xds_WAVES = xds_WAVES.sel(
 
 # --------------------------------------
 # load SLP (use xarray saved predictor data) 
-xds_SLP_site = xr.open_dataset(p_SLP_data)
+xds_SLP_site = xr.open_dataset(pc.p_st_SLP)
 
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
@@ -89,8 +82,7 @@ xds_SLP_day.update({
 
 # --------------------------------------
 # Use a tesla-kit predictor
-p_SLP_pred = op.join(p_test, 'pred_SLP')
-pred = Predictor(p_SLP_pred)
+pred = Predictor(pc.p_st_PRED_SLP)
 pred.data = xds_SLP_day
 
 
@@ -118,12 +110,9 @@ pred.Save()
 
 # --------------------------------------
 # load storms, find inside circle and modify predictor KMA 
-from lib.hurricanes import Extract_Circle
+from lib.storms import Extract_Circle
 
-p_data_hurr = op.join(p_data, 'HURR')
-p_hurr_noaa_fix = op.join(p_data_hurr, 'Allstorms.ibtracs_wmo.v03r10_fix.nc')
-
-xds_wmo_fix = xr.open_dataset(p_hurr_noaa_fix)
+xds_wmo_fix = xr.open_dataset(pc.p_db_NOAA_fix)
 
 p_lon = 178
 p_lat = -17.5
