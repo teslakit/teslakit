@@ -19,13 +19,10 @@ from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.objs.alr_wrapper import ALR_WRP
 
+# --------------------------------------
 # data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
-
-# data storage
-p_data = op.join(op.dirname(__file__), '..', 'data')
-p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
+pc = PathControl()
+pc.SetSite('test_site')
 
 
 # --------------------------------------

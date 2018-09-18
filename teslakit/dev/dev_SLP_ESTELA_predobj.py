@@ -15,25 +15,28 @@ from lib.objs.tkpaths import PathControl
 from lib.objs.predictor import Predictor
 from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.estela import spatial_gradient, mask_from_poly
+from lib.tcyclone import Extract_Circle
 
+
+# --------------------------------------
 # data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
+pc = PathControl()
+pc.SetSite('test_site')
 
 
 # --------------------------------------
 # load sea polygons for mask generation
-ls_sea_poly = ReadCoastMat(pc.p_st_coast_mat)
+ls_sea_poly = ReadCoastMat(pc.site.est.coastmat)
 
 
 # --------------------------------------
 # load estela data 
-xds_est = ReadEstelaMat(pc.p_st_estela_mat)
+xds_est = ReadEstelaMat(pc.site.est.estelamat)
 
 
 # --------------------------------------
 # load waves data from .mat gow file
-xds_WAVES = ReadGowMat(pc.p_st_gow_point)
+xds_WAVES = ReadGowMat(pc.site.est.gowpoint)
 
 # calculate Fe (from GOW waves data)
 hs = xds_WAVES.hs
@@ -51,7 +54,7 @@ xds_WAVES = xds_WAVES.sel(
 
 # --------------------------------------
 # load SLP (use xarray saved predictor data) 
-xds_SLP_site = xr.open_dataset(pc.p_st_SLP)
+xds_SLP_site = xr.open_dataset(pc.site.est.slp)
 
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
@@ -82,7 +85,7 @@ xds_SLP_day.update({
 
 # --------------------------------------
 # Use a tesla-kit predictor
-pred = Predictor(pc.p_st_PRED_SLP)
+pred = Predictor(pc.site.est.pred_slp)
 pred.data = xds_SLP_day
 
 
@@ -110,19 +113,17 @@ pred.Save()
 
 # --------------------------------------
 # load storms, find inside circle and modify predictor KMA 
-from lib.storms import Extract_Circle
-
-xds_wmo_fix = xr.open_dataset(pc.p_db_NOAA_fix)
+xds_wmo_fix = xr.open_dataset(pc.DB.tcs.noaa_fix)
 
 p_lon = 178
 p_lat = -17.5
 r = 4
 
-xds_storms_r, xds_inside = Extract_Circle(
+_, xds_in = Extract_Circle(
     xds_wmo_fix, p_lon, p_lat, r)
 
-storm_dates = xds_inside.inside_date.values[:]
-storm_categs = xds_inside.inside_category.values[:]
+storm_dates = xds_in.inside_date.values[:]
+storm_categs = xds_in.inside_category.values[:]
 
 # modify predictor KMA with circle storms data
 pred.Mod_KMA_AddStorms(storm_dates, storm_categs)

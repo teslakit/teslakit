@@ -10,9 +10,12 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 from lib.objs.tkpaths import PathControl
 from lib.io.cfs import ReadSLP
 
+
+# --------------------------------------
 # data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
+pc = PathControl()
+pc.SetSite('test_site')
+
 
 # --------------------------------------
 # site coordinates 
@@ -26,5 +29,5 @@ resample = 4  #2º
 xds_SLP_site = ReadSLP(
     pc.p_db_slp,
     lat1, lat2, lon1, lon2, resample,
-    p_save=pc.p_st_SLP)
+    p_save=pc.site.est.slp)
 

@@ -13,31 +13,33 @@ import xarray as xr
 # tk libs
 from lib.objs.tkpaths import PathControl
 from lib.objs.predictor import Predictor
-from lib.storms import Extract_Circle
-
-# data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
+from lib.tcyclone import Extract_Circle
 
 
 # --------------------------------------
-# load storms and select inside circle
-xds_wmo_fix = xr.open_dataset(pc.p_db_NOAA_fix)
+# data storage and path control
+pc = PathControl()
+pc.SetSite('test_site')
+
+
+# --------------------------------------
+# load TCs and select inside circle
+xds_wmo_fix = xr.open_dataset(pc.DB.tcs.noaa_fix)
 
 p_lon = 178
 p_lat = -17.5
 r = 4
 
-xds_storms_r, xds_inside = Extract_Circle(
+_, xds_in = Extract_Circle(
     xds_wmo_fix, p_lon, p_lat, r)
 
-storm_dates = xds_inside.inside_date.values[:]
-storm_categs = xds_inside.inside_category.values[:]
+storm_dates = xds_in.dmin_date.values[:]
+storm_categs = xds_in.category.values[:]
 
 
 # --------------------------------------
 # Load tesla-kit predictor
-pred = Predictor(pc.p_st_PRED_SLP)
+pred = Predictor(pc.site.est.pred_slp)
 pred.Load()
 
 # modify predictor KMA with circle storms data

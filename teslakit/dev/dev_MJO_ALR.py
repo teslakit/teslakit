@@ -17,14 +17,16 @@ from lib.mjo import GetMJOCategories
 from lib.plotting.MJO import Plot_MJOphases, Plot_MJOCategories
 from lib.objs.alr_wrapper import ALR_WRP
 
+
+# --------------------------------------
 # data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
+pc = PathControl()
+pc.SetSite('test_site')
 
 
 # --------------------------------------
 # Load MJO data (previously downloaded)
-xds_mjo_hist = xr.open_dataset(pc.p_db_MJO_hist)
+xds_mjo_hist = xr.open_dataset(pc.DB.mjo.hist)
 
 
 # --------------------------------------
@@ -38,11 +40,11 @@ xds_mjo_hist['categ'] = (('time',), categ)
 
 
 # plot MJO phases
-p_export = op.join(pc.p_export_figs, 'mjo_phases')  # if only show: None
+p_export = op.join(pc.DB.tmp.export_figs, 'mjo_phases')  # if only show: None
 Plot_MJOphases(rmm1, rmm2, phase, p_export)
 
 # plot MJO categories
-p_export = op.join(pc.p_export_figs, 'mjo_categ')  # if only show: None
+p_export = op.join(pc.DB.tmp.export_figs, 'mjo_categ')  # if only show: None
 Plot_MJOCategories(rmm1, rmm2, categ, p_export)
 
 

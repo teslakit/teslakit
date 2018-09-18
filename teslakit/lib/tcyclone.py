@@ -72,8 +72,10 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r):
                 l_date_in.append(np.datetime64(time_s_in[p_dm][0],'D'))
 
                 # store last cyclone date too
-                all_dates = filter(lambda a: a!= np.datetime64('NaT'),
-                                   time[i_storm][:])
+                # TODO: futurewarning
+                all_dates = filter(
+                    lambda a: a!= np.datetime64('NaT'), time[i_storm][:]
+                )
                 l_date_last.append(all_dates[-1])
 
     # cut storm dataset to selection
@@ -86,7 +88,7 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r):
             'inside_pos':(('storm'), np.array(l_pos_in)),
             'inside_pressure':(('storm'), np.array(l_press_in)),
             'inside_pressure_min':(('storm'), np.array(l_min_press_in)),
-            'inside_category':(('storm'), np.array(l_categ_in)),
+            'category':(('storm'), np.array(l_categ_in)),
         },
         coords = {
             'storm':(('storm'), xds_area.storm.values[:])
