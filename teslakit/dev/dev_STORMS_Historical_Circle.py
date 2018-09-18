@@ -12,23 +12,25 @@ import numpy as np
 # tk libs
 from lib.objs.tkpaths import PathControl
 from lib.data_fetcher.STORMS import Download_NOAA_WMO
-from lib.storms import Extract_Circle
+from lib.tcyclone import Extract_Circle
 from lib.plotting.storms import WorldMap_Storms
-
-# data storage and path control
-p_data = op.join(op.dirname(__file__), '..', 'data')
-pc = PathControl(p_data)
 
 
 # --------------------------------------
-# HISTORICAL STORMS 
+# data storage and path control
+pc = PathControl()
+pc.SetSite('test_site')
 
-# Download storms and save xarray.dataset to netcdf
+
+# --------------------------------------
+# Historical TCs  
+
+# Download TCs and save xarray.dataset to netcdf
 download = False
 if download:
-    xds_wmo = Download_NOAA_WMO(pc.p_db_NOAA)
+    xds_wmo = Download_NOAA_WMO(pc.DB.tcs.noaa)
 else:
-    xds_wmo = xr.open_dataset(pc.p_db_NOAA)
+    xds_wmo = xr.open_dataset(pc.DB.tcs.noaa)
 
 # set lon to 0-360
 lon_wmo = xds_wmo.lon_wmo.values[:]
@@ -42,16 +44,22 @@ xds_wmo.rename(
      'time_wmo':'dates',
      'pres_wmo':'pressure',
     }, inplace=True)
-xds_wmo.to_netcdf(pc.p_db_NOAA_fix)
 
-# Select storms that crosses a circular area 
+# store fixed wmo file
+xds_wmo.to_netcdf(pc.DB.tcs.noaa_fix)
+
+
+# Select TCs that crosses a circular area 
 p_lon = 178
 p_lat = -17.5
 r = 4
 
-xds_storms_r, xds_inside = Extract_Circle(
+xds_TCs_r, xds_inside = Extract_Circle(
     xds_wmo, p_lon, p_lat, r)
-xds_storms_r.to_netcdf(pc.p_st_storms_hist_circle)
+
+# store data
+xds_TCs_r.to_netcdf(pc.site.tcs.circle_hist)
+
 
 # TODO: ADD PLOT (trazas huracanes seleccionados sobre mapa mundo)
 #WorldMap_Storms(xds_hurr_r)
