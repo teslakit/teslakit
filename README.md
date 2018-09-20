@@ -34,7 +34,11 @@ git clone git@bitbucket.org:ripolln/teslakit.git
 navigate to root folder and execute:
 
 ```
+# default python libraries 
 pip install -r requirements/default.txt
+
+# custom python libraries 
+pip install -r requirements/ttide.txt
 ```
 
 then install teslakit:
