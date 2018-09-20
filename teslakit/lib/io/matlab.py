@@ -69,6 +69,37 @@ def ReadGowMat(p_mfile):
 
     return xds_out
 
+def ReadAstroTideMat(p_mfile):
+    'Read data from MAR_1820000.mat file. Return xarray.Dataset'
+
+    d_matf = ReadMatfile(p_mfile)['MAR']
+
+    # parse matlab datenum to datetime
+    time = DateConverter_Mat2Py(d_matf['time'])
+
+    # separate keys
+    ks_coords = ['time']
+    ks_attrs = []
+
+    # generate dataset
+    xds_out = xr.Dataset(
+        {
+        },
+        coords = {
+            'time': time
+        },
+        attrs = {
+        }
+    )
+    # fill dataset
+    for k in d_matf.keys():
+        if k in ks_attrs:
+            xds_out.attrs[k] = d_matf[k]
+        elif k not in ['time']:
+            xds_out[k] =(('time',), d_matf[k])
+
+    return xds_out
+
 def ReadCoastMat(p_mfile):
     '''
     Read coast polygons from Costa.mat file.
