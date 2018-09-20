@@ -92,7 +92,13 @@ class PathControl(object):
 
         # tropical cyclones
         dd_tcs = {
-            'circle_hist':op.join(p_site, 'TCs', 'TCs_hist_circle.mat'),
+            'circle_hist':op.join(p_site, 'TCs', 'TCs_hist_circle.nc'),
+        }
+
+        # tide gauges 
+        dd_tds = {
+            'mareografo':op.join(p_site, 'tide', 'Mareografo_KWA.mat'),
+            'MAR_1820000':op.join(p_site, 'tide', 'MAR_1820000.mat'),
         }
 
         # waves data 
@@ -114,6 +120,7 @@ class PathControl(object):
         dd = {
             'est': atdict(dd_estela),
             'tcs': atdict(dd_tcs),
+            'tds': atdict(dd_tds),
             'wvs': atdict(dd_waves),
         }
         self.site = atdict(dd)
@@ -133,3 +140,4 @@ class PathControl(object):
                 for k2 in sorted(self.site[k1].keys()):
                     txt+='\n.site.{0}.{1:13} - {2}'.format(k1, k2, self.site[k1][k2])
         return txt[1:]
+
