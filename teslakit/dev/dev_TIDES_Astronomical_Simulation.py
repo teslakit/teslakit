@@ -21,6 +21,8 @@ from lib.objs.tkpaths import PathControl
 from lib.io.matlab import ReadAstroTideMat
 from lib.tides import fun  # TODO
 
+# TODO: ACTUALIZAR A LIBRERIA UTIDE
+# https://www.eoas.ubc.ca/~rich/#T_Tide
 
 # --------------------------------------
 # data storage and path control
