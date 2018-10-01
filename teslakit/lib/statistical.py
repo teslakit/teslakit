@@ -45,3 +45,27 @@ def ksdensity_CDF(x):
     fint = interp1d(kde.support, kde.cdf)
     return fint(x)
 
+def runmean(X, m, modestr):
+    '''
+    parsed runmean function from original matlab codes.
+    '''
+
+    mm = 2*m+1
+
+    if modestr == 'edge':
+        xfirst = np.repeat(X[0], m)
+        xlast = np.repeat(X[-1], m)
+    elif modestr == 'zero':
+        xfirst = np.zeros(m)
+        xlast = np.zeros(m)
+    elif modestr == 'mean':
+        xfirst = np.repeat(np.mean(X), m)
+        xlast = xfirst
+
+    Y = np.concatenate(
+        (np.zeros(1), xfirst, X, xlast)
+    )
+    Y = np.cumsum(Y)
+    Y = np.divide(Y[mm:,]-Y[:-mm], mm)
+
+    return Y
