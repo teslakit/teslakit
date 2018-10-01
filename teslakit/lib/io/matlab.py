@@ -100,6 +100,37 @@ def ReadAstroTideMat(p_mfile):
 
     return xds_out
 
+def ReadMareografoMat(p_mfile):
+    'Read data from Mareografo_KWA.mat file. Return xarray.Dataset'
+
+    d_matf = ReadMatfile(p_mfile)
+
+    # parse matlab datenum to datetime
+    time = DateConverter_Mat2Py(d_matf['DATES'])
+
+    # separate keys
+    ks_coords = ['time']
+    ks_attrs = []
+
+    # generate dataset
+    xds_out = xr.Dataset(
+        {
+        },
+        coords = {
+            'time': time
+        },
+        attrs = {
+        }
+    )
+    # fill dataset
+    for k in d_matf.keys():
+        if k in ks_attrs:
+            xds_out.attrs[k] = d_matf[k]
+        elif k not in ['DATES']:
+            xds_out[k] =(('time',), d_matf[k])
+
+    return xds_out
+
 def ReadCoastMat(p_mfile):
     '''
     Read coast polygons from Costa.mat file.
