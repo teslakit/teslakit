@@ -27,7 +27,7 @@ pc.SetSite('test_site')
 
 # --------------------------------------
 # load predictor
-xds_pred = xr.open_dataset(pc.p_db_SST)
+xds_pred = xr.open_dataset(pc.DB.sst.hist)
 
 # TODO: ACABAR EL PROCESO PCA-KMA-CALCULOS
 # Y EMPAQUETARLO EN lib/objs/predictor.py
@@ -41,11 +41,11 @@ m1 = 6
 mN = 5
 
 xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
-# TODO: save this for ALR
+
 
 # plot EOFs
 n_plot = 3
-p_export = op.join(pc.p_export_figs, 'latavg_EOFs')  # if only show: None
+p_export = op.join(pc.DB.tmp.export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
 
@@ -57,12 +57,16 @@ repres = 0.95
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 
-# Get more data from xds_AWT
-
 # add yearly time data to xds_AWT
 time_yearly = [datetime(x,1,1) for x in range(y1,yN+1)]
 xds_AWT['time']=(('n_pcacomp'), time_yearly)
-# TODO: xds_AWT y xds_PCA SE USAN EN EL PROCESO E1A_MMSL_KWA.m
+
+# store AWTs and PCs
+xds_PCA.to_netcdf(pc.site.sst_awt.xds_PCA,'w')  # store SST PCA data 
+xds_AWT.to_netcdf(pc.site.sst_awt.xds_KMA,'w')  # store SST KMA data 
+
+
+# Get more data from xds_AWT
 
 # Get bmus Persistences
 # TODO: ver como guardar esta info / donde se usa?
