@@ -81,6 +81,11 @@ class PathControl(object):
         # site folder 
         p_site = op.join(self.p_sites, site_name)
 
+        # SST
+        dd_sst_awt = {
+            'xds_PCA':op.join(p_site, 'SST_PCA.nc'),
+            'xds_KMA':op.join(p_site, 'SST_KMA.nc'),
+        }
         # estela predictor
         dd_estela = {
             'estelamat':op.join(p_site, 'estela', 'kwajalein_roi_obj.mat'),
@@ -118,6 +123,7 @@ class PathControl(object):
 
         # main site dict
         dd = {
+            'sst_awt': atdict(dd_sst_awt),
             'est': atdict(dd_estela),
             'tcs': atdict(dd_tcs),
             'tds': atdict(dd_tds),
