@@ -28,6 +28,7 @@ class PathControl(object):
         self.p_data = p_data
         self.p_DB = p_DB
         self.p_sites = p_sites
+        self.p_site = None  # current site
 
         # atdicts
         self.DB = None
@@ -53,17 +54,12 @@ class PathControl(object):
 
         # SST
         dd_sst = {
-            'hist':op.join(self.p_DB, 'SST', 'SST_1854_2017.nc'),
+            'hist_pacific':op.join(self.p_DB, 'SST','SST_1854_2017_Pacific.nc'),
         }
 
         # SLP
         dd_slp = {
             'cfs_prmsl':op.join(self.p_DB, 'CFS', 'prmsl'),
-        }
-
-        # temp  # TODO
-        dd_tmp = {
-            'export_figs':op.join(self.p_DB, 'export_figs'),
         }
 
         # main database dict
@@ -72,20 +68,28 @@ class PathControl(object):
             'mjo': atdict(dd_mjo),
             'sst': atdict(dd_sst),
             'slp': atdict(dd_slp),
-            'tmp': atdict(dd_tmp),
+            'sst': atdict(dd_sst),
         }
         self.DB = atdict(dd)
 
     def SetSite(self, site_name):
+        'Sets dictionary with site files'
 
         # site folder 
         p_site = op.join(self.p_sites, site_name)
 
         # SST
-        dd_sst_awt = {
-            'xds_PCA':op.join(p_site, 'SST_PCA.nc'),
-            'xds_KMA':op.join(p_site, 'SST_KMA.nc'),
+        dd_sst = {
+            'PCA':op.join(p_site, 'SST', 'SST_PCA.nc'),
+            'KMA':op.join(p_site, 'SST', 'SST_KMA.nc'),
         }
+
+        # mjo
+        dd_mjo = {
+            'alrw':op.join(p_site, 'MJO', 'alr_w'),
+            'sim':op.join(p_site, 'MJO', 'MJO_sim.nc'),
+        }
+
         # estela predictor
         dd_estela = {
             'estelamat':op.join(p_site, 'estela', 'kwajalein_roi_obj.mat'),
@@ -121,15 +125,24 @@ class PathControl(object):
             'families_noTCs':op.join(p_wvs_procs, 'waves_families_noTCs.nc'),
         }
 
+        # n-years simulation files 
+        #dd_sim = {
+        #    'mjo':op.join(p_site, 'SIM', 'MJO_sim.nc'),
+        #}
+
         # main site dict
         dd = {
-            'sst_awt': atdict(dd_sst_awt),
+            'sst': atdict(dd_sst),
+            'mjo': atdict(dd_mjo),
             'est': atdict(dd_estela),
             'tcs': atdict(dd_tcs),
             'tds': atdict(dd_tds),
             'wvs': atdict(dd_waves),
+            #'sim': atdict(dd_sim),
+            'export_figs':op.join(p_site, 'export_figs')
         }
         self.site = atdict(dd)
+        self.p_site = p_site
 
     def __str__(self):
         'Print paths'

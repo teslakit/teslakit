@@ -21,7 +21,7 @@ from lib.objs.alr_wrapper import ALR_WRP
 # --------------------------------------
 # data storage and path control
 pc = PathControl()
-pc.SetSite('test_site')
+pc.SetSite('KWAJALEIN')
 
 
 # --------------------------------------
@@ -40,24 +40,26 @@ xds_mjo_hist['categ'] = (('time',), categ)
 
 
 # plot MJO phases
-p_export = op.join(pc.DB.tmp.export_figs, 'mjo_phases')  # if only show: None
+p_export = op.join(pc.site.export_figs, 'MJO', 'mjo_phases')  # if only show: None
 Plot_MJOphases(rmm1, rmm2, phase, p_export)
 
 # plot MJO categories
-p_export = op.join(pc.DB.tmp.export_figs, 'mjo_categ')  # if only show: None
+p_export = op.join(pc.site.export_figs, 'MJO', 'mjo_categ')  # if only show: None
 Plot_MJOCategories(rmm1, rmm2, categ, p_export)
 
 
 # --------------------------------------
-# Autoregressive Logistic Regression
+# Autoregressive Logistic Regression - fit model
 
 # MJO historical data for fitting
 num_categs  = 25
-xds_bmus_fit = xds_mjo_hist.categ
 
-
-# Autoregressive logistic enveloper
-ALRW = ALR_WRP(xds_bmus_fit, num_categs)
+xds_bmus_fit = xr.Dataset(
+    {
+        'bmus'  :(('time',), xds_mjo_hist.categ.values[:]),
+    },
+    {'time' : xds_mjo_hist.time}
+)
 
 # ALR terms
 d_terms_settings = {
@@ -66,47 +68,48 @@ d_terms_settings = {
     'seasonality': (True, [2,4,8]),
 }
 
-ALRW.SetFittingTerms(d_terms_settings)
+# ALR wrapper
+ALRW = ALR_WRP(pc.site.mjo.alrw)
+ALRW.SetFitData(num_categs, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
 ALRW.FitModel(max_iter=10000)
 
-# ALR model simulations 
-sim_num = 1  # only one simulation for mjo daily
-sim_years = 500
+
+# --------------------------------------
+# Autoregressive Logistic Regression - simulate 
 
 # simulation dates
 d1 = date(1700,6,1)
-d2 = date(d1.year+sim_years, d1.month, d1.day)
+d2 = date(2200,6,1)
 dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 # launch simulation
+sim_num = 1  # only one simulation for mjo daily
 xds_alr = ALRW.Simulate(sim_num, dates_sim)
-evbmus_sim = xds_alr.evbmus_sims.values
+evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
 
-# parse to 1D array
-evbmus_sim = np.squeeze(evbmus_sim)
 
-# Generate mjo_sim list using random mjo from each category
-# TODO: MUY LENTO, ACELERAR
-print 'parte avisada como muy lenta'
-mjo_sim = np.empty((len(evbmus_sim),2)) * np.nan
+# Generate mjo_sim, rmm12_sim, phase_sim using random mjo value from each category
+rmm12_sim = np.empty((len(evbmus_sim),2)) * np.nan
 for c, m in enumerate(evbmus_sim):
+    # rmm1, rmm2
     options = d_rmm_categ['cat_{0}'.format(int(m))]
     r = np.random.randint(options.shape[0])
-    mjo_sim[c,:] = options[r,:]
-
-# TODO COMO OBTENGO MJO SIMULATED PHASE? RMM1? RMM2?
+    rmm12_sim[c,:] = options[r,:]
 
 
-# TODO: GUARDAR MJO SIMULADO EN XARRAY 
+# store simulated mjo
+# TODO: como simulo la phase y el mjo? igual que las componentes rmm12?
 xds_MJO_sim = xr.Dataset(
     {
-        'mjo'   :(('time',), mjo_sim),
+        #'mjo'   :(('time',), mjo_sim),
         #'phase' :(('time',), phase_sim),
-        #'rmm1'  :(('time',), rmm1_sim),
-        #'rmm2'  :(('time',), rmm2_sim),
+        'rmm1'  :(('time',), rmm12_sim[:,0]),
+        'rmm2'  :(('time',), rmm12_sim[:,1]),
     },
-    {'time' : dates_sim}
+    {'time' : [np.datetime64(d) for d in dates_sim]}
 )
+print xds_MJO_sim
+xds_MJO_sim.to_netcdf(pc.site.mjo.sim, 'w')
 

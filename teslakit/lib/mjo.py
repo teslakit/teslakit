@@ -13,7 +13,6 @@ def GetMJOCategories(rmm1, rmm2, phase):
     '''
 
     rmm = np.sqrt(rmm1**2+rmm2**2)
-
     categ = np.empty(rmm.shape)*np.nan
 
     for i in range(1,9):
