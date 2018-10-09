@@ -13,11 +13,16 @@ import xarray as xr
 from lib.io.matlab import ReadMatfile
 from lib.PCA import CalcRunningMean
 from lib.custom_dateutils import DateConverter_Mat2Py
+from lib.objs.tkpaths import PathControl
+
+# --------------------------------------
+# data storage and path control
+pc = PathControl()
+
 
 # data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_pred_mat = op.join(p_data, 'SST_1854_2017.mat')
-p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
+p_pred_mat = op.join(pc.p_DB, 'SST', 'SST_1854_2017.mat')
+p_pred_nc = op.join(pc.p_DB, 'SST','SST_1854_2017_Pacific.nc')
 
 
 # --------------------------------------
@@ -25,8 +30,6 @@ p_pred_nc = op.join(p_data, 'SST_1854_2017.nc')
 
 # predictor used: SST spatial fields (ERSST v4)
 n_pred = 'SST';
-lat1, lat2 = 5, -5
-lon1, lon2 = 120, 280
 
 # load data (from matlab file)
 d_matf = ReadMatfile(p_pred_mat)
@@ -50,6 +53,8 @@ xds_predictor = xr.Dataset(
 )
 
 # cut bounding box
+lat1, lat2 = 5, -5
+lon1, lon2 = 120, 280
 xds_predictor = xds_predictor.sel(
     longitude=slice(lon1,lon2),
     latitude=slice(lat1,lat2)
@@ -61,6 +66,4 @@ xds_predictor = CalcRunningMean(xds_predictor, 'SST', 5)
 
 # save netcdf
 xds_predictor.to_netcdf(p_pred_nc, 'w')
-
-print xds_predictor
 
