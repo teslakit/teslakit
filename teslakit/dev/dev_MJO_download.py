@@ -14,11 +14,8 @@ from lib.data_fetcher.MJO import Download_MJO
 # --------------------------------------
 # data storage and path control
 pc = PathControl()
-pc.SetSite('test_site')
-
 
 # Download MJO and save to netcdf
 y1 = '1979-01-01'
-xds_mjo_hist = Download_MJO(
-    pc.DB.mjo.hist, init_year=y1, log=True)
+xds_mjo_hist = Download_MJO(pc.DB.mjo.hist, init_year=y1, log=True)
 
