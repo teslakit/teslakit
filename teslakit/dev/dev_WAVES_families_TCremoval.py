@@ -4,6 +4,7 @@
 # basic import
 import os
 import os.path as op
+import ast
 import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
@@ -13,42 +14,70 @@ import xarray as xr
 from datetime import datetime
 
 # tk libs
-from lib.objs.tkpaths import PathControl
+from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadGowMat
 from lib.waves import GetDistribution
 from lib.tcyclone import Extract_Circle
 
 
 # --------------------------------------
-# data storage and path control
-pc = PathControl()
-pc.SetSite('test_site')
+# Site paths and parameters
+site = Site('KWAJALEIN')
+site.Summary()
+
+# input files
+p_wvs_parts = site.pc.site.wvs.partitions_p1
+p_hist_tcs = site.pc.DB.tcs.noaa_fix
+
+# output files
+p_wvs_parts_noTCs = site.pc.site.wvs.partitions_noTCs
+p_wvs_fams_noTCs = site.pc.site.wvs.families_noTCs
+
+# wave point lon, lat, families sectors, and radius for TCs selection
+wvs_sectors = ast.literal_eval(site.params.WAVES.sectors)
+pnt_lon = float(site.params.WAVES.point_longitude)
+pnt_lat = float(site.params.WAVES.point_latitude)
+r2 = float(site.params.TCS.r2)   # smaller one
+
+# also date limits for TCs removal from waves data, and TC time window (hours)
+tc_rm_date1 = site.params.WAVES.tc_remov_date1
+tc_rm_date2 = site.params.WAVES.tc_remov_date2
+tc_time_window = int(site.params.WAVES.tc_remov_timew)
 
 
 # --------------------------------------
 # load wave point partitions data
-xds_wvs_pts = ReadGowMat(pc.site.wvs.partitions_p1)
+xds_wvs_pts = ReadGowMat(p_wvs_parts)
 
 # calculate wave families at sectors 
-sectors = [(210, 22.5), (22.5, 135)]
-xds_wvs_fam = GetDistribution(xds_wvs_pts, sectors)
+print('\nCalculating waves families in sectors: {0}'.format(wvs_sectors))
+xds_wvs_fam = GetDistribution(xds_wvs_pts, wvs_sectors)
 
 
 # --------------------------------------
 # load historical TCs
-xds_wmo_fix = xr.open_dataset(pc.DB.tcs.noaa_fix)
+xds_hist_tcs = xr.open_dataset(p_hist_tcs)
 
 # extract TCs inside circle using GOW point as center 
-p_lon = xds_wvs_pts.lon
-p_lat = xds_wvs_pts.lat
-r = 4
+print(
+'\nExtracting Synthetic TCs from Nakajo database...\n \
+Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
+    pnt_lon, pnt_lat, r2)
+)
 
 _, xds_in = Extract_Circle(
-    xds_wmo_fix, p_lon, p_lat, r)
+    xds_hist_tcs, pnt_lon, pnt_lat, r2)
+
 
 # remove TCs before 1979 and after 2015
-d1 = np.datetime64('1979-01-01')
-d2 = np.datetime64('2015-12-31')
+print(
+'\nRemoving Historical TCs from waves partitions and families ...\n \
+date_ini = {0}\n date_end = {1}\n time_window(h) = {2}'.format(
+    tc_rm_date1, tc_rm_date2, tc_time_window)
+)
+
+d1 = np.datetime64(tc_rm_date1)
+d2 = np.datetime64(tc_rm_date2)
 dmin_dates = xds_in.dmin_date.values
 
 p1 = np.where(dmin_dates >= d1)[0][0]
@@ -59,8 +88,7 @@ xds_in = xds_in.sel(storm = slice(p1, p2))
 storms = xds_in.storm.values[:]
 
 
-# for each storm: find hs_max instant and clean waves data inside "hs_max windows"
-window = 12  # hours
+# for each storm: find hs_max instant and clean waves data inside "hs_max window"
 xds_wvs_pts_noTCs = xds_wvs_pts.copy()
 xds_wvs_fam_noTCs = xds_wvs_fam.copy()
 
@@ -81,8 +109,8 @@ for s in storms:
     ).time.values[:][0]
 
     # hs_max time window 
-    w1 = t_hs_max - np.timedelta64(window,'h')
-    w2 = t_hs_max + np.timedelta64(window,'h')
+    w1 = t_hs_max - np.timedelta64(tc_time_window,'h')
+    w2 = t_hs_max + np.timedelta64(tc_time_window,'h')
 
     # clean waves partitions 
     xds_wvs_pts_noTCs = xds_wvs_pts_noTCs.where(
@@ -96,11 +124,11 @@ for s in storms:
     )
 
 # store results
-xds_wvs_pts_noTCs.to_netcdf(pc.site.wvs.partitions_noTCs,'w')
-xds_wvs_fam_noTCs.to_netcdf(pc.site.wvs.families_noTCs,'w')
+xds_wvs_pts_noTCs.to_netcdf(p_wvs_parts_noTCs, 'w')
+xds_wvs_fam_noTCs.to_netcdf(p_wvs_fams_noTCs, 'w')
+print('\nWaves Partitions (TCs removed) stored at:\n{0}'.format(p_wvs_parts_noTCs))
+print('\nWaves Families   (TCs removed) stored at:\n{0}'.format(p_wvs_fams_noTCs))
 
-print xds_wvs_fam_noTCs
-# TODO: los datos de oleaje (particiones y familias) estan limpios
-# hay que hacer algo mas con estos intervalos hs_peak?
+# TODO hay que hacer algo mas con estos intervalos hs_peak?
 
 
