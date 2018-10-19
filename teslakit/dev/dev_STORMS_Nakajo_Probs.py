@@ -12,21 +12,33 @@ import xarray as xr
 import numpy as np
 
 # tk libs
-from lib.objs.tkpaths import PathControl
+from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadNakajoMats
 from lib.util.operations import GetUniqueRows
 from lib.tcyclone import Extract_Circle, GetStormCategory, \
 SortCategoryCount
 
+# --------------------------------------
+# Site paths and parameters
+site = Site('KWAJALEIN')
+site.Summary()
+
+# input files
+p_nakajo_mats = site.pc.DB.tcs.nakajo_mats
+
+# output files
+p_probs_synth = site.pc.site.tcs.probs_synth
+
+# wave point lon, lat, and radius for TC selection
+pnt_lon = float(site.params.WAVES.point_longitude)
+pnt_lat = float(site.params.WAVES.point_latitude)
+r1 = float(site.params.TCS.r1)   # bigger one
+r2 = float(site.params.TCS.r2)   # smaller one
+
 
 # --------------------------------------
-# data storage and path control
-pc = PathControl()
-pc.SetSite('test_site')
-
-
 # read each nakajo simulation pack from .mat custom files 
-xds_Nakajo = ReadNakajoMats(pc.DB.tcs.nakajo)
+xds_Nakajo = ReadNakajoMats(p_nakajo_mats)
 
 # rename lon,lat variables 
 xds_Nakajo.rename(
@@ -37,20 +49,24 @@ xds_Nakajo.rename(
     }, inplace=True)
 
 
-# Select TCs that crosses a circular area 
-p_lon = 167.5
-p_lat = 9.5
-r1 = 14
-r2 = 4
+# Extract synthetic TCs at 2 radius to get category change 
+print(
+'\nExtracting Synthetic TCs from Nakajo database...\n \
+Lon = {0:.2f}º , Lat = {1:.2f}º\n \
+R1  = {2:6.2f}º , R2  = {3:6.2f}º'.format(
+    pnt_lon, pnt_lat, r1, r2)
+)
 
 # Extract TCs inside R=14 and positions
 _, xds_in_r1 = Extract_Circle(
-    xds_Nakajo, p_lon, p_lat, r1)
+    xds_Nakajo, pnt_lon, pnt_lat, r1)
 
 # Extract TCs inside R=4 and positions
 _, xds_in_r2 = Extract_Circle(
-    xds_Nakajo, p_lon, p_lat, r2)
+    xds_Nakajo, pnt_lon, pnt_lat, r2)
 
+
+print('\nCalculating Syntethic TCs category-change probabilities...')
 
 # Get min pressure and storm category inside both circles
 n_storms = len(xds_in_r1.storm)
@@ -60,12 +76,12 @@ for i in range(len(xds_in_r1.storm)):
     # min pressure inside R1
     storm_in_r1 = xds_in_r1.isel(storm=[i])
     storm_id = storm_in_r1.storm.values[0]
-    storm_cat_r1 = storm_in_r1.inside_category
+    storm_cat_r1 = storm_in_r1.category
 
     # min pressure inside R2
     if storm_id in xds_in_r2.storm.values[:]:
         storm_in_r2 = xds_in_r2.sel(storm=[storm_id])
-        storm_cat_r2 = storm_in_r2.inside_category
+        storm_cat_r2 = storm_in_r2.category
     else:
         storm_cat_r2 = 9  # no category 
 
@@ -84,10 +100,20 @@ m_sum = np.sum(m_count,axis=0)
 probs = m_count.astype(float)/m_sum.astype(float)
 probs_cs = np.cumsum(probs, axis=0)
 
-
-print m_count
-print ''
-print probs
-print ''
-print probs_cs
+# store output using xarray
+xds_categ_cp = xr.Dataset(
+    {
+        'category_change_count': (('category','category'), m_count[:-1,:]),
+        'category_change_sum': (('category'), m_count[-1,:]),
+        'category_change_probs': (('category','category'), probs[:-1,:]),
+        'category_nochange_probs': (('category'), probs[-1,:]),
+        'category_change_cumsum': (('category','category'), probs_cs[:-1,:]),
+    },
+    coords = {
+        'category': [0,1,2,3,4,5]
+    }
+)
+xds_categ_cp.to_netcdf(p_probs_synth)
+print xds_categ_cp
+print('\nSyntethic TCs category-change stored at:\n{0}'.format(p_probs_synth))
 
