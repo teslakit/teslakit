@@ -60,7 +60,7 @@ xds_hist_tcs = xr.open_dataset(p_hist_tcs)
 
 # extract TCs inside circle using GOW point as center 
 print(
-'\nExtracting Synthetic TCs from Nakajo database...\n \
+'\nExtracting Historical TCs from WMO database...\n \
 Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
     pnt_lon, pnt_lat, r2)
 )
