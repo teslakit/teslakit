@@ -18,6 +18,7 @@ from lib.util.operations import GetUniqueRows
 from lib.tcyclone import Extract_Circle, GetStormCategory, \
 SortCategoryCount
 
+
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
