@@ -80,7 +80,8 @@ def CalcRunningMean(xdset, pred_name, window=5):
              data_pnt = xdset[pred_name].loc[lon, lat, time_mnt]
 
 
-             tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(data_pnt.values, 5)
+             tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(
+                 data_pnt.values, window)
 
     # store running average
     xdset['{0}_runavg'.format(pred_name)]= (
