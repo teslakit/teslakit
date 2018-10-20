@@ -11,7 +11,7 @@ import numpy as np
 import xarray as xr
 
 # tk libs
-from lib.objs.tkpaths import PathControl
+from lib.objs.tkpaths import Site
 from lib.objs.predictor import Predictor
 from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.estela import spatial_gradient, mask_from_poly
@@ -19,24 +19,41 @@ from lib.tcyclone import Extract_Circle
 
 
 # --------------------------------------
-# data storage and path control
-pc = PathControl()
-pc.SetSite('test_site')
+# Site paths and parameters
+site = Site('KWAJALEIN')
+site.Summary()
+
+# input files
+p_estela_coast_mat = site.pc.site.est.coastmat  # estela coast (.mat)
+p_estela_data_mat = site.pc.site.est.estelamat  # estela data (.mat)
+p_gow_mat = site.pc.site.est.gowpoint  # gow point (.mat)
+p_slp = site.pc.site.est.slp  # site slp data (.nc)
+p_hist_tcs = site.pc.DB.tcs.noaa_fix  # WMO historical TCs
+
+# output files
+p_estela_pred = site.pc.site.est.pred_slp  # estela slp predictor
+
+# parameters for KMA_REGRESSION_GUIDED
+waves_date_ini = site.params.ESTELA_KMA_RG.waves_date_ini
+waves_date_end = site.params.ESTELA_KMA_RG.waves_date_end
+
+# wave point lon, lat, and radius for TCs selection
+pnt_lon = float(site.params.WAVES.point_longitude)
+pnt_lat = float(site.params.WAVES.point_latitude)
+r2 = float(site.params.TCS.r2)   # smaller one
 
 
 # --------------------------------------
 # load sea polygons for mask generation
-ls_sea_poly = ReadCoastMat(pc.site.est.coastmat)
+ls_sea_poly = ReadCoastMat(p_estela_coast_mat)
 
-
-# --------------------------------------
 # load estela data 
-xds_est = ReadEstelaMat(pc.site.est.estelamat)
+xds_est = ReadEstelaMat(p_estela_data_mat)
 
 
 # --------------------------------------
 # load waves data from .mat gow file
-xds_WAVES = ReadGowMat(pc.site.est.gowpoint)
+xds_WAVES = ReadGowMat(p_gow_mat)
 
 # calculate Fe (from GOW waves data)
 hs = xds_WAVES.hs
@@ -48,13 +65,13 @@ xds_WAVES.update({
 
 # select time window and do data daily mean
 xds_WAVES = xds_WAVES.sel(
-    time=slice('1979-01-22','1980-12-31')
+    time = slice(waves_date_ini, waves_date_end)
 ).resample(time='1D').mean()
 
 
 # --------------------------------------
 # load SLP (use xarray saved predictor data) 
-xds_SLP_site = xr.open_dataset(pc.site.est.slp)
+xds_SLP_site = xr.open_dataset(p_slp)
 
 # parse data to daily average 
 xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
@@ -85,7 +102,7 @@ xds_SLP_day.update({
 
 # --------------------------------------
 # Use a tesla-kit predictor
-pred = Predictor(pc.site.est.pred_slp)
+pred = Predictor(p_estela_pred)
 pred.data = xds_SLP_day
 
 
@@ -113,19 +130,23 @@ pred.Save()
 
 # --------------------------------------
 # load storms, find inside circle and modify predictor KMA 
-xds_wmo_fix = xr.open_dataset(pc.DB.tcs.noaa_fix)
+xds_wmo_fix = xr.open_dataset(p_hist_tcs)
 
-p_lon = 178
-p_lat = -17.5
-r = 4
+# extract TCs inside circle using GOW point as center 
+print(
+'\nExtracting Historical TCs from WMO database...\n \
+Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
+    pnt_lon, pnt_lat, r2)
+)
 
 _, xds_in = Extract_Circle(
-    xds_wmo_fix, p_lon, p_lat, r)
+    xds_wmo_fix, pnt_lon, pnt_lat, r2)
 
 storm_dates = xds_in.inside_date.values[:]
-storm_categs = xds_in.inside_category.values[:]
+storm_categs = xds_in.category.values[:]
 
 # modify predictor KMA with circle storms data
+print('\nAdding Historical TCs to SLP_PREDICTOR KMA_RG bmus...')
 pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
 pred.Save()
 
