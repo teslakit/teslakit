@@ -38,9 +38,16 @@ def ksdensity_CDF(x):
     '''
 
     # TODO METER UN SWITCH EN ARGS para devolver kde.icdf interp
-
     kde = sm.nonparametric.KDEUnivariate(x)
     kde.fit()
+    print ''
+    print kde
+    print ''
+    print dir(kde)
+    print ''
+    print kde.support
+    print kde.cdf
+    import sys; sys.exit()
 
     fint = interp1d(kde.support, kde.cdf)
     return fint(x)
