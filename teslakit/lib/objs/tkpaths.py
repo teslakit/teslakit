@@ -215,6 +215,7 @@ class PathControl(object):
         pt = op.join(p_site, 'export_figs')
         dd_export = {
             'mjo': op.join(pt, 'mjo'),
+            'sst': op.join(pt, 'sst'),
         }
 
 
