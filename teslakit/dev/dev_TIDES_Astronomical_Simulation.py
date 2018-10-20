@@ -17,21 +17,30 @@ from ttide.t_tide import t_tide
 from ttide.t_predic import t_predic
 
 # tk libs
-from lib.objs.tkpaths import PathControl
+from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadAstroTideMat
-from lib.tides import fun  # TODO
 
 # TODO: ACTUALIZAR A LIBRERIA UTIDE
 # https://www.eoas.ubc.ca/~rich/#T_Tide
 
+
 # --------------------------------------
-# data storage and path control
-pc = PathControl()
-pc.SetSite('test_site')
+# Site paths and parameters
+site = Site('KWAJALEIN')
+site.Summary()
+
+# input files
+# TODO: REVISAR/MODIFICAR DATOS TIDE Y USAR .NC
+p_tide_astro = site.pc.site.tds.MAR_1820000
+
+# output files
+p_probs_synth = site.pc.site.tcs.probs_synth
 
 
+
+# --------------------------------------
 # load astronomical tide data
-xds_atide = ReadAstroTideMat(pc.site.tds.MAR_1820000)
+xds_atide = ReadAstroTideMat(p_tide_astro)
 xds_atide.rename(
     {'observed':'level',
      'predicted':'tide',
@@ -55,6 +64,7 @@ tidecon = d_out['tidecon']
 
 
 # astronomical tide prediction
+# TODO: COGER ESTAS FECHAS AUTO, ES PARA COMPARAR
 dp1 = np.datetime64('1998-06-01')
 dp2 = np.datetime64('2016-12-31')
 date_pred = np.arange(dp1, dp2, dtype='datetime64[h]')
@@ -77,8 +87,7 @@ plt.show()
 
 
 # TODO: predict 1000 years.
-# necesitamos un objeto que controle los tiempos (y parametros) de todas las simulaciones para
-#los distintos tramos de teslakit
+
 
 # TODO: ADD PLOTS
 
