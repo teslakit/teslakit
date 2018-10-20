@@ -10,16 +10,30 @@ import xarray as xr
 import numpy as np
 
 # tk libs
-from lib.objs.tkpaths import PathControl
+from lib.objs.tkpaths import Site
 from lib.data_fetcher.STORMS import Download_NOAA_WMO
 from lib.tcyclone import Extract_Circle
 from lib.plotting.storms import WorldMap_Storms
 
 
 # --------------------------------------
-# data storage and path control
-pc = PathControl()
-pc.SetSite('test_site')
+# Site paths and parameters
+site = Site('KWAJALEIN')
+site.Summary()
+
+# input files
+p_wvs_parts = site.pc.site.wvs.partitions_p1
+p_hist_tcs = site.pc.DB.tcs.noaa_fix
+
+# output files
+p_hist_tcs = site.pc.DB.tcs.noaa
+p_hist_tcs_fix = site.pc.DB.tcs.noaa_fix
+p_tcs_circle_hist = site.pc.site.tcs.circle_hist
+
+# wave point lon, lat and radius for TCs selection
+pnt_lon = float(site.params.WAVES.point_longitude)
+pnt_lat = float(site.params.WAVES.point_latitude)
+r2 = float(site.params.TCS.r2)   # smaller one
 
 
 # --------------------------------------
@@ -28,9 +42,9 @@ pc.SetSite('test_site')
 # Download TCs and save xarray.dataset to netcdf
 download = False
 if download:
-    xds_wmo = Download_NOAA_WMO(pc.DB.tcs.noaa)
+    xds_wmo = Download_NOAA_WMO(p_hist_tcs)
 else:
-    xds_wmo = xr.open_dataset(pc.DB.tcs.noaa)
+    xds_wmo = xr.open_dataset(p_hist_tcs)
 
 # set lon to 0-360
 lon_wmo = xds_wmo.lon_wmo.values[:]
@@ -46,19 +60,22 @@ xds_wmo.rename(
     }, inplace=True)
 
 # store fixed wmo file
-xds_wmo.to_netcdf(pc.DB.tcs.noaa_fix)
+xds_wmo.to_netcdf(p_hist_tcs_fix)
 
 
 # Select TCs that crosses a circular area 
-p_lon = 178
-p_lat = -17.5
-r = 4
+print(
+'\nExtracting Historical TCs from WMO database...\n \
+Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
+    pnt_lon, pnt_lat, r2)
+)
 
 xds_TCs_r, xds_inside = Extract_Circle(
-    xds_wmo, p_lon, p_lat, r)
+    xds_wmo, pnt_lon, pnt_lat, r2)
 
 # store data
-xds_TCs_r.to_netcdf(pc.site.tcs.circle_hist)
+xds_TCs_r.to_netcdf(p_tcs_circle_hist)
+print('\nHistorical TCs (inside circle) stored at:\n{0}'.format(p_tcs_circle_hist))
 
 
 # TODO: ADD PLOT (trazas huracanes seleccionados sobre mapa mundo)
