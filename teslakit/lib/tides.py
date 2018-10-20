@@ -7,7 +7,7 @@ import xarray as xr
 
 def Calculate_MMSL(xds_tide, year_ini, year_end):
     '''
-    TODO: documentar
+    Calculate monthly mean sea level
     '''
 
     lout_mean = []
