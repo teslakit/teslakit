@@ -34,7 +34,6 @@ site.Summary()
 p_tide_astro = site.pc.site.tds.MAR_1820000
 
 # output files
-p_probs_synth = site.pc.site.tcs.probs_synth
 
 
 
