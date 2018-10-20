@@ -32,7 +32,7 @@ p_SST = site.pc.DB.sst.hist_pacific  # SST Pacific area
 # output files
 p_export_figs = site.pc.site.exp.sst
 p_sst_PCA = site.pc.site.sst.PCA
-p_sst_KMA = site.pc.site.sst.PCA
+p_sst_KMA = site.pc.site.sst.KMA
 
 # PCA dates parameters
 pred_name = 'SST'
