@@ -433,7 +433,7 @@ def Download_Gridded_Coords(p_ncfolder):
     returns list of xarray.Dataset
     '''
 
-    grid_codes = ['pac_4m', 'pac_10m', 'aus_4m', 'aus_10m', 'glob_24m']
+    grid_codes = ['glob_24m', 'pac_4m', 'pac_10m', 'aus_4m', 'aus_10m']
 
     # download folder
     if not op.isdir(p_ncfolder):
@@ -442,13 +442,18 @@ def Download_Gridded_Coords(p_ncfolder):
     # Generate URL list 
     l_xds_grids = []
     for gc in grid_codes:
-        print gc
+        print 'downloading gridded coordinates: {0} ... '.format(gc)
         l_urls = Generate_URLs('gridded', gc)
         with xr.open_dataset(l_urls[0]) as ff:
+
+            # get mask
+            hs1 = ff.hs.isel(time=0).values[:]
+            mask = ~np.isnan(hs1)
 
             # generate output dataset
             xds_out = xr.Dataset(
                 {
+                    'mask': (('latitude', 'longitude'), mask),
                 },
                 coords = {
                     'longitude': ff.longitude,
