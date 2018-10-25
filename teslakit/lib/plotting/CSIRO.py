@@ -76,7 +76,7 @@ def WorldMap_Stations(
         d_parallel, d_meridian)
 
     # add stations
-    m.scatter(lon, lat, s=4, c='r', latlon=True)
+    m.scatter(lon, lat, s=24, c='r', latlon=True)
 
     # more info
     plt.title('CSIRO spec stations')
@@ -245,6 +245,9 @@ def WorldMap_GriddedCoords(
     lon = xds_gridded.longitude.values[:]
     lat = xds_gridded.latitude.values[:]
 
+    # land mask 
+    use_mask = 'mask' in xds_gridded.variables
+
     # fix lon for plotting
     lon[np.where(lon>180.0)] = lon[np.where(lon>180.0)]-360
 
@@ -260,7 +263,15 @@ def WorldMap_GriddedCoords(
 
     # add stations
     xx,yy = np.meshgrid(lon, lat)
-    m.scatter(xx, yy, s=6, c='r', latlon=True)
+    if use_mask:
+        mask = xds_gridded.mask.values[:]
+        xx_plot = xx[mask]
+        yy_plot = yy[mask]
+    else:
+        xx_plot = xx
+        yy_plot = yy
+
+    m.scatter(xx_plot, yy_plot, s=6, c='r', latlon=True)
 
     # more info
     plt.title('CSIRO gridded coords')
@@ -273,36 +284,4 @@ def WorldMap_GriddedCoords(
         fig.savefig(p_export, dpi=96)
         plt.close()
 
-def WorldMap_GriddedCoords2(xds_gridded, bk='simple', p_export=None):
-    '''
-    Plot mercator world map with all CSIRO gridded coordinates
-    bk (background)= 'simple', 'shaderelief', 'etopo', 'bluemarble'
-    '''
-
-    # xds_station lon lat
-    lon = xds_gridded.longitude.values[:]
-    lat = xds_gridded.latitude.values[:]
-
-    lon[np.where(lon>180.0)] = lon[np.where(lon>180.0)]-360  # fix lon for plotting
-
-    # plot figure
-    fig = plt.figure(figsize=(16,9))
-
-    # Get customized basemap
-    m = WorldMap(bk)
-
-    # add stations
-    xx,yy = np.meshgrid(lon, lat)
-    m.scatter(xx, yy, s=6, c='r', latlon=True)
-
-    # more info
-    plt.title('CSIRO gridded coords')
-
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=96)
-        plt.close()
 
