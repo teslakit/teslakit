@@ -189,6 +189,7 @@ class PathControl(object):
         dd_tds = {
             'mareografo':  op.join(pt, 'Mareografo_KWA.mat'),
             'MAR_1820000': op.join(pt, 'MAR_1820000.mat'),
+            'sim_astro': op.join(pt, 'tide_astro_sim.nc'),
         }
 
         # waves data 
