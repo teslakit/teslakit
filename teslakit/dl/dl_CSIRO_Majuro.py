@@ -16,7 +16,7 @@ from lib.data_fetcher.CSIRO import Download_Gridded_Area, Download_Spec_Area
 # --------------------------------------
 # data storage and path control
 pc = PathControl()
-p_site = op.join(pc.dwl.CSIRO, 'MAJURO')
+p_site = op.join(pc.DB.dwl.CSIRO, 'MAJURO')
 
 
 # --------------------------------------
