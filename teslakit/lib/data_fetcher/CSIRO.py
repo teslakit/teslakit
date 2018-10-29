@@ -70,9 +70,6 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
     # Generate URL list 
     l_urls = Generate_URLs('gridded', grid_code)
 
-    # TODO: QUITAR DESPUES DE TESTEO
-    l_urls = l_urls[:4]
-
     # get coordinates from first file
     with xr.open_dataset(l_urls[0]) as ff:
         idx1 = (np.abs(ff.longitude.values - lonp1)).argmin()
