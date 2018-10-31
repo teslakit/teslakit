@@ -10,6 +10,7 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 # python libs
 import numpy as np
 import xarray as xr
+import netCDF4
 from datetime import datetime
 
 # custom libs
@@ -32,7 +33,6 @@ site.Summary()
 # input files
 # TODO: REVISAR/MODIFICAR DATOS TIDE Y USAR .NC
 p_tide_astro = site.pc.site.tds.MAR_1820000
-p_tide_astro_sim =  site.pc.site.tds.sim_astro
 
 # output files
 p_astro_sim = site.pc.site.tds.sim_astro
@@ -40,7 +40,6 @@ p_astro_sim = site.pc.site.tds.sim_astro
 # Simulation dates
 d1_sim = np.datetime64(site.params.SIMULATION.date_ini)
 d2_sim = np.datetime64(site.params.SIMULATION.date_end)
-d2_sim = np.datetime64('2540-01-01')  # TODO: quitar
 
 
 # --------------------------------------
@@ -72,10 +71,6 @@ freq = d_out['fu']
 tidecon = d_out['tidecon']
 
 
-# TODO: PROBLEMA EXTRANO PARA GUARDAR EL DATASET
-
-
-
 # --------------------------------------
 # t_tide library - Prediction
 date_pred = np.arange(d1_sim, d2_sim, dtype='datetime64[h]')
@@ -83,22 +78,32 @@ atide_pred = t_predic(
     date_pred, names, freq, tidecon,
     lat=lat0, ltype='nodal')
 
-# store simulated astronomical tide
-date_pred_dt = [x.astype(datetime) for x in date_pred]
-xds_AT_sim = xr.Dataset(
-    {
-        'astronomical_tide'  :(('time',), atide_pred),
-    },
-    coords = {'time' : date_pred_dt}
-)
-xds_AT_sim.to_netcdf(p_astro_sim, 'w')
+
+# --------------------------------------
+# use netCDF4 library to store this data
+calendar = 'standard'
+units = 'days since 1970-01-01 00:00:00'
+times = [z.astype(datetime) for z in date_pred]
+
+# open file
+root = netCDF4.Dataset(p_astro_sim, 'w', format='NETCDF4')
+root.createDimension('time', len(date_pred))
+
+# time variable
+timevar = root.createVariable(
+    varname='time',dimensions=('time',), datatype='float32')
+timevar[:] = netCDF4.date2num(times, units=units, calendar=calendar)
+timevar.units = units
+
+# astronomical tide variable
+atvar = root.createVariable(
+    varname='astronomical_tide', dimensions=('time',), datatype='float32')
+atvar[:] = atide_pred
+
+# close file
+root.close()
+
 print('\nAstronomical Tide Simulation stored at:\n{0}\n'.format(p_astro_sim))
-print xds_AT_sim
-
-
-
-
-
 
 
 # --------------------------------------
