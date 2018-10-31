@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import sys
 import numpy as np
 import os
 import os.path as op
@@ -85,23 +86,30 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
     # download data from files
     print 'downloading CSIRO gridded data... {0} files'.format(len(l_urls))
     for u in l_urls:
-        print op.basename(u)
+        print op.basename(u), ' ... ',
+        sys.stdout.flush()
 
         # local downloaded file
         p_u_tmp = op.join(p_tmp, op.basename(u))
-        if op.isfile(p_u_tmp):
-            continue
 
-        # read file from url
-        # TODO: INTRODUCIR TRY/CATCH PARA BORRAR ARCHIVO INCOMPLETO
-        with xr.open_dataset(u) as xds_u:
-            xds_temp = xds_u.isel(
-                longitude=slice(idx1,idx2+1),
-                latitude=slice(idy1,idy2+1))
+        # download is not stable. use while + try
+        while not op.isfile(p_u_tmp):
+            try:
+                # read file from url
+                with xr.open_dataset(u) as xds_u:
+                    xds_temp = xds_u.isel(
+                        longitude=slice(idx1,idx2+1),
+                        latitude=slice(idy1,idy2+1))
+                    # save temp file
+                    xds_temp.to_netcdf(p_u_tmp,'w')
+            except:
+                # clean failed download and retry
+                if op.isfile(p_u_tmp):
+                    os.remove(p_u_tmp)
+                print 'failed. retry... ',
+                sys.stdout.flush()
 
-            # save temp file
-            xds_temp.to_netcdf(p_u_tmp,'w')
-    print 'done.'
+        print 'downloaded.'
 
     # join .nc files in one file
     xds_out = Join_NCs(p_tmp, p_ncfile)
