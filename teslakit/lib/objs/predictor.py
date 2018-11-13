@@ -75,13 +75,21 @@ class Predictor(object):
         self, num_clusters, xds_waves, waves_vars, alpha):
         'KMA regression guided with waves data'
 
+        # we have to miss some days of data due to ESTELA
+        tcut = self.PCA.pred_time.values[:]
+        print 'KMA: ', tcut[0], ' - ', tcut[-1]
+
         # calculate regresion model between predictand and predictor
+        xds_waves = xds_waves.sel(time = slice(tcut[0], tcut[-1]))
         xds_Yregres = SMRM(self.PCA, xds_waves, waves_vars)
 
         # classification: KMA regresion guided
         repres = 0.95
         self.KMA = KMA_regression_guided(
             self.PCA, xds_Yregres, num_clusters, repres, alpha)
+
+        # store time array with KMA
+        self.KMA['time'] = (('n_components',), self.PCA.pred_time.values[:])
 
     def Mod_KMA_AddStorms(self, storm_dates, storm_categories):
         '''
