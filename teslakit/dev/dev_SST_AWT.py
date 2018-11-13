@@ -36,10 +36,12 @@ p_sst_KMA = site.pc.site.sst.KMA
 
 # PCA dates parameters
 pred_name = 'SST'
-y1 = site.params.SST_AWT.pca_year_ini
-yN = site.params.SST_AWT.pca_year_end
-m1 = site.params.SST_AWT.pca_month_ini
-mN = site.params.SST_AWT.pca_month_end
+y1 = int(site.params.SST_AWT.pca_year_ini)
+yN = int(site.params.SST_AWT.pca_year_end)
+m1 = int(site.params.SST_AWT.pca_month_ini)
+mN = int(site.params.SST_AWT.pca_month_end)
+num_clusters = int(site.params.SST_AWT.num_clusters)
+repres = float(site.params.SST_AWT.repres)
 
 # Simulation dates (ALR)
 year_sim1 = site.params.SIMULATION.date_ini.split('-')[0]
@@ -58,6 +60,7 @@ xds_pred = CalcRunningMean(xds_pred, pred_name)
 
 # Principal Components Analysis
 print('\nPrincipal Component Analysis (latitude average)...')
+# TODO: RECORTAR AQUI LAS FECHAS / MONTAR AQUI EL VECTOR DE FECHAS
 xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
 
 # plot EOFs
@@ -68,15 +71,13 @@ PlotEOFs(xds_PCA, n_plot, p_export)
 
 # --------------------------------------
 # KMA Classification 
-num_clusters = 6
-repres = 0.95
-
 print('\nKMA Classification...')
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 
-# add yearly time data to xds_AWT
+# add yearly time data to xds_AWT and xds_PCA 
 time_yearly = [datetime(x,1,1) for x in range(y1,yN+1)]
+xds_PCA['time']=(('n_components'), time_yearly)
 xds_AWT['time']=(('n_pcacomp'), time_yearly)
 
 # store AWTs and PCs
@@ -84,6 +85,10 @@ xds_PCA.to_netcdf(p_sst_PCA,'w')  # store SST PCA data
 xds_AWT.to_netcdf(p_sst_KMA,'w')  # store SST KMA data 
 print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
     pred_name, p_sst_PCA, p_sst_KMA))
+
+#TODO
+print('\nTODO: FINALIZAR dev/dev_SST_AWT ("copulafit")')
+sys.exit()
 
 # --------------------------------------
 # Get more data from xds_AWT
