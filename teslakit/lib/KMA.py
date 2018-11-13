@@ -304,7 +304,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     returns a xarray.Dataset
     '''
 
-    # TODO: POR QUE ESTE PARAMETRO?
+    # 95% repres
     repres = 0.951
 
     # PREDICTOR: PCA data
@@ -316,7 +316,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
 
-    PCsub = PCs.values[:, :nterm-1]  # TODO: POR QUE MENOS 1 ?
+    PCsub = PCs.values[:, :nterm-1]
     EOFsub = EOFs.values[:nterm-1, :]
 
     PCsub_std = np.std(PCsub, axis=0)
@@ -334,6 +334,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     # Adjust
     [n, d] = Y.shape
     X = np.concatenate((np.ones((n,1)), X), axis=1)
+
     clf = linear_model.LinearRegression(fit_intercept=True)
     Ymod = np.zeros((n,d))*np.nan
     for i in range(d):
