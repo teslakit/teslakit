@@ -50,9 +50,10 @@ class Site(object):
 
         txt='\nSite Parameters'
         for k1 in sorted(self.params.keys()):
+            print ''
             for k2 in sorted(self.params[k1].keys()):
                 aux ='\n.params.{0}.{1}'.format(k1, k2)
-                txt+='{0:30} = {1}'.format(aux, self.params[k1][k2])
+                txt+='{0:.<45} {1}'.format(aux, self.params[k1][k2])
         print(txt)
 
 
@@ -90,14 +91,16 @@ class PathControl(object):
         for k1 in sorted(self.DB.keys()):
             for k2 in sorted(self.DB[k1].keys()):
                 aux ='\n.DB.{0}.{1}'.format(k1, k2)
-                txt+='{0:27} - {1}'.format(aux, self.DB[k1][k2])
+                #txt+='{0:27} - {1}'.format(aux, self.DB[k1][k2])
+                txt+='{0:.<45} {1}'.format(aux, self.DB[k1][k2])
 
         if isinstance(self.site,dict):
             txt+= '\n\nSite Files:'
             for k1 in sorted(self.site.keys()):
                 for k2 in sorted(self.site[k1].keys()):
                     aux ='\n.site.{0}.{1}'.format(k1, k2)
-                    txt+='{0:27} - {1}'.format(aux, self.site[k1][k2])
+                    #txt+='{0:27} - {1}'.format(aux, self.site[k1][k2])
+                    txt+='{0:.<45} {1}'.format(aux, self.site[k1][k2])
         return txt
 
     def SetDatabase(self):
@@ -157,6 +160,7 @@ class PathControl(object):
         dd_sst = {
             'PCA': op.join(pt, 'SST_PCA.nc'),
             'KMA': op.join(pt, 'SST_KMA.nc'),
+            'PCs_sim': op.join(pt, 'SST_PCs_sim.nc'),
         }
 
         # mjo
@@ -174,6 +178,7 @@ class PathControl(object):
             'gowpoint':  op.join(pt, 'gow2_062_ 9.50_167.25.mat'),
             'slp':       op.join(pt, 'SLP.nc'),
             'pred_slp':  op.join(pt, 'pred_SLP'),
+            'alrw':      op.join(pt, 'alr_w'),       # auto regresive logistic sim 
         }
 
         # tropical cyclones
