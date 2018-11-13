@@ -20,6 +20,7 @@ from ttide.t_predic import t_predic
 # tk libs
 from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadAstroTideMat
+from lib.io.aux_nc import StoreAstroTide
 
 # TODO: ACTUALIZAR A LIBRERIA UTIDE
 # https://www.eoas.ubc.ca/~rich/#T_Tide
@@ -31,7 +32,7 @@ site = Site('KWAJALEIN')
 site.Summary()
 
 # input files
-# TODO: REVISAR/MODIFICAR DATOS TIDE Y USAR .NC
+# TODO: REVISAR/MODIFICAR DATOS TIDE Y USAR iNPUT .NC
 p_tide_astro = site.pc.site.tds.MAR_1820000
 
 # output files
@@ -81,29 +82,9 @@ atide_pred = t_predic(
 
 # --------------------------------------
 # use netCDF4 library to store this data
-calendar = 'standard'
-units = 'days since 1970-01-01 00:00:00'
-times = [z.astype(datetime) for z in date_pred]
-
-# open file
-root = netCDF4.Dataset(p_astro_sim, 'w', format='NETCDF4')
-root.createDimension('time', len(date_pred))
-
-# time variable
-timevar = root.createVariable(
-    varname='time',dimensions=('time',), datatype='float32')
-timevar[:] = netCDF4.date2num(times, units=units, calendar=calendar)
-timevar.units = units
-
-# astronomical tide variable
-atvar = root.createVariable(
-    varname='astronomical_tide', dimensions=('time',), datatype='float32')
-atvar[:] = atide_pred
-
-# close file
-root.close()
-
+StoreAstroTide(p_astro_sim, date_pred, atide_pred)
 print('\nAstronomical Tide Simulation stored at:\n{0}\n'.format(p_astro_sim))
+# TODO: GENERALIZAR A SBXDS??
 
 
 # --------------------------------------
