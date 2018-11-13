@@ -34,8 +34,10 @@ p_hist_tcs = site.pc.DB.tcs.noaa_fix  # WMO historical TCs
 p_estela_pred = site.pc.site.est.pred_slp  # estela slp predictor
 
 # parameters for KMA_REGRESSION_GUIDED
-waves_date_ini = site.params.ESTELA_KMA_RG.waves_date_ini
-waves_date_end = site.params.ESTELA_KMA_RG.waves_date_end
+kma_date_ini = site.params.ESTELA_KMA_RG.date_ini
+kma_date_end = site.params.ESTELA_KMA_RG.date_end
+num_clusters = int(site.params.ESTELA_KMA_RG.num_clusters)
+kmarg_alpha = float(site.params.ESTELA_KMA_RG.alpha)
 
 # wave point lon, lat, and radius for TCs selection
 pnt_lon = float(site.params.WAVES.point_longitude)
@@ -54,6 +56,7 @@ xds_est = ReadEstelaMat(p_estela_data_mat)
 # --------------------------------------
 # load waves data from .mat gow file
 xds_WAVES = ReadGowMat(p_gow_mat)
+print('\nResampling waves data to daily mean...')
 
 # calculate Fe (from GOW waves data)
 hs = xds_WAVES.hs
@@ -65,28 +68,35 @@ xds_WAVES.update({
 
 # select time window and do data daily mean
 xds_WAVES = xds_WAVES.sel(
-    time = slice(waves_date_ini, waves_date_end)
+    time = slice(kma_date_ini, kma_date_end)
 ).resample(time='1D').mean()
+print 'WVS: ',xds_WAVES.time.values[0],' - ',xds_WAVES.time.values[-1]
 
 
 # --------------------------------------
 # load SLP (use xarray saved predictor data) 
 xds_SLP_site = xr.open_dataset(p_slp)
 
-# parse data to daily average 
-xds_SLP_day = xds_SLP_site.resample(time='1D').mean()
+# select time window and do data daily mean
+print('\nResampling SLP data to daily mean...')
+xds_SLP_day = xds_SLP_site.sel(
+    time = slice(kma_date_ini, kma_date_end)
+).resample(time='1D').mean()
+print 'SLP: ',xds_SLP_day.time.values[0],' - ',xds_SLP_day.time.values[-1]
 
 # calculate daily gradients
+print('\nCalculating SLP spatial gradient...')
 xds_SLP_day = spatial_gradient(xds_SLP_day, 'SLP')
 
 # generate land mask with land polygons 
+print('\nReading land mask and ESTELA data for SLP...')
 xds_SLP_day = mask_from_poly(
     xds_SLP_day, ls_sea_poly, 'mask_land')
 
 # resample estela to site mesh
 xds_est_site = xds_est.sel(
-    longitude = xds_SLP_day.longitude,
-    latitude = xds_SLP_day.latitude,
+    longitude = xds_SLP_site.longitude,
+    latitude = xds_SLP_site.latitude,
 )
 estela_D = xds_est_site.D_y1993to2012
 
@@ -105,8 +115,8 @@ xds_SLP_day.update({
 pred = Predictor(p_estela_pred)
 pred.data = xds_SLP_day
 
-
 # Calculate PCA (dynamic estela predictor)
+print('\nPrincipal Component Analysis (ESTELA predictor)...')
 pred.Calc_PCA_EstelaPred('SLP', estela_D)
 
 # plot PCA EOFs
@@ -115,16 +125,18 @@ pred.Plot_EOFs_EstelaPred(n_EOFs, show=False)
 
 
 # Calculate KMA (regression guided with WAVES data)
-num_clusters = 36
-alpha = 0.3  # TODO: encontrar alpha optimo?
+print('\nKMA Classification (regression guided: waves)...')
+# TODO: encontrar alpha optimo?
 pred.Calc_KMA_regressionguided(
     num_clusters,
     xds_WAVES, ['hs','t02','Fe'],
-    alpha)
+    kmarg_alpha)
+
+# save predictor data
 pred.Save()
 
 # plot KMA clusters
-#pred.Plot_KMArg_clusters_datamean('SLP', show=True, mask_name='mask_estela')
+pred.Plot_KMArg_clusters_datamean('SLP', show=False, mask_name='mask_estela')
 
 
 
@@ -142,7 +154,7 @@ Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
 _, xds_in = Extract_Circle(
     xds_wmo_fix, pnt_lon, pnt_lat, r2)
 
-storm_dates = xds_in.inside_date.values[:]
+storm_dates = xds_in.dmin_date.values[:]
 storm_categs = xds_in.category.values[:]
 
 # modify predictor KMA with circle storms data
