@@ -2,6 +2,10 @@
 
 Python library for statistical calculations and methodologies for handling global climate data.
 
+## Project Map
+
+![picture](img/map.png)
+
 ## Getting Started
 
 Source code is currently hosted on Bitbucket at: https://bitbucket.org/ripolln/teslakit/src/master/
