@@ -28,7 +28,7 @@ def DateConverter_Mat2Py(datearray_matlab):
 
 def xds2datetime(d64):
     'converts xr.Dataset np.datetime64[ns] into datetime'
-    # TODO: MUY INEFICIENTE
+    # TODO: MUY INEFICIENTE. Demasiado simple, eliminar si posible
 
     return datetime(d64.dt.year, d64.dt.month, d64.dt.day)
 
@@ -42,10 +42,15 @@ def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
     Reindex xarray.Dataset to daily data between optional limits
     '''
+    # TODO: demasiado simple, eliminar si posible
 
-    # parse xds times to python datetime
-    xds_dt1 = xds2datetime(xds_data.time[0])
-    xds_dt2 = xds2datetime(xds_data.time[-1])
+    if isinstance(xds_data.time.values[0], datetime):
+        xds_dt1 = xds_data.time.values[0]
+        xds_dt2 = xds_data.time.values[-1]
+    else:
+        # parse xds times to python datetime
+        xds_dt1 = xds2datetime(xds_data.time[0])
+        xds_dt2 = xds2datetime(xds_data.time[-1])
 
     # cut data at limits
     if dt_lim1:
@@ -72,9 +77,13 @@ def xds_common_dates_daily(xds_list):
 
     for xds_e in xds_list:
 
-        # parse xds times to python datetime
-        xds_e_dt1 = xds2datetime(xds_e.time[0])
-        xds_e_dt2 = xds2datetime(xds_e.time[-1])
+        if isinstance(xds_e.time.values[0], datetime):
+            xds_e_dt1 = xds_e.time.values[0]
+            xds_e_dt2 = xds_e.time.values[-1]
+        else:
+            # parse xds times to python datetime
+            xds_e_dt1 = xds2datetime(xds_e.time[0])
+            xds_e_dt2 = xds2datetime(xds_e.time[-1])
 
         if d1 == None:
             d1 = xds_e_dt1
