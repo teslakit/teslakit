@@ -10,7 +10,10 @@ import netCDF4 as nc4
 import xarray as xr
 from datetime import datetime, timedelta
 import threddsclient
+import signal
 
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")
 
 def Generate_URLs(switch_db='gridded', grid_code='pac_4m'):
     '''
@@ -62,6 +65,41 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
         (time, latitude, longitude) var_name_N
     '''
 
+    # def aux function
+    def getrfile(u, p_nc):
+        'download unstable gridded files'
+        min_timeout = 30
+
+        while not op.isfile(p_nc):
+            try:
+                # we limit time available for operation
+                signal.signal(signal.SIGALRM, signal_handler)
+                signal.alarm(min_timeout*60)   # min*60 seconds
+
+                # read file from url
+                with xr.open_dataset(u) as xds_u:
+                    xds_temp = xds_u.isel(
+                        longitude=slice(idx1,idx2+1),
+                        latitude=slice(idy1,idy2+1))
+                    # save temp file
+                    xds_temp.to_netcdf(p_nc,'w')
+
+            except Exception:
+                # clean failed download and retry
+                if op.isfile(p_nc):
+                    os.remove(p_nc)
+                print 'timed out. retry... ',
+                sys.stdout.flush()
+            except:
+                # clean failed download and retry
+                if op.isfile(p_nc):
+                    os.remove(p_nc)
+                print 'failed. retry... ',
+                sys.stdout.flush()
+
+            finally:
+                signal.alarm(0)
+
     # long, lat query
     lonp1 = lonq[0]
     latp1 = latq[0]
@@ -70,6 +108,11 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
 
     # Generate URL list 
     l_urls = Generate_URLs('gridded', grid_code)
+
+    # find gridded-data-format split position, split lists
+    pos_split =['201306' in x for x in l_urls].index(True)
+    l_urls_a = l_urls[pos_split:]
+    l_urls_b = l_urls[:pos_split]
 
     # get coordinates from first file
     with xr.open_dataset(l_urls[0]) as ff:
@@ -80,41 +123,34 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
 
     # temp folder
     p_tmp = op.join(p_ncfile.replace('.nc','.tmp'))
-    if not op.isdir(p_tmp):
-        os.makedirs(p_tmp)
+    p_tmp_b = op.join(p_tmp, 'b201305')
+    p_tmp_a = op.join(p_tmp, 'a201305')
+    [os.makedirs(pp) for pp in [p_tmp, p_tmp_b, p_tmp_a] if not op.isdir(pp)]
+
 
     # download data from files
     print 'downloading CSIRO gridded data... {0} files'.format(len(l_urls))
-    for u in l_urls:
+    for u in l_urls_b:
+        p_u_tmp = op.join(p_tmp_b, op.basename(u))
+
         print op.basename(u), ' ... ',
         sys.stdout.flush()
+        getrfile(u, p_u_tmp)
+        print 'downloaded.'
 
-        # local downloaded file
-        p_u_tmp = op.join(p_tmp, op.basename(u))
+    for u in l_urls_a:
+        p_u_tmp = op.join(p_tmp_a, op.basename(u))
 
-        # download is not stable. use while + try
-        while not op.isfile(p_u_tmp):
-            try:
-                # read file from url
-                with xr.open_dataset(u) as xds_u:
-                    xds_temp = xds_u.isel(
-                        longitude=slice(idx1,idx2+1),
-                        latitude=slice(idy1,idy2+1))
-                    # save temp file
-                    xds_temp.to_netcdf(p_u_tmp,'w')
-            except:
-                # clean failed download and retry
-                if op.isfile(p_u_tmp):
-                    os.remove(p_u_tmp)
-                print 'failed. retry... ',
-                sys.stdout.flush()
-
+        print op.basename(u), ' ... ',
+        sys.stdout.flush()
+        getrfile(u, p_u_tmp)
         print 'downloaded.'
 
     # join .nc files in one file
-    xds_out = Join_NCs(p_tmp, p_ncfile)
+    xds_out_1 = Join_NCs(p_tmp_b, p_ncfile.replace('.nc', '_before_201305.nc'))
+    xds_out_2 = Join_NCs(p_tmp_a, p_ncfile.replace('.nc', '_after_201305.nc'))
 
-    return xds_out
+    return xds_out_1, xds_out_2
 
 def Download_Spec_Point(p_ncfile, lon_p, lat_p):
     '''
