@@ -102,6 +102,8 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
     '''
 
+    # TODO: EL RECORTE DE FECHAS DEBERIA ESTAR FUERA DE LA FUNCION
+
     # predictor variable and variable_runnavg from dataset
     pred_var = xdset[pred_name]
     pred_var_ra = xdset['{0}_runavg'.format(pred_name)]
@@ -212,14 +214,14 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     pred_norm[np.isnan(pred_norm)] = 0
 
     # principal components analysis
-    ipca = PCA(n_components=pred_norm.shape[0])
+    ipca = PCA(n_components=min(pred_norm.shape[0], pred_norm.shape[1]))
     PCs = ipca.fit_transform(pred_norm)
 
     # return dataset
     print 'Principal Components Analysis COMPLETE'
     return xr.Dataset(
         {
-            'PCs': (('n_components', 'n_components'), PCs),
+            'PCs': (('time', 'n_components'), PCs),
             'EOFs': (('n_components','n_features'), ipca.components_),
             'variance': (('n_components',), ipca.explained_variance_),
 
@@ -228,7 +230,7 @@ def CalcPCA_EstelaPred(xdset, pred_name):
 
             'pred_lon': (('n_lon',), xdset.longitude.values),
             'pred_lat': (('n_lat',), xdset.latitude.values),
-            'pred_time': (('n_components',), xdset.time.values),
+            'pred_time': (('time',), xdset.time.values),
             'pred_data_pos':(('n_points',), data_pos)
         },
 
