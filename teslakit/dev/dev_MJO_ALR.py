@@ -17,6 +17,7 @@ from lib.objs.tkpaths import Site
 from lib.mjo import GetMJOCategories
 from lib.plotting.MJO import Plot_MJOphases, Plot_MJOCategories
 from lib.objs.alr_wrapper import ALR_WRP
+from lib.io.aux_nc import StoreBugXdset as sbxds
 
 
 # --------------------------------------
@@ -100,6 +101,7 @@ ALRW.SetFitData(num_categs, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
 ALRW.FitModel(max_iter=10000)
+ALRW.Report_Fit()
 
 
 # --------------------------------------
@@ -114,26 +116,32 @@ xds_alr = ALRW.Simulate(sim_num, dates_sim)
 evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
 
 
-# Generate mjo_sim, rmm12_sim, phase_sim using random mjo value from each category
+# Generate mjo rmm1 and rmm2 simulated values
 print('\nGenerating MJO simulation: rmm1, rmm2 (random value withing category)...')
 rmm12_sim = np.empty((len(evbmus_sim),2)) * np.nan
 for c, m in enumerate(evbmus_sim):
-    # rmm1, rmm2
     options = d_rmm_categ['cat_{0}'.format(int(m))]
     r = np.random.randint(options.shape[0])
     rmm12_sim[c,:] = options[r,:]
 
+# mjo and phase
+mjo_sim = np.sqrt(rmm12_sim[:,0]**2+rmm12_sim[:,1]**2)
+phase_sim = np.arctan2(rmm12_sim[:,0], rmm12_sim[:,1])
 
 # store simulated mjo
-# TODO: como simulo la phase y el mjo? igual que las componentes rmm12?
 xds_MJO_sim = xr.Dataset(
     {
-        #'mjo'   :(('time',), mjo_sim),
-        #'phase' :(('time',), phase_sim),
+        'mjo'   :(('time',), mjo_sim),
+        'phase' :(('time',), phase_sim),
         'rmm1'  :(('time',), rmm12_sim[:,0]),
         'rmm2'  :(('time',), rmm12_sim[:,1]),
     },
-    {'time' : [np.datetime64(d) for d in dates_sim]}
+    {'time' : dates_sim}
 )
-xds_MJO_sim.to_netcdf(p_mjo_sim, 'w')
+
+print xds_MJO_sim
+
+# xarray.Dataset.to_netcdf() wont work with this time array and time dtype
+sbxds(xds_MJO_sim, p_mjo_sim)
 print('\nMJO Simulation stored at:\n{0}'.format(p_mjo_sim))
+
