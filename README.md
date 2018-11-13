@@ -4,7 +4,7 @@ Python library for statistical calculations and methodologies for handling globa
 
 ## Project Map
 
-![picture](img/map.png)
+![picture](img/map.svg)
 
 ## Getting Started
 
