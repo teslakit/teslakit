@@ -139,8 +139,6 @@ xds_MJO_sim = xr.Dataset(
     {'time' : dates_sim}
 )
 
-print xds_MJO_sim
-
 # xarray.Dataset.to_netcdf() wont work with this time array and time dtype
 sbxds(xds_MJO_sim, p_mjo_sim)
 print('\nMJO Simulation stored at:\n{0}'.format(p_mjo_sim))
