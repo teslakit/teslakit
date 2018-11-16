@@ -14,11 +14,12 @@ import numpy as np
 # tk libs
 from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
-from lib.statistical import Persistences, ksdensity_CDF
+from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
+from lib.io.aux_nc import StoreBugXdset as sbxds
 
 
 # --------------------------------------
@@ -33,6 +34,8 @@ p_SST = site.pc.DB.sst.hist_pacific  # SST Pacific area
 p_export_figs = site.pc.site.exp.sst
 p_sst_PCA = site.pc.site.sst.PCA
 p_sst_KMA = site.pc.site.sst.KMA
+p_sst_alrw = site.pc.site.sst.alrw
+p_PCs_sim = site.pc.site.sst.PCs_sim
 
 # PCA dates parameters
 pred_name = 'SST'
@@ -42,10 +45,11 @@ m1 = int(site.params.SST_AWT.pca_month_ini)
 mN = int(site.params.SST_AWT.pca_month_end)
 num_clusters = int(site.params.SST_AWT.num_clusters)
 repres = float(site.params.SST_AWT.repres)
+num_PCs_rnd = int(site.params.SST_AWT.num_pcs_rnd)
 
 # Simulation dates (ALR)
-year_sim1 = site.params.SIMULATION.date_ini.split('-')[0]
-year_sim2 = site.params.SIMULATION.date_end.split('-')[0]
+y1_sim = int(site.params.SIMULATION.date_ini.split('-')[0])
+y2_sim = int(site.params.SIMULATION.date_end.split('-')[0])
 
 
 # --------------------------------------
@@ -86,9 +90,6 @@ xds_AWT.to_netcdf(p_sst_KMA,'w')  # store SST KMA data
 print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
     pred_name, p_sst_PCA, p_sst_KMA))
 
-#TODO
-print('\nTODO: FINALIZAR dev/dev_SST_AWT ("copulafit")')
-sys.exit()
 
 # --------------------------------------
 # Get more data from xds_AWT
@@ -107,8 +108,8 @@ PC1 = np.divide(PCs[:,0], np.sqrt(variance[0]))
 PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
 PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
 
-# TODO: PREGUNTAR ANA: entonces PC_rnd no depende de ALR output
-# TODO generate copula for each WT
+# for each WT: generate copulas and simulate data 
+d_pcs_wt = {}
 for i in range(num_clusters):
 
     # getting copula number from plotting order
@@ -118,25 +119,24 @@ for i in range(num_clusters):
     ind = np.where(kma_labels == num)[:]
 
     # transfom data using kernel estimator
-    print PC1[ind]
     cdf_PC1 = ksdensity_CDF(PC1[ind])
     cdf_PC2 = ksdensity_CDF(PC2[ind])
     cdf_PC3 = ksdensity_CDF(PC3[ind])
     U = np.column_stack((cdf_PC1.T, cdf_PC2.T, cdf_PC3.T))
 
+    # fit PCs CDFs to a gaussian copula 
+    rhohat, _ = copulafit(U, 'gaussian')
 
-    # TODO COPULAFIT. fit u to a student t copula. leer la web que compara
-    #  lib incompleta: https://github.com/stochasticresearch/copula-py/blob/master/copulafit.py
-    #  lib con buena pinta: https://pypi.org/project/copulalib/
+    # simulate data to fill probabilistic space
+    U_sim = copularnd('gaussian', rhohat, num_PCs_rnd)
 
+    # get back PCs values from kernel estimator
+    PC1_rnd = ksdensity_ICDF(PC1[ind], U_sim[:,0])
+    PC2_rnd = ksdensity_ICDF(PC2[ind], U_sim[:,1])
+    PC3_rnd = ksdensity_ICDF(PC3[ind], U_sim[:,2])
 
-    # TODO COPULARND para crear USIMULADO
-
-    # TODO: KS DENSITY ICDF PARA CREAR PC123_RND SIMULATODS
-
-    # TODO: USAR NUM PARA GUARDAR LOS RESULTADOS
-
-
+    # store data  # TODO : num o i????
+    d_pcs_wt['wt_{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC2_rnd))
 
 
 # --------------------------------------
@@ -146,10 +146,7 @@ xds_bmus_fit = xr.Dataset(
         'bmus':(('time',), xds_AWT.bmus),
     },
     coords = {'time': xds_AWT.time.values}
-).bmus
-
-num_wts = 10
-ALRW = ALR_WRP(xds_bmus_fit, num_wts)
+)
 
 # ALR terms
 d_terms_settings = {
@@ -159,20 +156,44 @@ d_terms_settings = {
     'seasonality': (False, []),
 }
 
-
-ALRW.SetFittingTerms(d_terms_settings)
+# ALR wrapper
+ALRW = ALR_WRP(p_sst_alrw)
+ALRW.SetFitData(num_clusters, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
-ALRW.FitModel()
+ALRW.FitModel(max_iter=10000)
 
-# ALR model simulations 
-sim_num = 10
 
-dates_sim = [
-    datetime(x,1,1) for x in range(year_sim1,year_sim2+1)]
+# --------------------------------------
+# Autoregressive Logistic Regression - simulate 
 
-xds_ALR = ALRW.Simulate(sim_num, dates_sim)
+# simulation dates (annual array)
+dates_sim = [datetime(y,01,01) for y in range(y1_sim,y2_sim+1)]
 
-# TODO: GUARDAR RESULTADOS
-print xds_ALR
+# launch simulation
+sim_num = 1
+xds_alr = ALRW.Simulate(sim_num, dates_sim)
+evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
+
+# Generate random PCs
+print('\nGenerating PCs simulation: PC1, PC2, PC3 (random value withing category)...')
+pcs123_sim = np.empty((len(evbmus_sim),3)) * np.nan
+for c, m in enumerate(evbmus_sim):
+    options = d_pcs_wt['wt_{0}'.format(int(m))]
+    r = np.random.randint(options.shape[0])
+    pcs123_sim[c,:] = options[r,:]
+
+# store simulated PCs
+xds_PCs_sim = xr.Dataset(
+    {
+        'PC1'  :(('time',), pcs123_sim[:,0]),
+        'PC2'  :(('time',), pcs123_sim[:,1]),
+        'PC3'  :(('time',), pcs123_sim[:,2]),
+    },
+    {'time' : dates_sim}
+)
+
+# xarray.Dataset.to_netcdf() wont work with this time array and time dtype
+sbxds(xds_PCs_sim, p_PCs_sim)
+print('\nSST PCs Simulation stored at:\n{0}'.format(p_PCs_sim))
 
