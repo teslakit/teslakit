@@ -10,15 +10,14 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 import xarray as xr
 from datetime import datetime, timedelta
 import numpy as np
+from datetime import date, timedelta, datetime
 
 # tk libs
 from lib.objs.tkpaths import Site
-from lib.KMA import KMA_simple
-from lib.statistical import Persistences, ksdensity_CDF
-from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
-from lib.PCA import CalcPCA_latavg as CalcPCA
-from lib.PCA import CalcRunningMean
+from lib.statistical import ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.objs.alr_wrapper import ALR_WRP
+from lib.custom_dateutils import xds_reindex_daily as xr_daily
+from lib.io.aux_nc import StoreBugXdset as sbxds
 
 
 # --------------------------------------
@@ -27,18 +26,27 @@ site = Site('KWAJALEIN')
 site.Summary()
 
 # input files
-p_sst_PCA = site.pc.site.sst.PCA
 p_sst_KMA = site.pc.site.sst.KMA
+
+# output files
+p_sst_alrw = site.pc.site.sst.alrw
+p_PCs_sim = site.pc.site.sst.PCs_sim
 
 # parameters
 num_clusters = int(site.params.SST_AWT.num_clusters)
 
+# Simulation dates (ALR)
+d1_sim = np.datetime64(site.params.SIMULATION.date_ini).astype(datetime)
+d2_sim = np.datetime64(site.params.SIMULATION.date_end).astype(datetime)
+y1_sim = d1_sim.year
+y2_sim = d2_sim.year
+
+
 # --------------------------------------
-# TODO: CALCULATE PC_SIM 1,2,3
+# CALCULATE PC_SIM 1,2,3
 
 # Load data
 xds_AWT = xr.open_dataset(p_sst_KMA)
-print xds_AWT
 
 # bmus and order
 kma_order = xds_AWT.order.values
@@ -51,8 +59,8 @@ PC1 = np.divide(PCs[:,0], np.sqrt(variance[0]))
 PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
 PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
 
-# TODO: PREGUNTAR ANA: entonces PC_rnd no depende de ALR output
-# TODO generate copula for each WT
+# for each WT: generate copulas and simulate data 
+d_pcs_wt = {}
 for i in range(num_clusters):
 
     # getting copula number from plotting order
@@ -62,28 +70,35 @@ for i in range(num_clusters):
     ind = np.where(kma_labels == num)[:]
 
     # transfom data using kernel estimator
-    print PC1[ind]
     cdf_PC1 = ksdensity_CDF(PC1[ind])
     cdf_PC2 = ksdensity_CDF(PC2[ind])
     cdf_PC3 = ksdensity_CDF(PC3[ind])
     U = np.column_stack((cdf_PC1.T, cdf_PC2.T, cdf_PC3.T))
 
-    # TODO: QUE HACEMOS?
+    # fit PCs CDFs to a gaussian copula 
+    # TODO: programar t-student
+    rhohat, _ = copulafit(U, 'gaussian')
+
+    # simulate data to fill probabilistic space
+    U_sim = copularnd('gaussian', rhohat, 1000)
+    PC1_rnd = ksdensity_ICDF(PC1[ind], U_sim[:,0])
+    PC2_rnd = ksdensity_ICDF(PC2[ind], U_sim[:,1])
+    PC3_rnd = ksdensity_ICDF(PC3[ind], U_sim[:,2])
+
+    # store it
+    # TODO: num o i ?
+    d_pcs_wt['wt_{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC2_rnd))
 
 
-# TODO: SE USA LA SIMULACION  PERO COMO?
-sys.exit()
-
-# Autoregressive Logistic Regression
+# --------------------------------------
+# Autoregressive Logistic Regression - fit model
+num_wts = 6
 xds_bmus_fit = xr.Dataset(
     {
         'bmus':(('time',), xds_AWT.bmus),
     },
     coords = {'time': xds_AWT.time.values}
-).bmus
-
-num_wts = 10
-ALRW = ALR_WRP(xds_bmus_fit, num_wts)
+)
 
 # ALR terms
 d_terms_settings = {
@@ -93,19 +108,49 @@ d_terms_settings = {
     'seasonality': (False, []),
 }
 
-
-ALRW.SetFittingTerms(d_terms_settings)
+# ALR wrapper
+ALRW = ALR_WRP(p_sst_alrw)
+ALRW.SetFitData(num_wts, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
-ALRW.FitModel()
+ALRW.FitModel(max_iter=10000)
 
-# ALR model simulations 
-sim_num = 10
 
-dates_sim = [
-    datetime(x,1,1) for x in range(year_sim1,year_sim2+1)]
+# --------------------------------------
+# Autoregressive Logistic Regression - simulate 
 
-xds_ALR = ALRW.Simulate(sim_num, dates_sim)
+# simulation dates (year array)
+dates_sim = [datetime(y,01,01) for y in range(y1_sim,y2_sim+1)]
 
-# TODO: GUARDAR RESULTADOS
-print xds_ALR
+# launch simulation
+sim_num = 1
+xds_alr = ALRW.Simulate(sim_num, dates_sim)
+evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
+
+# Generate random PCs
+print('\nGenerating PCs simulation: PC1, PC2, PC3 (random value withing category)...')
+pcs123_sim = np.empty((len(evbmus_sim),3)) * np.nan
+for c, m in enumerate(evbmus_sim):
+    options = d_pcs_wt['wt_{0}'.format(int(m))]
+    r = np.random.randint(options.shape[0])
+    pcs123_sim[c,:] = options[r,:]
+
+# store simulated PCs
+xds_PCs_sim = xr.Dataset(
+    {
+        'PC1_rnd'  :(('time',), pcs123_sim[:,0]),
+        'PC2_rnd'  :(('time',), pcs123_sim[:,1]),
+        'PC3_rnd'  :(('time',), pcs123_sim[:,2]),
+    },
+    {'time' : dates_sim}
+)
+
+# Parse annual data to daily data
+xds_PCs_sim = xr_daily(xds_PCs_sim)
+
+# xarray.Dataset.to_netcdf() wont work with this time array and time dtype
+sbxds(xds_PCs_sim, p_PCs_sim)
+print('\nSST PCs Simulation stored at:\n{0}'.format(p_PCs_sim))
+
+
+
