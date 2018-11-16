@@ -160,5 +160,4 @@ storm_categs = xds_in.category.values[:]
 # modify predictor KMA with circle storms data
 print('\nAdding Historical TCs to SLP_PREDICTOR KMA_RG bmus...')
 pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
-pred.Save()
 
