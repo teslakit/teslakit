@@ -32,7 +32,6 @@ class Predictor(object):
         self.p_data = op.join(p_store, 'data.nc')
         self.p_pca = op.join(p_store, 'pca.nc')
         self.p_kma = op.join(p_store, 'kma.nc')
-        self.p_kma_storms = op.join(p_store, 'kma_storms.nc')
         self.p_plots = op.join(p_store, 'figs')
 
         # data (xarray.Dataset)
@@ -54,10 +53,13 @@ class Predictor(object):
         except:
             pass
         if self.data:
+            if op.isfile(self.p_data): os.remove(self.p_data)
             self.data.to_netcdf(self.p_data,'w')
         if self.PCA:
+            if op.isfile(self.p_pca): os.remove(self.p_pca)
             self.PCA.to_netcdf(self.p_pca,'w')
         if self.KMA:
+            if op.isfile(self.p_kma): os.remove(self.p_kma)
             self.KMA.to_netcdf(self.p_kma,'w')
 
     def Calc_PCA_EstelaPred(self, var_name, xds_estela):
@@ -107,6 +109,10 @@ class Predictor(object):
 
         # copy kma and add bmus_storms
         self.KMA['sorted_bmus_storms'] = (('n_components',), bmus_storms)
+
+        # store changes
+        if op.isfile(self.p_kma): os.remove(self.p_kma)
+        self.KMA.to_netcdf(self.p_kma,'w')
 
     def Plot_EOFs_EstelaPred(self, n_plot, show=False):
         'Plot EOFs generated in PCA_EstelaPred'
