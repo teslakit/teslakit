@@ -92,7 +92,8 @@ class PathControl(object):
             for k2 in sorted(self.DB[k1].keys()):
                 aux ='\n.DB.{0}.{1}'.format(k1, k2)
                 #txt+='{0:27} - {1}'.format(aux, self.DB[k1][k2])
-                txt+='{0:.<45} {1}'.format(aux, self.DB[k1][k2])
+                txt+='{0:.<45} {1}'.format(
+                    aux, self.DB[k1][k2].split('teslakit')[1])
 
         if isinstance(self.site,dict):
             txt+= '\n\nSite Files:'
@@ -100,7 +101,8 @@ class PathControl(object):
                 for k2 in sorted(self.site[k1].keys()):
                     aux ='\n.site.{0}.{1}'.format(k1, k2)
                     #txt+='{0:27} - {1}'.format(aux, self.site[k1][k2])
-                    txt+='{0:.<45} {1}'.format(aux, self.site[k1][k2])
+                    txt+='{0:.<45} {1}'.format(
+                        aux, self.site[k1][k2].split('teslakit')[1])
         return txt
 
     def SetDatabase(self):
@@ -160,7 +162,9 @@ class PathControl(object):
         dd_sst = {
             'PCA': op.join(pt, 'SST_PCA.nc'),
             'KMA': op.join(pt, 'SST_KMA.nc'),
+            'alrw': op.join(pt, 'alr_w'),
             'PCs_sim': op.join(pt, 'SST_PCs_sim.nc'),
+
         }
 
         # mjo
