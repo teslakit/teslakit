@@ -77,19 +77,8 @@ xds_PCs_fit = xr_daily(xds_PCs_fit)
 xds_MJO_sim = xr.open_dataset(p_mjo_sim)
 
 # SST: PCs (annual)
-#xds_PCs_sim = xr.open_dataset(p_sst_PCs_sim)
+xds_PCs_sim = xr.open_dataset(p_sst_PCs_sim)
 
-# TODO AWT: NO TENGO LAS COPULAS, CARGA NP.RANDOM
-# TODO: QUITAR ESTO DE AQUI, LLEVAR EL PROBLEMA SOLO AL ORIGEN
-dates_sim = [datetime(x,1,1) for x in range(2020,3010+1)]
-xds_PCs_sim = xr.Dataset(
-    {
-        'PC1': (('time',),np.random.choice(sst_PCs[:,0], len(dates_sim))),
-        'PC2': (('time',),np.random.choice(sst_PCs[:,1], len(dates_sim))),
-        'PC3': (('time',),np.random.choice(sst_PCs[:,2], len(dates_sim))),
-    },
-    coords = {'time': dates_sim}
-)
 # reindex annual data to daily data
 xds_PCs_sim = xr_daily(xds_PCs_sim)
 
