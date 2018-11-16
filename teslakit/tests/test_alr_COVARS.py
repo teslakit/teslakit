@@ -117,7 +117,7 @@ xds_PCs_sim = xr_daily(xds_PCs_sim)
 # model sim: xds_MJO_sim, xds_PCs_sim
 
 # covariates: FIT
-d_covars_fit = xcd_daily(xds_MJO_fit, xds_PCs_fit)
+d_covars_fit = xcd_daily([xds_MJO_fit, xds_PCs_fit])
 
 # PCs covar 
 cov_PCs = xds_PCs_fit.sel(time=slice(d_covars_fit[0],d_covars_fit[-1]))
@@ -149,8 +149,9 @@ xds_cov_fit = xr.Dataset(
     }
 )
 
+
 # covariates: SIMULATION
-d_covars_sim = xcd_daily(xds_MJO_sim, xds_PCs_sim)
+d_covars_sim = xcd_daily([xds_MJO_sim, xds_PCs_sim])
 
 # PCs covar 
 cov_PCs = xds_PCs_sim.sel(time=slice(d_covars_sim[0],d_covars_sim[-1]))
@@ -183,6 +184,7 @@ xds_cov_sim = xr.Dataset(
 # model fit: xds_KMA_fit, xds_cov_sim, num_clusters
 # model sim: xds_cov_sim, sim_num, sim_years
 
+# TODO: TEST NO ACTUALIZADO A PARTIR DE AQUI
 
 # use bmus inside covariate time frame
 d_covars_bmus_fit = [
