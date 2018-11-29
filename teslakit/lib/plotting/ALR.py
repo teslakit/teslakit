@@ -118,7 +118,7 @@ def Plot_PValues(p_values, term_names, p_export=None):
             v = p_values[j,i]
             if v<=0.1:
                 ax.text(i+0.5, j+0.5, '{0:.4f}'.format(v),
-                        va='center', ha='center', size=8, fontweight='bold')
+                        va='center', ha='center', size=6, fontweight='bold')
 
     # axis
     ax.set_title('p-value', fontweight='bold')
@@ -159,7 +159,7 @@ def Plot_Params(params, term_names, p_export=None):
         for j in xrange(params.shape[0]):
             v = params[j,i]
             ax.text(i+0.5, j+0.5, '{0:.1f}'.format(v),
-                    va='center', ha='center', size=8)
+                    va='center', ha='center', size=6)
     fig.colorbar(c, ax=ax)
 
     # axis
