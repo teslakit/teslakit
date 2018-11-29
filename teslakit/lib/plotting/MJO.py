@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
