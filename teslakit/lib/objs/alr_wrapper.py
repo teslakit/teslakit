@@ -360,35 +360,50 @@ class ALR_WRP(object):
         self.model = pickle.load(open(self.p_save_model, 'rb'))
         print 'ALR model loaded from {0}'.format(self.p_save_model)
 
-    def Report_Fit(self):
+    def Report_Fit(self, export=False):
         'Report containing model fitting info'
 
-        # report folder
-        p_save = self.p_report_fit
-        if not op.isdir(p_save):
-            os.mkdir(p_save)
+        if export:
 
-        # get data 
-        pval_df = self.model.pvalues.transpose()
-        params_df = self.model.params.transpose()
-        name_terms = pval_df.columns.tolist()
-        summ = self.model.summary()
+            # report folder
+            p_save = self.p_report_fit
+            if not op.isdir(p_save):
+                os.mkdir(p_save)
 
-        # plot p-values
-        p_plot = op.join(p_save, 'pval.png')
-        Plot_PValues(pval_df.values, name_terms, p_plot)
+            # get data 
+            pval_df = self.model.pvalues.transpose()
+            params_df = self.model.params.transpose()
+            name_terms = pval_df.columns.tolist()
+            summ = self.model.summary()
 
-        # plot parameters
-        p_plot = op.join(p_save, 'params.png')
-        Plot_Params(params_df.values, name_terms, p_plot)
+            # plot p-values
+            p_plot = op.join(p_save, 'pval.png')
+            Plot_PValues(pval_df.values, name_terms, p_plot)
 
-        # write summary
-        p_summ = op.join(p_save, 'summary.txt')
-        with open(p_summ, 'w') as fW:
-            fW.write(summ.as_text())
+            # plot parameters
+            p_plot = op.join(p_save, 'params.png')
+            Plot_Params(params_df.values, name_terms, p_plot)
 
-        # plot terms used for fitting
-        self.Report_Terms_Fit()
+            # write summary
+            p_summ = op.join(p_save, 'summary.txt')
+            with open(p_summ, 'w') as fW:
+                fW.write(summ.as_text())
+
+            # plot terms used for fitting
+            self.Report_Terms_Fit()
+
+        else:
+
+            # get data 
+            pval_df = self.model.pvalues.transpose()
+            params_df = self.model.params.transpose()
+            name_terms = pval_df.columns.tolist()
+
+            # plot p-values
+            Plot_PValues(pval_df.values, name_terms)
+
+            # plot parameters
+            Plot_Params(params_df.values, name_terms)
 
     def Report_Terms_Fit(self):
         'Plot terms used for model fitting'
@@ -402,7 +417,7 @@ class ALR_WRP(object):
         p_terms_png = op.join(self.p_report_fit, 'terms_fit.png')
         Plot_Terms(term_mx, term_ds, term_ns, p_terms_png)
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None, progress_bar=True):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -481,9 +496,10 @@ class ALR_WRP(object):
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
 
                 # progress bar
-                pb(i + 1, len(time_yfrac)-mk_order,
-                   prefix = 'Sim. Num. {0:03d}'.format(n+1),
-                   suffix = 'Complete', length = 50)
+                if progress_bar:
+                    pb(i + 1, len(time_yfrac)-mk_order,
+                        prefix = 'Sim. Num. {0:03d}'.format(n+1),
+                        suffix = 'Complete', length = 50)
 
             evbmus_sims[:,n] = evbmus
 
