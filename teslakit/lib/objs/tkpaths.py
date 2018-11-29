@@ -197,7 +197,8 @@ class PathControl(object):
         pt = op.join(p_site, 'TIDE')
         dd_tds = {
             'mareografo':  op.join(pt, 'Mareografo_KWA.mat'),
-            'MAR_1820000': op.join(pt, 'MAR_1820000.mat'),
+            'mareografo_nc':  op.join(pt, 'Mareografo_KWA.nc'),
+            'hist_astro': op.join(pt, 'tide_astro_hist.nc'),
             'sim_astro': op.join(pt, 'tide_astro_sim.nc'),
         }
 
@@ -226,6 +227,7 @@ class PathControl(object):
         dd_export = {
             'mjo': op.join(pt, 'mjo'),
             'sst': op.join(pt, 'sst'),
+            'tds': op.join(pt, 'tds'),
         }
 
 
