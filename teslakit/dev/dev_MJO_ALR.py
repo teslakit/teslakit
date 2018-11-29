@@ -101,7 +101,7 @@ ALRW.SetFitData(num_categs, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
 ALRW.FitModel(max_iter=10000)
-ALRW.Report_Fit()
+ALRW.Report_Fit(export=True)
 
 
 # --------------------------------------
