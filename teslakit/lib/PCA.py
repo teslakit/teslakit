@@ -102,8 +102,6 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
     '''
 
-    # TODO: EL RECORTE DE FECHAS DEBERIA ESTAR FUERA DE LA FUNCION
-
     # predictor variable and variable_runnavg from dataset
     pred_var = xdset[pred_name]
     pred_var_ra = xdset['{0}_runavg'.format(pred_name)]
