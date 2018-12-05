@@ -20,12 +20,13 @@ from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
 from lib.io.aux_nc import StoreBugXdset as sbxds
+from lib.custom_dateutils import xds_reindex_daily as xr_daily
+from lib.custom_dateutils import xds_reindex_monthly as xr_monthly
 
 
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
 
 # input files
 p_SST = site.pc.DB.sst.hist_pacific  # SST Pacific area
@@ -36,6 +37,8 @@ p_sst_PCA = site.pc.site.sst.PCA
 p_sst_KMA = site.pc.site.sst.KMA
 p_sst_alrw = site.pc.site.sst.alrw
 p_PCs_sim = site.pc.site.sst.PCs_sim
+p_PCs_sim_d = site.pc.site.sst.PCs_sim_d
+p_PCs_sim_m = site.pc.site.sst.PCs_sim_m
 
 # PCA dates parameters
 pred_name = 'SST'
@@ -64,7 +67,6 @@ xds_pred = CalcRunningMean(xds_pred, pred_name)
 
 # Principal Components Analysis
 print('\nPrincipal Component Analysis (latitude average)...')
-# TODO: RECORTAR AQUI LAS FECHAS / MONTAR AQUI EL VECTOR DE FECHAS
 xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
 
 # plot EOFs
@@ -78,11 +80,12 @@ PlotEOFs(xds_PCA, n_plot, p_export)
 print('\nKMA Classification...')
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
+# TODO: A VECES SALE UN CLUSTER DE MAS ?
 
-# add yearly time data to xds_AWT and xds_PCA 
-time_yearly = [datetime(x,1,1) for x in range(y1,yN+1)]
-xds_PCA['time']=(('n_components'), time_yearly)
-xds_AWT['time']=(('n_pcacomp'), time_yearly)
+# PCA, KMA  dates (annual array)
+dates_fit = [datetime(y,m1,01) for y in range(y1,yN+1)]
+xds_PCA['time']=(('n_components'), dates_fit)
+xds_AWT['time']=(('n_pcacomp'), dates_fit)
 
 # store AWTs and PCs
 xds_PCA.to_netcdf(p_sst_PCA,'w')  # store SST PCA data 
@@ -95,7 +98,6 @@ print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
 # Get more data from xds_AWT
 kma_order = xds_AWT.order.values
 kma_labels = xds_AWT.bmus.values
-
 
 # Get bmus Persistences
 # TODO: ver como guardar esta info / donde se usa?
@@ -168,7 +170,7 @@ ALRW.FitModel(max_iter=10000)
 # Autoregressive Logistic Regression - simulate 
 
 # simulation dates (annual array)
-dates_sim = [datetime(y,01,01) for y in range(y1_sim,y2_sim+1)]
+dates_sim = [datetime(y,m1,01) for y in range(y1_sim,y2_sim+1)]
 
 # launch simulation
 sim_num = 1
@@ -195,5 +197,15 @@ xds_PCs_sim = xr.Dataset(
 
 # xarray.Dataset.to_netcdf() wont work with this time array and time dtype
 sbxds(xds_PCs_sim, p_PCs_sim)
-print('\nSST PCs Simulation stored at:\n{0}'.format(p_PCs_sim))
+print('\nSST PCs Simulation (yearly) stored at:\n{0}'.format(p_PCs_sim))
+
+# resample to daily and store
+xds_PCs_sim_d = xr_daily(xds_PCs_sim)
+sbxds(xds_PCs_sim_d, p_PCs_sim_d)
+print('\nSST PCs Simulation (daily) stored at:\n{0}'.format(p_PCs_sim_d))
+
+# resample to monthly and store
+xds_PCs_sim_m = xr_monthly(xds_PCs_sim)
+sbxds(xds_PCs_sim_m, p_PCs_sim_m)
+print('\nSST PCs Simulation (monthly) stored at:\n{0}'.format(p_PCs_sim_m))
 
