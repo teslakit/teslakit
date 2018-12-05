@@ -81,6 +81,7 @@ print('\nKMA Classification...')
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 # TODO: A VECES SALE UN CLUSTER DE MAS ?
+print xds_AWT
 
 # PCA, KMA  dates (annual array)
 dates_fit = [datetime(y,m1,01) for y in range(y1,yN+1)]
@@ -164,6 +165,9 @@ ALRW.SetFitData(num_clusters, xds_bmus_fit, d_terms_settings)
 
 # ALR model fitting
 ALRW.FitModel(max_iter=10000)
+
+# show fit report
+ALRW.Report_Fit(export=True)
 
 
 # --------------------------------------
