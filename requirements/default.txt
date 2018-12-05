@@ -13,4 +13,7 @@ h5py==2.8.0
 threddsclient==0.3.5
 toolz==0.9.0
 configparser==3.5.0
+requests
+cython
+pillow
 
