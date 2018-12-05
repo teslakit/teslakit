@@ -23,7 +23,6 @@ from lib.custom_dateutils import xds2datetime as x2d
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
 
 # input files
 p_estela_pred = site.pc.site.est.pred_slp
