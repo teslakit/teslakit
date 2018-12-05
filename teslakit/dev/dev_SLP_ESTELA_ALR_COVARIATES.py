@@ -31,8 +31,8 @@ p_estela_kma = op.join(p_estela_pred, 'kma.nc')  # ESTELA + TCs Predictor
 p_sst_PCA = site.pc.site.sst.PCA  # SST PCA
 p_mjo_hist = site.pc.DB.mjo.hist  # historica MJO
 
-p_sst_PCs_sim = site.pc.site.sst.PCs_sim
-p_mjo_sim =  site.pc.site.mjo.sim
+p_sst_PCs_sim_d = site.pc.site.sst.PCs_sim_d  # daily PCs sim
+p_mjo_sim =  site.pc.site.mjo.sim  # daily MJO sim
 
 
 # output files
@@ -76,11 +76,8 @@ xds_PCs_fit = xr_daily(xds_PCs_fit)
 # MJO: rmm1, rmm2 (daily data)
 xds_MJO_sim = xr.open_dataset(p_mjo_sim)
 
-# SST: PCs (annual)
-xds_PCs_sim = xr.open_dataset(p_sst_PCs_sim)
-
-# reindex annual data to daily data
-xds_PCs_sim = xr_daily(xds_PCs_sim)
+# SST: PCs (daily data)
+xds_PCs_sim = xr.open_dataset(p_sst_PCs_sim_d)
 
 
 
