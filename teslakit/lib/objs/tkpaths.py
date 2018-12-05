@@ -6,6 +6,8 @@ import os
 import os.path as op
 import configparser
 
+from lib.io.getinfo import description
+
 class atdict(dict):
     __getattr__= dict.__getitem__
     __setattr__= dict.__setitem__
@@ -105,6 +107,23 @@ class PathControl(object):
                         aux, self.site[k1][k2].split('teslakit')[1])
         return txt
 
+    def FilesSummary(self):
+        'return detailed database and site files summary'
+
+        txt = ''
+        txt+= '\nDatabase Files:'
+        for k1 in sorted(self.DB.keys()):
+            for k2 in sorted(self.DB[k1].keys()):
+                txt += description(self.DB[k1][k2])
+
+        if isinstance(self.site,dict):
+            txt+= '\n\nSite Files:'
+            for k1 in sorted(self.site.keys()):
+                for k2 in sorted(self.site[k1].keys()):
+                    txt += description(self.site[k1][k2])
+
+        return txt
+
     def SetDatabase(self):
         'Set paths not related with a study site'
 
@@ -164,6 +183,8 @@ class PathControl(object):
             'KMA': op.join(pt, 'SST_KMA.nc'),
             'alrw': op.join(pt, 'alr_w'),
             'PCs_sim': op.join(pt, 'SST_PCs_sim.nc'),
+            'PCs_sim_d': op.join(pt, 'SST_PCs_sim_d.nc'),
+            'PCs_sim_m': op.join(pt, 'SST_PCs_sim_m.nc'),
 
         }
 
