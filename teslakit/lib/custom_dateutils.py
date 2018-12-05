@@ -2,7 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+from cftime._cftime import DatetimeGregorian
+import calendar
+from time import mktime
 import numpy as np
+
 
 def datematlab2datetime(datenum_matlab):
     'Return python datetime for matlab datenum. Transform and adjust from matlab.'
@@ -42,7 +47,6 @@ def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
     Reindex xarray.Dataset to daily data between optional limits
     '''
-    # TODO: demasiado simple, eliminar si posible
 
     if isinstance(xds_data.time.values[0], datetime):
         xds_dt1 = xds_data.time.values[0]
@@ -64,6 +68,29 @@ def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     # reindex xarray.Dataset
     return xds_data.reindex(
         {'time': [xds_dt1 + timedelta(days=i) for i in range(num_days)]},
+        method = 'pad',
+    )
+
+def xds_reindex_monthly(xds_data):
+    '''
+    Reindex xarray.Dataset to monthly data
+    '''
+
+    if isinstance(xds_data.time.values[0], datetime):
+        xds_dt1 = xds_data.time.values[0]
+        xds_dt2 = xds_data.time.values[-1]
+    else:
+        # parse xds times to python datetime
+        xds_dt1 = xds2datetime(xds_data.time[0])
+        xds_dt2 = xds2datetime(xds_data.time[-1])
+
+    # number of months
+    num_months = (xds_dt2.year - xds_dt1.year)*12 + \
+            xds_dt2.month - xds_dt1.month
+
+    # reindex xarray.Dataset
+    return xds_data.reindex(
+        {'time': [xds_dt1 + relativedelta(months=i) for i in range(num_months)]},
         method = 'pad',
     )
 
@@ -93,4 +120,38 @@ def xds_common_dates_daily(xds_list):
         d2 = min(xds_e_dt2, d2)
 
     return [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+
+def date2yearfrac(d):
+    'Returns date d in fraction of the year'
+
+    # get timetuple obj 
+    if isinstance(d, datetime):
+        ttup = d.timetuple()
+
+    elif isinstance(d, np.datetime64):
+        ttup = npdt64todatetime(d).timetuple()
+
+    elif isinstance(d, DatetimeGregorian):
+        ttup = d.timetuple()
+
+    # total number of days in year
+    year_ndays = 366.0 if calendar.isleap(ttup.tm_year) else 365.0
+
+    return ttup.tm_yday / year_ndays
+
+def date2datenum(d):
+    'Returns date d (any format) in datetime'
+
+    if isinstance(d, datetime):
+        return d
+
+    # else get timetuple
+    elif isinstance(d, np.datetime64):
+        ttup = npdt64todatetime(d).timetuple()
+
+    elif isinstance(d, DatetimeGregorian):
+        ttup = d.timetuple()
+
+    # return datetime 
+    return datetime.fromtimestamp(mktime(ttup))
 
