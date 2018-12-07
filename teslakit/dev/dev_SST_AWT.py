@@ -16,6 +16,7 @@ from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
+from lib.plotting.KMA import Plot_Weather_Types
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
@@ -59,8 +60,6 @@ y2_sim = int(site.params.SIMULATION.date_end.split('-')[0])
 # load SST predictor from database
 xds_pred = xr.open_dataset(p_SST)
 
-
-# --------------------------------------
 # Calculate running average
 print('\nCalculating {0} running average... '.format(pred_name))
 xds_pred = CalcRunningMean(xds_pred, pred_name)
@@ -70,7 +69,7 @@ print('\nPrincipal Component Analysis (latitude average)...')
 xds_PCA = CalcPCA(xds_pred, pred_name, y1, yN, m1, mN)
 
 # plot EOFs
-n_plot = 3
+n_plot = 6
 p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
@@ -81,7 +80,6 @@ print('\nKMA Classification...')
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
 # TODO: A VECES SALE UN CLUSTER DE MAS ?
-print xds_AWT
 
 # PCA, KMA  dates (annual array)
 dates_fit = [datetime(y,m1,01) for y in range(y1,yN+1)]
@@ -93,6 +91,10 @@ xds_PCA.to_netcdf(p_sst_PCA,'w')  # store SST PCA data
 xds_AWT.to_netcdf(p_sst_KMA,'w')  # store SST KMA data 
 print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
     pred_name, p_sst_PCA, p_sst_KMA))
+
+# Plot Weather Types
+p_export = op.join(p_export_figs, 'AWT_WeatherTypes.png')  # if only show: None
+Plot_Weather_Types(xds_AWT, xds_PCA.pred_lon, p_export)
 
 
 # --------------------------------------
