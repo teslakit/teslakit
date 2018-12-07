@@ -16,7 +16,7 @@ from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
-from lib.plotting.KMA import Plot_Weather_Types
+from lib.plotting.KMA import Plot_Weather_Types, Plot_3D_3PCs_WTs
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
@@ -73,6 +73,8 @@ n_plot = 6
 p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
+# TODO: plot 3D PCs
+
 
 # --------------------------------------
 # KMA Classification 
@@ -93,8 +95,15 @@ print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
     pred_name, p_sst_PCA, p_sst_KMA))
 
 # Plot Weather Types
-p_export = op.join(p_export_figs, 'AWT_WeatherTypes.png')  # if only show: None
+p_export = op.join(p_export_figs, 'AWT_WeatherTypes.png')
 Plot_Weather_Types(xds_AWT, xds_PCA.pred_lon, p_export)
+
+# TODO: plot year/label wts
+
+# Plot 3D Weather Types to PC1,2,3
+p_export = op.join(p_export_figs, 'AWT_WeatherTypes_3D_PCs.png')
+Plot_3D_3PCs_WTs(xds_AWT, p_export)
+
 
 
 # --------------------------------------
