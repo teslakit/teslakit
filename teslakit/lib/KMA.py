@@ -143,6 +143,9 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     EOFs = xds_PCA['EOFs']
     PCs = xds_PCA['PCs']
 
+    var_anom_std = xds_PCA.var_anom_std.values[:]
+    var_anom_mean = xds_PCA.var_anom_mean.values[:]
+
     # APEV: the cummulative proportion of explained variance by ith PC
     APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
@@ -172,6 +175,13 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     # centroids
     centroids = np.dot(kma.cluster_centers_, EOFsub)
 
+    # km, x and var_centers
+    km = np.multiply(
+        centroids,
+        np.tile(var_anom_std, (num_clusters, 1))
+    ) + np.tile(var_anom_mean, (num_clusters, 1))
+
+
     print 'KMEANS classification COMPLETE.'
     return xr.Dataset(
         {
@@ -180,6 +190,7 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
             'bmus': (('n_pcacomp',), kma.labels_),
             'centroids': (('n_clusters','n_pcafeat'), centroids),
+            'Km': (('n_clusters','n_pcafeat'), km),
             'group_size': (('n_clusters'), group_size),
 
             # PCA data
