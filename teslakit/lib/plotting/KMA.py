@@ -6,6 +6,7 @@ import os.path as op
 import numpy as np
 from math import sqrt
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
@@ -80,6 +81,7 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
 
 def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
     '''
+    TODO DOC
     '''
 
     bmus = xds_AWT.bmus.values[:]
@@ -101,6 +103,9 @@ def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
     gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.10, hspace=0.15)
+
+    # TODO MEJORAR
+    cs = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
 
     grid_row = 0
     grid_col = 0
@@ -138,3 +143,49 @@ def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
+def Plot_3D_3PCs_WTs(xds_AWT, p_export=None):
+    '''
+    TODO DOC
+    '''
+
+    variance = xds_AWT.variance.values[:]
+    bmus = xds_AWT.bmus.values[:]
+    PCs = xds_AWT.PCs.values[:]
+    order = xds_AWT.order.values[:]
+    n_clusters = len(xds_AWT.n_clusters)
+
+    PC1 = np.divide(PCs[:,0], np.sqrt(variance[0]))
+    PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
+    PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # TODO MEJORAR
+    cs = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
+
+    for ic in range(n_clusters):
+        num = order[ic]
+        ind =(np.where(bmus==num)[0][:])
+
+        # scatter  plot
+        ax.scatter(
+            PC1[ind],PC2[ind],PC3[ind],
+            c = cs[ic],
+            label = 'WT#{0}'.format(ic+1)
+        )
+
+    ax.legend(loc='best')
+    ax.set_xlabel('PC1',{'fontsize':10})
+    ax.set_ylabel('PC2',{'fontsize':10})
+    ax.set_zlabel('PC3',{'fontsize':10})
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
+
