@@ -151,10 +151,12 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
             'variance': (('n_components',), ipca.explained_variance_),
 
             'pred_lon': (('n_lon',), xdset.longitude.values),
+
+            'var_anom_std': (('n_features',), var_anom_std),
+            'var_anom_mean': (('n_features',), var_anom_mean),
         },
 
         # store PCA algorithm metadata
-        # TODO: REPLACE Y1Y2M1M2 ATTRS FOR PRED_TIME VARIABLE?
         attrs = {
             'method': 'latitude averaged',
             'y1': y1,
