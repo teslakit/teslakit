@@ -16,6 +16,9 @@ from datetime import datetime, timedelta
 from lib.custom_dateutils import xds2datetime
 from lib.util.operations import GetDivisors
 
+# fig aspect and size
+_faspect = (1+5**0.5)/2.0
+_fsize = 7
 
 def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     '''
@@ -29,7 +32,7 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     var_min = np.min(xds_datavar.values)
 
     # prepare figure
-    fig = plt.figure(figsize=(16,9))
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
     # Get number of rows and cols for gridplot 
     sqrt_clusters = sqrt(n_clusters)
@@ -74,3 +77,64 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
         fig.savefig(p_export, dpi=96)
         plt.close()
 
+
+def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
+    '''
+    '''
+
+    bmus = xds_AWT.bmus.values[:]
+    order = xds_AWT.order.values[:]
+    Km = xds_AWT.Km.values[:]
+    n_clusters = len(xds_AWT.n_clusters)
+
+    # Get number of rows and cols for gridplot 
+    sqrt_clusters = sqrt(n_clusters)
+    if sqrt_clusters.is_integer():
+        n_rows = int(sqrt_clusters)
+        n_cols = int(sqrt_clusters)
+    else:
+        l_div = GetDivisors(n_clusters)
+        n_rows = l_div[len(l_div)/2]
+        n_cols = n_clusters/n_rows
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.10, hspace=0.15)
+
+    grid_row = 0
+    grid_col = 0
+    yt = np.arange(12)+1
+    for ic in range(n_clusters):
+        num = order[ic]
+        var_AWT = Km[num,:]
+        D = var_AWT.reshape(-1, len(longitude))
+        nwts = len(np.where(bmus==num)[0][:])
+
+        # grid plot
+        ax = plt.subplot(gs[grid_row, grid_col])
+        ax.pcolormesh(
+            D,
+            cmap='RdBu', shading='gouraud',
+            vmin=-2, vmax=+2,
+        )
+        ax.set_title(
+            'WT#{0} {1} years'.format(ic+1, nwts),
+            {'fontsize':8, 'fontweight':'bold'}
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_ylabel('month',{'fontsize':6})
+        ax.set_xlabel('lon',{'fontsize':6})
+
+        grid_col += 1
+        if grid_col >= n_cols:
+            grid_col = 0
+            grid_row += 1
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
