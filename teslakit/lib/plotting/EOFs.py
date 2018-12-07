@@ -13,6 +13,10 @@ from datetime import datetime, timedelta
 
 from lib.custom_dateutils import xds2datetime
 
+# fig aspect and size
+_faspect = (1+5**0.5)/2.0
+_fsize = 7
+
 
 def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
     '''
@@ -60,7 +64,7 @@ def Plot_EOFs_latavg(xds_PCA, n_plot, p_export=None):
     for it in range(n_plot):
 
         # plot figure
-        fig = plt.figure(figsize=(16,9))
+        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
         # map of the spatial field
         spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
@@ -130,7 +134,7 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
     for it in range(n_plot):
 
         # plot figure
-        fig = plt.figure(figsize=(16,9))
+        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
         # get vargrd 
         var_grd_1d = EOFs[:,it]*np.sqrt(variance[it])
@@ -215,7 +219,7 @@ def Plot_PCvsPC(xds_PC123, text=[], p_export = None):
     pc3_d = pc3_d * pf
 
     # create figure
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(14,14))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(_faspect*_fsize, _fsize))
 
     ax1.plot(pc2_val, pc1_val, '.r')
     ax2.plot(pc3_val, pc1_val, '.r')
