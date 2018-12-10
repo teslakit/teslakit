@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 # python libs
+import pickle
 import xarray as xr
 from datetime import datetime, timedelta
 import numpy as np
@@ -16,7 +17,7 @@ from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
-from lib.plotting.KMA import Plot_Weather_Types, Plot_3D_3PCs_WTs
+from lib.plotting.KMA import Plot_Weather_Types
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
@@ -73,15 +74,13 @@ n_plot = 6
 p_export = op.join(p_export_figs, 'latavg_EOFs')  # if only show: None
 PlotEOFs(xds_PCA, n_plot, p_export)
 
-# TODO: plot 3D PCs
-
 
 # --------------------------------------
 # KMA Classification 
 print('\nKMA Classification...')
 xds_AWT = KMA_simple(
     xds_PCA, num_clusters, repres)
-# TODO: A VECES SALE UN CLUSTER DE MAS ?
+# TODO: resultado KMA a veces funciona a veces no????? 
 
 # PCA, KMA  dates (annual array)
 dates_fit = [datetime(y,m1,01) for y in range(y1,yN+1)]
@@ -100,10 +99,6 @@ Plot_Weather_Types(xds_AWT, xds_PCA.pred_lon, p_export)
 
 # TODO: plot year/label wts
 
-# Plot 3D Weather Types to PC1,2,3
-p_export = op.join(p_export_figs, 'AWT_WeatherTypes_3D_PCs.png')
-Plot_3D_3PCs_WTs(xds_AWT, p_export)
-
 
 
 # --------------------------------------
@@ -112,8 +107,9 @@ kma_order = xds_AWT.order.values
 kma_labels = xds_AWT.bmus.values
 
 # Get bmus Persistences
-# TODO: ver como guardar esta info / donde se usa?
-d_pers_bmus = Persistences(xds_AWT.bmus.values)
+# TODO: guardar con pickle. donde se usa?
+# calcular para simulado?
+#d_pers_bmus = Persistences(xds_AWT.bmus.values)
 
 # first 3 PCs
 PCs = xds_AWT.PCs.values
@@ -123,7 +119,8 @@ PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
 PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
 
 # for each WT: generate copulas and simulate data 
-d_pcs_wt = {}
+d_pcs_fit = {}
+d_pcs_rnd = {}
 for i in range(num_clusters):
 
     # getting copula number from plotting order
@@ -150,7 +147,16 @@ for i in range(num_clusters):
     PC3_rnd = ksdensity_ICDF(PC3[ind], U_sim[:,2])
 
     # store data  # TODO : num o i????
-    d_pcs_wt['wt_{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC2_rnd))
+    d_pcs_fit['wt_{0}'.format(num+1)] = np.column_stack((PC1[ind],PC2[ind],PC3[ind]))
+    d_pcs_rnd['wt_{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC3_rnd))
+
+# store WTS PC123 fit and rnd_generation
+p_pick = op.join(p_export_figs, 'd_pcs_fit.pickle')
+pickle.dump(d_pcs_fit, open(p_pick, 'wb'))
+p_pick = op.join(p_export_figs, 'd_pcs_rnd.pickle')
+pickle.dump(d_pcs_rnd, open(p_pick, 'wb'))
+
+# TODO: PLOTEAR HISTOGRAMAS Y PCS3D PARA COMPARAR FIT VS. RND
 
 
 # --------------------------------------
@@ -178,7 +184,7 @@ ALRW.SetFitData(num_clusters, xds_bmus_fit, d_terms_settings)
 ALRW.FitModel(max_iter=10000)
 
 # show fit report
-ALRW.Report_Fit(export=True)
+#ALRW.Report_Fit(export=True)
 
 
 # --------------------------------------
@@ -196,16 +202,21 @@ evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
 print('\nGenerating PCs simulation: PC1, PC2, PC3 (random value withing category)...')
 pcs123_sim = np.empty((len(evbmus_sim),3)) * np.nan
 for c, m in enumerate(evbmus_sim):
-    options = d_pcs_wt['wt_{0}'.format(int(m))]
+    options = d_pcs_rnd['wt_{0}'.format(int(m))]
     r = np.random.randint(options.shape[0])
     pcs123_sim[c,:] = options[r,:]
+
+# denormalize simulated PCs
+PC1_sim = np.multiply(pcs123_sim[:,0], np.sqrt(variance[0]))
+PC2_sim = np.multiply(pcs123_sim[:,1], np.sqrt(variance[1]))
+PC3_sim = np.multiply(pcs123_sim[:,2], np.sqrt(variance[2]))
 
 # store simulated PCs
 xds_PCs_sim = xr.Dataset(
     {
-        'PC1'  :(('time',), pcs123_sim[:,0]),
-        'PC2'  :(('time',), pcs123_sim[:,1]),
-        'PC3'  :(('time',), pcs123_sim[:,2]),
+        'PC1'  :(('time',), PC1_sim),
+        'PC2'  :(('time',), PC2_sim),
+        'PC3'  :(('time',), PC3_sim),
     },
     {'time' : dates_sim}
 )
