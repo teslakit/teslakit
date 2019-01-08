@@ -5,6 +5,7 @@ import os
 import os.path as op
 import numpy as np
 from math import sqrt
+import itertools
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -17,9 +18,19 @@ from datetime import datetime, timedelta
 from lib.custom_dateutils import xds2datetime
 from lib.util.operations import GetDivisors
 
-# fig aspect and size
+# fig aspecti, size, export png dpi
 _faspect = (1+5**0.5)/2.0
 _fsize = 7
+_fedpi = 128
+
+# TODO: figure parameters
+_fntsize_label = 8
+_fntsize_legend = 8
+_fntsize_title = 8
+# etc
+
+# Weather Type colors
+wt_colors = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
 
 def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     '''
@@ -78,10 +89,11 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
         fig.savefig(p_export, dpi=96)
         plt.close()
 
-
 def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
     '''
-    TODO DOC
+    Plot Weather types
+
+    xds_AWT: KMA output
     '''
 
     bmus = xds_AWT.bmus.values[:]
@@ -103,9 +115,6 @@ def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
     gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.10, hspace=0.15)
-
-    # TODO MEJORAR
-    cs = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
 
     grid_row = 0
     grid_col = 0
@@ -144,43 +153,41 @@ def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
         fig.savefig(p_export, dpi=128)
         plt.close()
 
-def Plot_3D_3PCs_WTs(xds_AWT, p_export=None):
+def Plot_WTs_Dates(xds_AWT, p_export=None):
     '''
-    TODO DOC
+    Plot each Weather Type dates
+
+    xds_AWT: KMA output
     '''
 
-    variance = xds_AWT.variance.values[:]
     bmus = xds_AWT.bmus.values[:]
-    PCs = xds_AWT.PCs.values[:]
+    dates = xds_AWT.time.values[:]
     order = xds_AWT.order.values[:]
     n_clusters = len(xds_AWT.n_clusters)
+    ys_str = np.array([str(d).split('-')[0] for d in dates])
 
-    PC1 = np.divide(PCs[:,0], np.sqrt(variance[0]))
-    PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
-    PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
+    text_cycler = itertools.cycle(['bottom', 'top'])
 
     # plot figure
-    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
-    ax = fig.add_subplot(111, projection='3d')
-
-    # TODO MEJORAR
-    cs = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
+    fig, ax = plt.subplots(figsize=(_faspect*_fsize, _fsize))
 
     for ic in range(n_clusters):
         num = order[ic]
-        ind =(np.where(bmus==num)[0][:])
+        index = np.where(bmus==num)[0][:]
 
-        # scatter  plot
-        ax.scatter(
-            PC1[ind],PC2[ind],PC3[ind],
-            c = cs[ic],
-            label = 'WT#{0}'.format(ic+1)
+        ax.plot(
+            dates[index], bmus[index],
+            marker='+',markersize=7, linestyle='', color=wt_colors[ic]
         )
-
-    ax.legend(loc='best')
-    ax.set_xlabel('PC1',{'fontsize':10})
-    ax.set_ylabel('PC2',{'fontsize':10})
-    ax.set_zlabel('PC3',{'fontsize':10})
+        va = 'bottom'
+        for tx,ty,tt in zip(dates[index], bmus[index], ys_str[index]):
+            ax.text(
+                tx, ty, tt,
+                {'fontsize':6},
+                verticalalignment=text_cycler.next(),
+            )
+        ax.set_ylabel('WT',{'fontsize':8})
+        ax.set_xlabel('Year',{'fontsize':8})
 
     # show / export
     if not p_export:
@@ -188,4 +195,92 @@ def Plot_3D_3PCs_WTs(xds_AWT, p_export=None):
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
+def Plot_3D_3PCs_WTs(d_wts, ttl='Weather Types PCs', p_export=None):
+    '''
+    Plots PC1 PC2 PC3 with 3D axis
+
+    d_wts: dictionary. contains PCs (nx3) for each Weather Type
+    '''
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # plot each weather type
+    wt_keys = sorted(d_wts.keys())
+    for ic, k in enumerate(wt_keys):
+        PC1 = d_wts[k][:,0]
+        PC2 = d_wts[k][:,1]
+        PC3 = d_wts[k][:,2]
+
+        # scatter  plot
+        ax.scatter(
+            PC1, PC2, PC3,
+            c = wt_colors[ic],
+            label = k,
+        )
+
+    ax.legend(loc='best')
+    ax.set_xlabel('PC1', {'fontsize':10})
+    ax.set_ylabel('PC2', {'fontsize':10})
+    ax.set_zlabel('PC3', {'fontsize':10})
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=128)
+        plt.close()
+
+def Plot_Compare_WTs_hist(d_wts_fit, d_wts_rnd, p_export=None):
+    '''
+    Plots PC1 PC2 PC3 fit vs rnd histograms for each Weather Type
+    Generates one figure for each Weather Type
+
+    d_wts_*: dictionary. contains PCs (nx3) for each Weather Type
+    (same keys required)
+    '''
+
+    # plot parameters  
+    nb = 20
+
+    # plot each weather type
+    wt_keys = sorted(d_wts_fit.keys())
+    for k in wt_keys:
+
+        # get data
+        PC1_fit = d_wts_fit[k][:,0]
+        PC2_fit = d_wts_fit[k][:,1]
+        PC3_fit = d_wts_fit[k][:,2]
+
+        PC1_rnd = d_wts_rnd[k][:,0]
+        PC2_rnd = d_wts_rnd[k][:,1]
+        PC3_rnd = d_wts_rnd[k][:,2]
+
+        # plot figure
+        fig, axs = plt.subplots(
+            ncols=2, nrows=3,
+            figsize=(_faspect*_fsize, _fsize),
+        )
+        fig.suptitle(k, fontsize=10, fontweight='bold')
+
+        # compare histograms
+        axs[0,0].hist(PC1_fit, nb, density=True, label='PC1_fit')
+        axs[0,1].hist(PC1_rnd, nb, density=True, label='PC1_rnd')
+        axs[1,0].hist(PC2_fit, nb, density=True, label='PC2_fit')
+        axs[1,1].hist(PC2_rnd, nb, density=True, label='PC2_rnd')
+        axs[2,0].hist(PC3_fit, nb, density=True, label='PC3_fit')
+        axs[2,1].hist(PC3_rnd, nb, density=True, label='PC3_rnd')
+
+        # show / export
+        if not p_export:
+            plt.show()
+        else:
+            if not op.isdir(p_export):
+                os.makedirs(p_export)
+            p_tmp = op.join(p_export, 'hist_{0}.png'.format(k))
+            fig.savefig(p_tmp, dpi=128)
+            plt.close()
 
