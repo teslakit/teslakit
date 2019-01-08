@@ -17,7 +17,8 @@ from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
 from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
-from lib.plotting.KMA import Plot_Weather_Types
+from lib.plotting.KMA import Plot_Weather_Types, Plot_WTs_Dates
+from lib.plotting.KMA import Plot_3D_3PCs_WTs, Plot_Compare_WTs_hist
 from lib.PCA import CalcPCA_latavg as CalcPCA
 from lib.PCA import CalcRunningMean
 from lib.objs.alr_wrapper import ALR_WRP
@@ -97,8 +98,9 @@ print('\n{0} PCA and KMA stored at:\n{1}\n{2}'.format(
 p_export = op.join(p_export_figs, 'AWT_WeatherTypes.png')
 Plot_Weather_Types(xds_AWT, xds_PCA.pred_lon, p_export)
 
-# TODO: plot year/label wts
-
+# Plot year/label wts
+p_export = op.join(p_export_figs, 'AWT_WT_Dates.png')
+Plot_WTs_Dates(xds_AWT, p_export)
 
 
 # --------------------------------------
@@ -147,8 +149,8 @@ for i in range(num_clusters):
     PC3_rnd = ksdensity_ICDF(PC3[ind], U_sim[:,2])
 
     # store data  # TODO : num o i????
-    d_pcs_fit['wt_{0}'.format(num+1)] = np.column_stack((PC1[ind],PC2[ind],PC3[ind]))
-    d_pcs_rnd['wt_{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC3_rnd))
+    d_pcs_fit['WT #{0}'.format(num+1)] = np.column_stack((PC1[ind],PC2[ind],PC3[ind]))
+    d_pcs_rnd['WT #{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC3_rnd))
 
 # store WTS PC123 fit and rnd_generation
 p_pick = op.join(p_export_figs, 'd_pcs_fit.pickle')
@@ -156,7 +158,17 @@ pickle.dump(d_pcs_fit, open(p_pick, 'wb'))
 p_pick = op.join(p_export_figs, 'd_pcs_rnd.pickle')
 pickle.dump(d_pcs_rnd, open(p_pick, 'wb'))
 
-# TODO: PLOTEAR HISTOGRAMAS Y PCS3D PARA COMPARAR FIT VS. RND
+
+# Plot Weather Type 3D PCs for fit and random generation data
+p_export = op.join(p_export_figs, 'AWT_WTs_3DPCs_fit.png')
+Plot_3D_3PCs_WTs(d_pcs_fit, 'Weather Types PCs (fit)', p_export)
+
+p_export = op.join(p_export_figs, 'AWT_WTs_3DPCs_rnd.png')
+Plot_3D_3PCs_WTs(d_pcs_rnd, 'Weather Types PCs (rnd)', p_export)
+
+# Plot Weather Type histogram comparison for fit and random generation data
+p_export = op.join(p_export_figs, 'AWT_WTs_Histograms')  # folder
+Plot_Compare_WTs_hist(d_pcs_fit, d_pcs_rnd, p_export)
 
 
 # --------------------------------------
@@ -202,7 +214,7 @@ evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
 print('\nGenerating PCs simulation: PC1, PC2, PC3 (random value withing category)...')
 pcs123_sim = np.empty((len(evbmus_sim),3)) * np.nan
 for c, m in enumerate(evbmus_sim):
-    options = d_pcs_rnd['wt_{0}'.format(int(m))]
+    options = d_pcs_rnd['WT #{0}'.format(int(m))]
     r = np.random.randint(options.shape[0])
     pcs123_sim[c,:] = options[r,:]
 
