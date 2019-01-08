@@ -221,6 +221,7 @@ class PathControl(object):
             'mareografo_nc':  op.join(pt, 'Mareografo_KWA.nc'),
             'hist_astro': op.join(pt, 'tide_astro_hist.nc'),
             'sim_astro': op.join(pt, 'tide_astro_sim.nc'),
+            'sim_mmsl': op.join(pt, 'tide_mmsl_sim.nc'),
         }
 
         # waves data 
