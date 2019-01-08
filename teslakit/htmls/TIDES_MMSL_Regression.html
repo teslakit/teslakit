@@ -11797,6 +11797,7 @@ div#notebook {
 <span class="kn">from</span> <span class="nn">lib.objs.tkpaths</span> <span class="kn">import</span> <span class="n">Site</span>
 <span class="kn">from</span> <span class="nn">lib.tides</span> <span class="kn">import</span> <span class="n">Calculate_MMSL</span>
 <span class="kn">from</span> <span class="nn">lib.statistical</span> <span class="kn">import</span> <span class="n">runmean</span>
+<span class="kn">from</span> <span class="nn">lib.io.aux_nc</span> <span class="kn">import</span> <span class="n">StoreBugXdset</span> <span class="k">as</span> <span class="n">sbxds</span>
 <span class="kn">from</span> <span class="nn">lib.custom_dateutils</span> <span class="kn">import</span> <span class="n">date2yearfrac</span> <span class="k">as</span> <span class="n">d2yf</span>
 <span class="kn">from</span> <span class="nn">lib.plotting.tides</span> <span class="kn">import</span> <span class="n">Plot_Tide_SLR</span><span class="p">,</span> <span class="n">Plot_Tide_RUNM</span><span class="p">,</span> <span class="n">Plot_Tide_MMSL</span><span class="p">,</span> \
 <span class="n">Plot_Validate_MMSL_tseries</span><span class="p">,</span> <span class="n">Plot_Validate_MMSL_scatter</span><span class="p">,</span> <span class="n">Plot_MMSL_Prediction</span><span class="p">,</span> \
@@ -11813,8 +11814,7 @@ div#notebook {
 <span class="n">p_sst_PCs_sim_m</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">sst</span><span class="o">.</span><span class="n">PCs_sim_m</span>  <span class="c1"># monthly simulated PCs</span>
 
 <span class="c1"># output files</span>
-<span class="c1"># TODO: RESULTADOS FINALES MALOS, COMPROBAR LAS SST_PCs</span>
-<span class="c1"># TODO: GUARDAR PREDICCION MMSL</span>
+<span class="n">p_mmsl_sim</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">tds</span><span class="o">.</span><span class="n">sim_mmsl</span>
 
 <span class="c1"># export figs</span>
 <span class="n">p_export_tds</span> <span class="o">=</span> <span class="n">site</span><span class="o">.</span><span class="n">pc</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">exp</span><span class="o">.</span><span class="n">tds</span>
@@ -12158,10 +12158,25 @@ Calculating Monthly Mean Sea Level between 1996 and 2017...
 <span class="n">y0s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">frac_year_sim</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 <span class="n">yp_1000y</span> <span class="o">=</span> <span class="n">modelfun</span><span class="p">(</span><span class="n">res_lsq</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">frac_year_sim</span><span class="p">,</span> <span class="n">MMSL_PC1_sim</span><span class="p">,</span> <span class="n">MMSL_PC2_sim</span><span class="p">,</span> <span class="n">MMSL_PC3_sim</span><span class="p">,</span> <span class="n">y0s</span><span class="p">)</span>
 
+
+<span class="c1"># plot mmsl prediction</span>
 <span class="n">Plot_MMSL_Prediction</span><span class="p">(</span><span class="n">PCs_sim_time</span><span class="p">,</span> <span class="n">yp_1000y</span><span class="p">)</span>
 
 <span class="c1"># compare model histograms</span>
 <span class="n">Plot_MMSL_Histogram</span><span class="p">(</span><span class="n">yp</span><span class="p">,</span> <span class="n">yp_1000y</span><span class="p">)</span>
+
+
+<span class="c1"># Store data</span>
+<span class="n">xds_mmsl_sim</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;mmsl&#39;</span> <span class="p">:</span> <span class="p">((</span><span class="s1">&#39;time&#39;</span><span class="p">,),</span> <span class="n">yp_1000y</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;time&#39;</span> <span class="p">:</span> <span class="n">PCs_sim_time</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1"># xarray.Dataset.to_netcdf() wont work with this time array and time dtype</span>
+<span class="n">sbxds</span><span class="p">(</span><span class="n">xds_mmsl_sim</span><span class="p">,</span> <span class="n">p_mmsl_sim</span><span class="p">)</span>
+<span class="k">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Monthly Mean Sea Level Simulation stored at:</span><span class="se">\n</span><span class="s1">{0}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">p_mmsl_sim</span><span class="p">))</span>
 </pre></div>
 
 </div>
@@ -12214,6 +12229,20 @@ Calculating Monthly Mean Sea Level between 1996 and 2017...
 >
 </div>
 
+</div>
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+Monthly Mean Sea Level Simulation stored at:
+/Users/nico/Projects/TESLA-kit/source/teslakit/data/sites/KWAJALEIN/TIDE/tide_mmsl_sim.nc
+
+</pre>
+</div>
 </div>
 
 </div>
