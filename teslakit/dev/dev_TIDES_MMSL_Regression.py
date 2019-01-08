@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 from lib.objs.tkpaths import Site
 from lib.tides import Calculate_MMSL
 from lib.statistical import runmean
+from lib.io.aux_nc import StoreBugXdset as sbxds
 from lib.custom_dateutils import date2yearfrac as d2yf
 from lib.plotting.tides import Plot_Tide_SLR, Plot_Tide_RUNM, Plot_Tide_MMSL, \
 Plot_Validate_MMSL_tseries, Plot_Validate_MMSL_scatter, Plot_MMSL_Prediction, \
@@ -35,8 +36,7 @@ p_sst_KMA = site.pc.site.sst.KMA
 p_sst_PCs_sim_m = site.pc.site.sst.PCs_sim_m  # monthly simulated PCs
 
 # output files
-# TODO: RESULTADOS FINALES MALOS, COMPROBAR LAS SST_PCs
-# TODO: GUARDAR PREDICCION MMSL
+p_mmsl_sim = site.pc.site.tds.sim_mmsl
 
 # export figs
 p_export_tds = site.pc.site.exp.tds
@@ -190,10 +190,25 @@ frac_year_sim = np.array([d2yf(x) for x in PCs_sim_time])
 y0s = np.zeros(frac_year_sim.shape)
 yp_1000y = modelfun(res_lsq.x, frac_year_sim, MMSL_PC1_sim, MMSL_PC2_sim, MMSL_PC3_sim, y0s)
 
+
+# plot mmsl prediction
 p_export = op.join(p_export_tds, 'MMSL_NLM_prediction_1000y.png')
 Plot_MMSL_Prediction(PCs_sim_time, yp_1000y, p_export)
 
 # compare model histograms
 p_export = op.join(p_export_tds, 'MMSL_NLM_histograms.png')
 Plot_MMSL_Histogram(yp, yp_1000y, p_export)
+
+
+# Store data
+xds_mmsl_sim = xr.Dataset(
+    {
+        'mmsl' : (('time',), yp_1000y),
+    },
+    {'time' : PCs_sim_time}
+)
+
+# xarray.Dataset.to_netcdf() wont work with this time array and time dtype
+sbxds(xds_mmsl_sim, p_mmsl_sim)
+print('\nMonthly Mean Sea Level Simulation stored at:\n{0}\n'.format(p_mmsl_sim))
 
