@@ -34,7 +34,7 @@ p_dbins = op.join(p_test, 'dbins_hydrographs.pk')
 xds_WAVES = ReadGowMat(p_GOW)
 
 d_KMA = ReadMatfile(p_KMA)
-xds_KMA = xr.Dataset(
+xds_BMUS = xr.Dataset(
     {
         'bmus': (('time',), d_KMA['KMA']['CorrectedBmus'])
     },
@@ -43,20 +43,14 @@ xds_KMA = xr.Dataset(
     }
 )
 
+
 # --------------------------------------
 # Calculate hydrographs 
-dict_bins = Calculate_Hydrographs(xds_KMA, xds_WAVES)
+dict_bins = Calculate_Hydrographs(xds_BMUS, xds_WAVES)
+
+# TODO: add hydrograph plots lib/plotting/intradaily
 
 # store output
-pickle.dump(d_bins, open(p_dbins,'wb'))
+pickle.dump(dict_bins, open(p_dbins,'wb'))
 #pickle.load(open(p_dbins,'rb'))  # for loading
-
-
-
-# TODO: desarrollar el dev/ y el ipynb/
-
-# TODO: LLAMAR FUNCIONES PLOTEO DE lib/plotting/intradaily.py. Input: 
-
-# TODO se usa BMUS CORRECTED, QUE TIENE 36 WTs
-# TODO MIRAR EN DEV QUE HACEMOS CON LOS WT STORMS (37-42): GUARDAMOS OTRO BMUS??
 
