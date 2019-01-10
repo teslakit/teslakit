@@ -61,7 +61,7 @@ class Site(object):
 
 class PathControl(object):
     'auxiliar object for handling database and site paths'
-    # TODO FUNCION QUE COMPRUEBE ARCHIVOS INPUT DE SITE SIN EJECUTAR
+    # TODO: COMMON AND SITE DATABASE CAN BE IMPROVED
 
     def __init__(self):
 
@@ -203,6 +203,7 @@ class PathControl(object):
             'gowpoint':  op.join(pt, 'gow2_062_ 9.50_167.25.mat'),
             'slp':       op.join(pt, 'SLP.nc'),
             'pred_slp':  op.join(pt, 'pred_SLP'),
+            'hydrographs':  op.join(pt, 'bins_hydrographs.pk'),  # intradaily
             'alrw':      op.join(pt, 'alr_w'),       # auto regresive logistic sim 
         }
 
@@ -214,7 +215,6 @@ class PathControl(object):
         }
 
         # tide gauges 
-        # TODO: RESOLVER DUDA DATOS MAREA. JUNTAR EN NC
         pt = op.join(p_site, 'TIDE')
         dd_tds = {
             'mareografo':  op.join(pt, 'Mareografo_KWA.mat'),
