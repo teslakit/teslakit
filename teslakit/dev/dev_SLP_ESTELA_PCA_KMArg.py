@@ -9,6 +9,7 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 import numpy as np
 import xarray as xr
+import pickle
 
 # tk libs
 from lib.objs.tkpaths import Site
@@ -21,17 +22,22 @@ from lib.tcyclone import Extract_Circle
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_estela_coast_mat = site.pc.site.est.coastmat  # estela coast (.mat)
-p_estela_data_mat = site.pc.site.est.estelamat  # estela data (.mat)
-p_gow_mat = site.pc.site.est.gowpoint  # gow point (.mat)
-p_slp = site.pc.site.est.slp  # site slp data (.nc)
-p_hist_tcs = site.pc.DB.tcs.noaa_fix  # WMO historical TCs
+p_est_coastmat = ST.est.coastmat       # estela coast (.mat)
+p_est_datamat = ST.est.estelamat       # estela data (.mat)
+p_gow_mat = ST.est.gowpoint            # gow point (.mat)
+p_wvs_parts_p1 = ST.wvs.partitions_p1
+p_slp = ST.est.slp                     # site slp data (.nc)
+p_hist_tcs = DB.tcs.noaa_fix           # WMO historical TCs
 
 # output files
-p_estela_pred = site.pc.site.est.pred_slp  # estela slp predictor
+p_est_pred = ST.est.pred_slp           # estela slp predictor
+p_dbins = ST.est.hydrographs           # intradaily mu tau hydrographs
 
 # parameters for KMA_REGRESSION_GUIDED
 kma_date_ini = site.params.ESTELA_KMA_RG.date_ini
@@ -47,10 +53,10 @@ r2 = float(site.params.TCS.r2)   # smaller one
 
 # --------------------------------------
 # load sea polygons for mask generation
-ls_sea_poly = ReadCoastMat(p_estela_coast_mat)
+ls_sea_poly = ReadCoastMat(p_est_coastmat)
 
 # load estela data 
-xds_est = ReadEstelaMat(p_estela_data_mat)
+xds_est = ReadEstelaMat(p_est_datamat)
 
 
 # --------------------------------------
@@ -100,7 +106,6 @@ xds_est_site = xds_est.sel(
 )
 estela_D = xds_est_site.D_y1993to2012
 
-
 # generate SLP mask using estela
 mask_est = np.zeros(estela_D.shape)
 mask_est[np.where(estela_D<1000000000)]=1
@@ -112,7 +117,7 @@ xds_SLP_day.update({
 
 # --------------------------------------
 # Use a tesla-kit predictor
-pred = Predictor(p_estela_pred)
+pred = Predictor(p_est_pred)
 pred.data = xds_SLP_day
 
 # Calculate PCA (dynamic estela predictor)
@@ -139,7 +144,6 @@ pred.Save()
 pred.Plot_KMArg_clusters_datamean('SLP', show=False, mask_name='mask_estela')
 
 
-
 # --------------------------------------
 # load storms, find inside circle and modify predictor KMA 
 xds_wmo_fix = xr.open_dataset(p_hist_tcs)
@@ -160,4 +164,18 @@ storm_categs = xds_in.category.values[:]
 # modify predictor KMA with circle storms data
 print('\nAdding Historical TCs to SLP_PREDICTOR KMA_RG bmus...')
 pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
+
+
+# --------------------------------------
+# Calculate intradaily MU TAU hydrographs 
+xds_WAVES_p1 = ReadGowMat(p_wvs_parts_p1)
+
+print('\nCalculating MU TAU hydrographs...')
+dict_bins = pred.Calc_MU_TAU_Hydrographs(xds_WAVES_p1)
+
+# TODO: add hydrograph plots lib/plotting/intradaily
+
+# store hydrographs
+pickle.dump(dict_bins, open(p_dbins,'wb'))
+print('\nMU, TAU hydrographs stored at:\n{0}'.format(p_dbins))
 
