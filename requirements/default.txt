@@ -16,4 +16,6 @@ configparser==3.5.0
 requests
 cython
 pillow
+cftime==1.0.3.4
+Cartopy==0.17.0
 
