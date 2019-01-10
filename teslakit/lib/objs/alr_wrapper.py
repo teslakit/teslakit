@@ -295,25 +295,8 @@ class ALR_WRP(object):
             # mount data with pandas
             X = pd.DataFrame(X, columns=self.terms_fit_names)
             y = pd.DataFrame(y, columns=['bmus'])
-            
-            # TODO: PLOTEAR TERMINOS PARA VER CON FER
-            #print X
-            
-            #b0 = 2
-            #b1 = 1
-            #b2 = 0.5
-            #b3 = 0.7
 
-            #YY = b0*X['intercept'] +b1*X['PC1']+b2*X['ss_cos_2']+b3*X['PC1_cos']
-
-            #import matplotlib.pyplot as plt
-            #YY.plot()
-            #plt.show()
-            #import sys; sys.exit()
-
-
-
-            # TODO: CAPTURAR LA EVOLUCION DE LOS VALORES DURANTE LAS ITERS
+            # TODO: CAPTURAR LA EVOLUCION DE L (maximun-likelihood) 
 
             self.model = sm.MNLogit(y,X).fit(
                 method='lbfgs',
@@ -573,9 +556,6 @@ class ALR_WRP(object):
 
             # covars sim
             cov_sim_values = xds_cov_sim.cov_values.values
-            print xds_cov_sim.time
-            print ''
-            print xds_cov_sim.time
 
             for ic, cn in enumerate(cov_names):
 
