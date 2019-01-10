@@ -189,7 +189,6 @@ def ReadEstelaMat(p_mfile):
             'latitude': latitude,
         },
         attrs = {
-            # TODO: PREGUNTAR ANA
             #'first_day':np.floor(np.nanmax(d_D['y1993to2012']))+1
         }
     )
