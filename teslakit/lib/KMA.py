@@ -136,8 +136,6 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     returns a xarray.Dataset containing KMA data
     '''
 
-    # TODO SACAR EL ORDER COMO EN KMA REGRESION GUIDED
-
     # PCA data
     variance = xds_PCA['variance']
     EOFs = xds_PCA['EOFs']
