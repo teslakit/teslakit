@@ -19,21 +19,24 @@ from lib.plotting.storms import WorldMap_Storms
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_wvs_parts = site.pc.site.wvs.partitions_p1
-p_hist_tcs = site.pc.DB.tcs.noaa_fix
+p_wvs_parts = ST.wvs.partitions_p1
+p_hist_tcs = DB.tcs.noaa_fix
 
 # output files
-p_hist_tcs = site.pc.DB.tcs.noaa
-p_hist_tcs_fix = site.pc.DB.tcs.noaa_fix
-p_tcs_circle_hist = site.pc.site.tcs.circle_hist
+p_hist_tcs = DB.tcs.noaa
+p_hist_tcs_fix = DB.tcs.noaa_fix
+p_tcs_circle_hist = ST.tcs.circle_hist
 
 # wave point lon, lat and radius for TCs selection
-pnt_lon = float(site.params.WAVES.point_longitude)
-pnt_lat = float(site.params.WAVES.point_latitude)
-r2 = float(site.params.TCS.r2)   # smaller one
+pnt_lon = float(PR.WAVES.point_longitude)
+pnt_lat = float(PR.WAVES.point_latitude)
+r2 = float(PR.TCS.r2)   # smaller one
 
 
 # --------------------------------------

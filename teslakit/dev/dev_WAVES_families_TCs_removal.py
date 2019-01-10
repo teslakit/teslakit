@@ -23,26 +23,29 @@ from lib.tcyclone import Extract_Circle
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_wvs_parts = site.pc.site.wvs.partitions_p1
-p_hist_tcs = site.pc.DB.tcs.noaa_fix
+p_wvs_parts = ST.wvs.partitions_p1
+p_hist_tcs = DB.tcs.noaa_fix
 
 # output files
-p_wvs_parts_noTCs = site.pc.site.wvs.partitions_noTCs
-p_wvs_fams_noTCs = site.pc.site.wvs.families_noTCs
+p_wvs_parts_noTCs = ST.wvs.partitions_noTCs
+p_wvs_fams_noTCs = ST.wvs.families_noTCs
 
 # wave point lon, lat, families sectors, and radius for TCs selection
-wvs_sectors = ast.literal_eval(site.params.WAVES.sectors)
-pnt_lon = float(site.params.WAVES.point_longitude)
-pnt_lat = float(site.params.WAVES.point_latitude)
-r2 = float(site.params.TCS.r2)   # smaller one
+wvs_sectors = ast.literal_eval(PR.WAVES.sectors)
+pnt_lon = float(PR.WAVES.point_longitude)
+pnt_lat = float(PR.WAVES.point_latitude)
+r2 = float(PR.TCS.r2)   # smaller one
 
 # also date limits for TCs removal from waves data, and TC time window (hours)
-tc_rm_date1 = site.params.WAVES.tc_remov_date1
-tc_rm_date2 = site.params.WAVES.tc_remov_date2
-tc_time_window = int(site.params.WAVES.tc_remov_timew)
+tc_rm_date1 = PR.WAVES.tc_remov_date1
+tc_rm_date2 = PR.WAVES.tc_remov_date2
+tc_time_window = int(PR.WAVES.tc_remov_timew)
 
 
 # --------------------------------------

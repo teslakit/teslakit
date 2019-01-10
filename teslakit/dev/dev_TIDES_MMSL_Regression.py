@@ -30,20 +30,24 @@ Plot_MMSL_Histogram
 # Site paths and parameters
 site = Site('KWAJALEIN')
 
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
+
 # input files
-p_mareografo_nc = site.pc.site.tds.mareografo_nc
-p_sst_KMA = site.pc.site.sst.KMA
-p_sst_PCs_sim_m = site.pc.site.sst.PCs_sim_m  # monthly simulated PCs
+p_mareografo_nc = ST.tds.mareografo_nc
+p_sst_KMA = ST.sst.KMA
+p_sst_PCs_sim_m = ST.sst.PCs_sim_m     # monthly simulated PCs
 
 # output files
-p_mmsl_sim = site.pc.site.tds.sim_mmsl
+p_mmsl_sim = ST.tds.sim_mmsl
 
 # export figs
-p_export_tds = site.pc.site.exp.tds
+p_export_tds = ST.exp.tds
 
 # parameters for mmsl calculation
-mmsl_year_ini = int(site.params.TIDES.mmsl_year_ini)
-mmsl_year_end = int(site.params.TIDES.mmsl_year_end)
+mmsl_year_ini = int(PR.TIDES.mmsl_year_ini)
+mmsl_year_end = int(PR.TIDES.mmsl_year_end)
 
 
 # --------------------------------------

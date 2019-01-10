@@ -24,23 +24,25 @@ from lib.custom_dateutils import xds2datetime as x2d
 # Site paths and parameters
 site = Site('KWAJALEIN')
 
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
+
 # input files
-p_estela_pred = site.pc.site.est.pred_slp
-p_estela_kma = op.join(p_estela_pred, 'kma.nc')  # ESTELA + TCs Predictor
-p_sst_PCA = site.pc.site.sst.PCA  # SST PCA
-p_mjo_hist = site.pc.DB.mjo.hist  # historica MJO
+p_est_pred = ST.est.pred_slp
+p_est_kma = op.join(p_est_pred, 'kma.nc')  # ESTELA + TCs Predictor
+p_sst_PCA = ST.sst.PCA                     # SST PCA
+p_mjo_hist = DB.mjo.hist                   # historical MJO
 
-p_sst_PCs_sim_d = site.pc.site.sst.PCs_sim_d  # daily PCs sim
-p_mjo_sim =  site.pc.site.mjo.sim  # daily MJO sim
-
+p_sst_PCs_sim_d = ST.sst.PCs_sim_d  # daily PCs sim
+p_mjo_sim =  ST.mjo.sim  # daily MJO sim
 
 # output files
-p_alr_covars =  site.pc.site.est.alrw  # alr wrapper
-
+p_alr_covars =  ST.est.alrw  # alr wrapper
 
 # ALR parameters
-alr_markov_order = int(site.params.SIMULATION.alr_covars_markov)
-alr_seasonality = ast.literal_eval(site.params.SIMULATION.alr_covars_seasonality)
+alr_markov_order = int(PR.SIMULATION.alr_covars_markov)
+alr_seasonality = ast.literal_eval(PR.SIMULATION.alr_covars_seasonality)
 
 
 # --------------------------------------

@@ -31,31 +31,35 @@ from lib.custom_dateutils import xds_reindex_monthly as xr_monthly
 # Site paths and parameters
 site = Site('KWAJALEIN')
 
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
+
 # input files
-p_SST = site.pc.DB.sst.hist_pacific  # SST Pacific area
+p_SST = DB.sst.hist_pacific  # SST Pacific area
 
 # output files
-p_export_figs = site.pc.site.exp.sst
-p_sst_PCA = site.pc.site.sst.PCA
-p_sst_KMA = site.pc.site.sst.KMA
-p_sst_alrw = site.pc.site.sst.alrw
-p_PCs_sim = site.pc.site.sst.PCs_sim
-p_PCs_sim_d = site.pc.site.sst.PCs_sim_d
-p_PCs_sim_m = site.pc.site.sst.PCs_sim_m
+p_export_figs = ST.exp.sst
+p_sst_PCA = ST.sst.PCA
+p_sst_KMA = ST.sst.KMA
+p_sst_alrw = ST.sst.alrw
+p_PCs_sim = ST.sst.PCs_sim
+p_PCs_sim_d = ST.sst.PCs_sim_d
+p_PCs_sim_m = ST.sst.PCs_sim_m
 
 # PCA dates parameters
 pred_name = 'SST'
-y1 = int(site.params.SST_AWT.pca_year_ini)
-yN = int(site.params.SST_AWT.pca_year_end)
-m1 = int(site.params.SST_AWT.pca_month_ini)
-mN = int(site.params.SST_AWT.pca_month_end)
-num_clusters = int(site.params.SST_AWT.num_clusters)
-repres = float(site.params.SST_AWT.repres)
-num_PCs_rnd = int(site.params.SST_AWT.num_pcs_rnd)
+y1 = int(PR.SST_AWT.pca_year_ini)
+yN = int(PR.SST_AWT.pca_year_end)
+m1 = int(PR.SST_AWT.pca_month_ini)
+mN = int(PR.SST_AWT.pca_month_end)
+num_clusters = int(PR.SST_AWT.num_clusters)
+repres = float(PR.SST_AWT.repres)
+num_PCs_rnd = int(PR.SST_AWT.num_pcs_rnd)
 
 # Simulation dates (ALR)
-y1_sim = int(site.params.SIMULATION.date_ini.split('-')[0])
-y2_sim = int(site.params.SIMULATION.date_end.split('-')[0])
+y1_sim = int(PR.SIMULATION.date_ini.split('-')[0])
+y2_sim = int(PR.SIMULATION.date_end.split('-')[0])
 
 
 # --------------------------------------

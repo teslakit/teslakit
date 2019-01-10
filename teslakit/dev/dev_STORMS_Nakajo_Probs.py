@@ -22,19 +22,22 @@ SortCategoryCount
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_nakajo_mats = site.pc.DB.tcs.nakajo_mats
+p_nakajo_mats = DB.tcs.nakajo_mats
 
 # output files
-p_probs_synth = site.pc.site.tcs.probs_synth
+p_probs_synth = ST.tcs.probs_synth
 
 # wave point lon, lat, and radius for TC selection
-pnt_lon = float(site.params.WAVES.point_longitude)
-pnt_lat = float(site.params.WAVES.point_latitude)
-r1 = float(site.params.TCS.r1)   # bigger one
-r2 = float(site.params.TCS.r2)   # smaller one
+pnt_lon = float(PR.WAVES.point_longitude)
+pnt_lat = float(PR.WAVES.point_latitude)
+r1 = float(PR.TCS.r1)                   # bigger one
+r2 = float(PR.TCS.r2)                   # smaller one
 
 
 # --------------------------------------

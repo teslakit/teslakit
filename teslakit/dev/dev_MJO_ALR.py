@@ -23,25 +23,28 @@ from lib.io.aux_nc import StoreBugXdset as sbxds
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_mjo_hist = site.pc.DB.mjo.hist
+p_mjo_hist = DB.mjo.hist
 
 # output files
-p_mjo_alrw = site.pc.site.mjo.alrw
-p_mjo_sim =  site.pc.site.mjo.sim
+p_mjo_alrw = ST.mjo.alrw
+p_mjo_sim =  ST.mjo.sim
 
 # export figs
-p_export_mjo = site.pc.site.exp.mjo
+p_export_mjo = ST.mjo
 
 # MJO ALR parameters
-alr_markov_order = int(site.params.MJO.alr_markov)
-alr_seasonality = ast.literal_eval(site.params.MJO.alr_seasonality)
+alr_markov_order = int(PR.MJO.alr_markov)
+alr_seasonality = ast.literal_eval(PR.MJO.alr_seasonality)
 
 # Simulation dates (ALR)
-d1_sim = np.datetime64(site.params.SIMULATION.date_ini).astype(datetime)
-d2_sim = np.datetime64(site.params.SIMULATION.date_end).astype(datetime)
+d1_sim = np.datetime64(PR.SIMULATION.date_ini).astype(datetime)
+d2_sim = np.datetime64(PR.SIMULATION.date_end).astype(datetime)
 
 
 # --------------------------------------

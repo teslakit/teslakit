@@ -28,20 +28,23 @@ from lib.plotting.tides import Plot_AstronomicalTide, Plot_ValidateTTIDE
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                        # common database
+ST = site.pc.site                      # site database
+PR = site.params                       # site parameters
 
 # input files
-p_astro_fit = site.pc.site.tds.hist_astro
+p_astro_fit = ST.tds.hist_astro
 
 # output files
-p_astro_sim = site.pc.site.tds.sim_astro
+p_astro_sim = ST.tds.sim_astro
 
 # export figs
-p_export_tds = site.pc.site.exp.tds
+p_export_tds = ST.exp.tds
 
 # Simulation dates
-d1_sim = np.datetime64(site.params.SIMULATION.date_ini)
-d2_sim = np.datetime64(site.params.SIMULATION.date_end)
+d1_sim = np.datetime64(PR.SIMULATION.date_ini)
+d2_sim = np.datetime64(PR.SIMULATION.date_end)
 
 
 # --------------------------------------
