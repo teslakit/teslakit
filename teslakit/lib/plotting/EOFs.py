@@ -6,7 +6,6 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from mpl_toolkits.basemap import Basemap
 from scipy.interpolate import interp1d
 import calendar
 from datetime import datetime, timedelta
@@ -261,3 +260,4 @@ def Plot_PCvsPC(xds_PC123, text=[], p_export = None):
     else:
         fig.savefig(p_export, dpi=96)
         plt.close()
+
