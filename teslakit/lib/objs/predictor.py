@@ -13,6 +13,7 @@ from lib.estela import dynamic_estela_predictor
 from lib.PCA import CalcPCA_EstelaPred
 from lib.KMA import KMA_regression_guided
 from lib.KMA import SimpleMultivariateRegressionModel as SMRM
+from lib.intradaily import Calculate_Hydrographs
 from lib.plotting.EOFs import Plot_EOFs_EstelaPred
 from lib.plotting.KMA import Plot_KMArg_clusters_datamean
 
@@ -79,7 +80,6 @@ class Predictor(object):
 
         # we have to miss some days of data due to ESTELA
         tcut = self.PCA.pred_time.values[:]
-        print 'KMA: ', tcut[0], ' - ', tcut[-1]
 
         # calculate regresion model between predictand and predictor
         xds_waves = xds_waves.sel(time = slice(tcut[0], tcut[-1]))
@@ -93,6 +93,24 @@ class Predictor(object):
         # store time array with KMA
         self.KMA['time'] = (('n_components',), self.PCA.pred_time.values[:])
 
+    def Calc_MU_TAU_Hydrographs(self, xds_WAVES):
+        '''
+        Calculates TWL hydrographs
+
+        returns dictionary containing hydrographs storage objects
+        '''
+
+        # get sorted bmus from kma
+        xds_BMUS = xr.Dataset(
+            {'bmus':(('time', self.KMA.sorted_bmus.values[:]))},
+            coords = {'time': self.KMA.time.values[:]}
+        )
+
+        # Calculate hydrographs 
+        dict_bins = Calculate_Hydrographs(xds_BMUS, xds_WAVES)
+
+        return dict_bins
+
     def Mod_KMA_AddStorms(self, storm_dates, storm_categories):
         '''
         Modify KMA bmus series adding storm category (6 new groups)
@@ -100,7 +118,7 @@ class Predictor(object):
 
         n_clusters = len(self.KMA.n_clusters.values[:])
         kma_dates = self.PCA.pred_time.values[:]
-        bmus_storms = self.KMA.sorted_bmus.values[:]
+        bmus_storms = self.KMA.sorted_bmus.copy()  # deep copy
 
         for sd, sc in zip(storm_dates, storm_categories):
             pos_date = np.where(kma_dates==sd)[0]
