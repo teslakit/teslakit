@@ -25,14 +25,19 @@ class Hydrograph(object):
         self.TAU = []
 
 
-def Calculate_Hydrographs(xds_KMA, xds_WAVES):
+def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
     '''
     Calculates intradaily hydrographs
+
+    xds_BMUS: (time) bmus
+    xds_WAVES: (time) hs, tp, dir
+
+    returns dictionary of Hydrograph objects for each WT
     '''
 
     # solve intradaily bins
-    bmus = xds_KMA.bmus.values[:]
-    time_KMA = xds_KMA.time.values[:]
+    bmus = xds_BMUS.bmus.values[:]
+    time_KMA = xds_BMUS.time.values[:]
 
     d_bins = {}
     for i_wt in sorted(set(bmus)):
@@ -46,6 +51,12 @@ def Calculate_Hydrographs(xds_KMA, xds_WAVES):
             (b-a).astype('timedelta64[D]')/np.timedelta64(1,'D') \
             for a,b in zip(date_index, date_index[1:])])
         sep_hydro = np.where((diff_time > 1.0))[0]
+
+        if len(sep_hydro)==0:
+            bin_k = 'bin{0:02d}'.format(i_wt)
+            d_bins[bin_k] = None
+            print '{0} empty'.format(bin_k)
+            continue
 
         hydro_indx = []
         hydro_indx.append(indx[0:sep_hydro[0]+1])
@@ -131,9 +142,8 @@ def Calculate_Hydrographs(xds_KMA, xds_WAVES):
         bin_hy.Hs_max = Hs_max
         bin_hy.MU = MU
         bin_hy.TAU = TAU
-        print MU
-        import sys; sys.exit()
 
+        # store at dictionary
         d_bins[bin_k] = bin_hy
         print '{0} calculated'.format(bin_k)
 
