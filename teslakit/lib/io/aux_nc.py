@@ -53,28 +53,4 @@ def StoreBugXdset(xds_data, p_ncfile):
     # close file
     root.close()
 
-def StoreAstroTide(p_ncfile, date_pred, atide_pred):
-    'Store hourly astronomical tide data'
-
-    calendar = 'standard'
-    units = 'days since 1970-01-01 00:00:00'
-    times = [z.astype(datetime) for z in date_pred]
-
-    # open file
-    root = netCDF4.Dataset(p_ncfile, 'w', format='NETCDF4')
-    root.createDimension('time', len(date_pred))
-
-    # time variable
-    timevar = root.createVariable(
-        varname='time',dimensions=('time',), datatype='float32')
-    timevar[:] = netCDF4.date2num(times, units=units, calendar=calendar)
-    timevar.units = units
-
-    # astronomical tide variable
-    atvar = root.createVariable(
-        varname='astronomical_tide', dimensions=('time',), datatype='float32')
-    atvar[:] = atide_pred
-
-    # close file
-    root.close()
 
