@@ -10,13 +10,20 @@ import netCDF4 as nc4
 
 def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
     'Read data from CFS SLP database: netCDF files'
+    # TODO: poder parar y retomar la extraccion
 
     print 'Reading SLP data from files...'
 
-    ncfiles = sorted(
+    ncfiles_1 = sorted(
         [op.join(p_db,f) for f in os.listdir(p_db) \
          if f.endswith('.nc') and 'gdas' in f]
     )
+    ncfiles_2 = sorted(
+        [op.join(p_db,f) for f in os.listdir(p_db) \
+         if f.endswith('.nc') and 'cdas1' in f]
+    )
+    ncfiles = ncfiles_1 + ncfiles_2
+
     if not ncfiles:
         return None
 
