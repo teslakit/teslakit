@@ -29,12 +29,12 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_wvs_parts = ST.wvs.partitions_p1
-p_hist_tcs = DB.tcs.noaa_fix
+p_wvs_parts = ST.WAVES.partitions_p1
+p_hist_tcs = DB.TCs.noaa_fix
 
 # output files
-p_wvs_parts_noTCs = ST.wvs.partitions_noTCs
-p_wvs_fams_noTCs = ST.wvs.families_noTCs
+p_wvs_parts_noTCs = ST.WAVES.partitions_notcs
+p_wvs_fams_noTCs = ST.WAVES.families_notcs
 
 # wave point lon, lat, families sectors, and radius for TCs selection
 wvs_sectors = ast.literal_eval(PR.WAVES.sectors)

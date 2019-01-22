@@ -23,21 +23,21 @@ from lib.tcyclone import Extract_Circle
 # Site paths and parameters
 site = Site('KWAJALEIN')
 
-DB = site.pc.DB                        # common database
-ST = site.pc.site                      # site database
-PR = site.params                       # site parameters
+DB = site.pc.DB                           # common database
+ST = site.pc.site                         # site database
+PR = site.params                          # site parameters
 
 # input files
-p_est_coastmat = ST.est.coastmat       # estela coast (.mat)
-p_est_datamat = ST.est.estelamat       # estela data (.mat)
-p_gow_mat = ST.est.gowpoint            # gow point (.mat)
-p_wvs_parts_p1 = ST.wvs.partitions_p1
-p_slp = ST.est.slp                     # site slp data (.nc)
-p_hist_tcs = DB.tcs.noaa_fix           # WMO historical TCs
+p_est_coastmat = ST.ESTELA.coastmat       # estela coast (.mat)
+p_est_datamat = ST.ESTELA.estelamat       # estela data (.mat)
+p_gow_mat = ST.ESTELA.gowpoint            # gow point (.mat)
+p_wvs_parts_p1 = ST.WAVES.partitions_p1
+p_slp = ST.ESTELA.slp                     # site slp data (.nc)
+p_hist_tcs = DB.TCs.noaa_fix              # WMO historical TCs
 
 # output files
-p_est_pred = ST.est.pred_slp           # estela slp predictor
-p_dbins = ST.est.hydrographs           # intradaily mu tau hydrographs
+p_est_pred = ST.ESTELA.pred_slp           # estela slp predictor
+p_dbins = ST.ESTELA.hydrographs           # intradaily mu tau hydrographs
 
 # parameters for KMA_REGRESSION_GUIDED
 kma_date_ini = site.params.ESTELA_KMA_RG.date_ini

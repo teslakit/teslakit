@@ -35,15 +35,15 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_mareografo_nc = ST.tds.mareografo_nc
-p_sst_KMA = ST.sst.KMA
-p_sst_PCs_sim_m = ST.sst.PCs_sim_m     # monthly simulated PCs
+p_mareografo_nc = ST.TIDE.mareografo_nc
+p_sst_KMA = ST.SST.kma
+p_sst_PCs_sim_m = ST.SST.pcs_sim_m     # monthly simulated PCs
 
 # output files
-p_mmsl_sim = ST.tds.sim_mmsl
+p_mmsl_sim = ST.TIDE.sim_mmsl
 
 # export figs
-p_export_tds = ST.exp.tds
+p_export_tds = ST.export_figs.tds
 
 # parameters for mmsl calculation
 mmsl_year_ini = int(PR.TIDES.mmsl_year_ini)

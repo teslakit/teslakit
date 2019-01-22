@@ -28,10 +28,10 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_nakajo_mats = DB.tcs.nakajo_mats
+p_nakajo_mats = DB.TCs.nakajo_mats
 
 # output files
-p_probs_synth = ST.tcs.probs_synth
+p_probs_synth = ST.TCs.probs_synth
 
 # wave point lon, lat, and radius for TC selection
 pnt_lon = float(PR.WAVES.point_longitude)

@@ -29,14 +29,14 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_mjo_hist = DB.mjo.hist
+p_mjo_hist = DB.MJO.hist
 
 # output files
-p_mjo_alrw = ST.mjo.alrw
-p_mjo_sim =  ST.mjo.sim
+p_mjo_alrw = ST.MJO.alrw
+p_mjo_sim =  ST.MJO.sim
 
 # export figs
-p_export_mjo = ST.mjo
+p_export_mjo = ST.export_figs.mjo
 
 # MJO ALR parameters
 alr_markov_order = int(PR.MJO.alr_markov)

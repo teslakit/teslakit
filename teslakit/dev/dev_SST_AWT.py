@@ -36,16 +36,16 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_SST = DB.sst.hist_pacific  # SST Pacific area
+p_SST = DB.SST.hist_pacific            # SST Pacific area
 
 # output files
-p_export_figs = ST.exp.sst
-p_sst_PCA = ST.sst.PCA
-p_sst_KMA = ST.sst.KMA
-p_sst_alrw = ST.sst.alrw
-p_PCs_sim = ST.sst.PCs_sim
-p_PCs_sim_d = ST.sst.PCs_sim_d
-p_PCs_sim_m = ST.sst.PCs_sim_m
+p_export_figs = ST.export_figs.sst
+p_sst_PCA = ST.SST.pca
+p_sst_KMA = ST.SST.kma
+p_sst_alrw = ST.SST.alrw
+p_PCs_sim = ST.SST.pcs_sim
+p_PCs_sim_d = ST.SST.pcs_sim_d
+p_PCs_sim_m = ST.SST.pcs_sim_m
 
 # PCA dates parameters
 pred_name = 'SST'

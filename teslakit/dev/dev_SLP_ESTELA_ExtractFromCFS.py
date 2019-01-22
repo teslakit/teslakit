@@ -14,24 +14,28 @@ from lib.io.cfs import ReadSLP
 # --------------------------------------
 # Site paths and parameters
 site = Site('KWAJALEIN')
-site.Summary()
+
+DB = site.pc.DB                            # common database
+ST = site.pc.site                          # site database
+PR = site.params                           # site parameters
 
 # input files
-p_DB_cfs_prmsl = site.pc.DB.slp.cfs_prmsl
+p_DB_cfs_prmsl = DB.CFS.cfs_prmsl
 
 # output files
-p_site_SLP =  site.pc.site.est.slp
+p_site_SLP =  ST.ESTELA.slp
 
 # SLP extraction coordinates 
-lat1 = float(site.params.SLP.lat1)
-lat2 = float(site.params.SLP.lat2)
-lon1 = float(site.params.SLP.lon1)
-lon2 = float(site.params.SLP.lon2)
-resample = int(site.params.SLP.resample)  # 2º resolution
+lat1 = float(PR.SLP.lat1)
+lat2 = float(PR.SLP.lat2)
+lon1 = float(PR.SLP.lon1)
+lon2 = float(PR.SLP.lon2)
+resample = int(PR.SLP.resample)  # 2º resolution
 
 
 # --------------------------------------
 # load predictor data (SLP) from CFSR and save to .nc 
+
 print('\nReading SLP data from CFS_prmsl database...')
 xds_SLP_site = ReadSLP(
     p_DB_cfs_prmsl,

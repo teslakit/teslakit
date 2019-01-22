@@ -34,13 +34,13 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_astro_fit = ST.tds.hist_astro
+p_astro_fit = ST.TIDE.hist_astro
 
 # output files
-p_astro_sim = ST.tds.sim_astro
+p_astro_sim = ST.TIDE.sim_astro
 
 # export figs
-p_export_tds = ST.exp.tds
+p_export_tds = ST.export_figs.tds
 
 # Simulation dates
 d1_sim = np.datetime64(PR.SIMULATION.date_ini)

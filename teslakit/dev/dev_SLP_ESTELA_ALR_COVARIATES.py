@@ -24,21 +24,21 @@ from lib.custom_dateutils import xds2datetime as x2d
 # Site paths and parameters
 site = Site('KWAJALEIN')
 
-DB = site.pc.DB                        # common database
-ST = site.pc.site                      # site database
-PR = site.params                       # site parameters
+DB = site.pc.DB                            # common database
+ST = site.pc.site                          # site database
+PR = site.params                           # site parameters
 
 # input files
-p_est_pred = ST.est.pred_slp
+p_est_pred = ST.ESTELA.pred_slp
 p_est_kma = op.join(p_est_pred, 'kma.nc')  # ESTELA + TCs Predictor
-p_sst_PCA = ST.sst.PCA                     # SST PCA
-p_mjo_hist = DB.mjo.hist                   # historical MJO
+p_sst_PCA = ST.SST.pca                     # SST PCA
+p_mjo_hist = DB.MJO.hist                   # historical MJO
 
-p_sst_PCs_sim_d = ST.sst.PCs_sim_d  # daily PCs sim
-p_mjo_sim =  ST.mjo.sim  # daily MJO sim
+p_sst_PCs_sim_d = ST.SST.pcs_sim_d         # daily PCs sim
+p_mjo_sim =  ST.MJO.sim                    # daily MJO sim
 
 # output files
-p_alr_covars =  ST.est.alrw  # alr wrapper
+p_alr_covars =  ST.ESTELA.alrw  # alr wrapper
 
 # ALR parameters
 alr_markov_order = int(PR.SIMULATION.alr_covars_markov)
