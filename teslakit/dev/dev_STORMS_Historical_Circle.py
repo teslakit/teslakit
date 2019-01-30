@@ -25,62 +25,53 @@ ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
 # input files
-p_wvs_parts = ST.WAVES.partitions_p1
-p_hist_tcs = DB.TCs.noaa_fix
+p_hist_tcs = DB.TCs.noaa
 
 # output files
-p_hist_tcs = DB.TCs.noaa
-p_hist_tcs_fix = DB.TCs.noaa_fix
-p_tcs_circle_hist = ST.TCs.circle_hist
+p_hist_r1 = ST.TCs.hist_r1
+p_hist_r1_params = ST.TCs.hist_r1_params
+p_hist_r2 = ST.TCs.hist_r2
+p_hist_r2_params = ST.TCs.hist_r2_params
 
 # wave point lon, lat and radius for TCs selection
 pnt_lon = float(PR.WAVES.point_longitude)
 pnt_lat = float(PR.WAVES.point_latitude)
+r1 = float(PR.TCS.r1)   # bigger one
 r2 = float(PR.TCS.r2)   # smaller one
+
+# TODO
+# EL PROCESO RADIUS -> PARAMS -> COPULAS PARETO -> MDA -> RBF
+# ES PARA LOS STORMS EN R1 (14º) O R2 (4º) 
 
 
 # --------------------------------------
-# Historical TCs  
+# Select Historical TCs inside circle
 
-# Download TCs and save xarray.dataset to netcdf
-download = False
-if download:
-    xds_wmo = Download_NOAA_WMO(p_hist_tcs)
-else:
-    xds_wmo = xr.open_dataset(p_hist_tcs)
+# Load historical TCs 
+xds_wmo = xr.open_dataset(p_hist_tcs)
 
-# set lon to 0-360
-lon_wmo = xds_wmo.lon_wmo.values[:]
-lon_wmo[np.where(lon_wmo<0)] = lon_wmo[np.where(lon_wmo<0)]+360
-xds_wmo['lon_wmo'].values[:] = lon_wmo
+# dictionary with needed variable names 
+d_vns = {
+    'longitude': 'lon_wmo',
+    'latitude': 'lat_wmo',
+    'time': 'time_wmo',
+    'pressure': 'pres_wmo',
+}
 
-# modify some variable names
-xds_wmo.rename(
-    {'lon_wmo':'lon',
-     'lat_wmo':'lat',
-     'time_wmo':'dates',
-     'pres_wmo':'pressure',
-    }, inplace=True)
-
-# store fixed wmo file
-xds_wmo.to_netcdf(p_hist_tcs_fix)
-
-
-# Select TCs that crosses a circular area 
+# Select TCs that crosses a circular area R
 print(
-'\nExtracting Historical TCs from WMO database...\n \
-Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
+'\nExtracting Historical TCs from WMO database...\n\
+    Lon = {0:.2f}º , Lat = {1:.2f}º, R = {2:6.2f}º'.format(
     pnt_lon, pnt_lat, r2)
 )
 
-xds_TCs_r, xds_inside = Extract_Circle(
-    xds_wmo, pnt_lon, pnt_lat, r2)
+xds_TCs_r2, xds_TCs_r2_params = Extract_Circle(
+    xds_wmo, pnt_lon, pnt_lat, r2, d_vns)
 
 # store data
-xds_TCs_r.to_netcdf(p_tcs_circle_hist)
-print('\nHistorical TCs (inside circle) stored at:\n{0}'.format(p_tcs_circle_hist))
+xds_TCs_r2.to_netcdf(p_hist_r2)
+xds_TCs_r2_params.to_netcdf(p_hist_r2_params)
 
-
-# TODO: ADD PLOT (trazas huracanes seleccionados sobre mapa mundo)
-#WorldMap_Storms(xds_hurr_r)
+print('\nHistorical TCs selection and parameters stored at:\n{0}\n{1}'.format(
+    p_hist_r2, p_hist_r2_params))
 
