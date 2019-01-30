@@ -15,8 +15,7 @@ import numpy as np
 from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadNakajoMats
 from lib.util.operations import GetUniqueRows
-from lib.tcyclone import Extract_Circle, GetStormCategory, \
-SortCategoryCount
+from lib.tcyclone import Extract_Circle_Nakajo, SortCategoryCount
 
 
 # --------------------------------------
@@ -44,13 +43,12 @@ r2 = float(PR.TCS.r2)                   # smaller one
 # read each nakajo simulation pack from .mat custom files 
 xds_Nakajo = ReadNakajoMats(p_nakajo_mats)
 
-# rename lon,lat variables 
-xds_Nakajo.rename(
-    {
-        'ylon_TC':'lon',
-        'ylat_TC':'lat',
-        'yCPRES':'pressure',
-    }, inplace=True)
+# dictionary with needed variable names 
+d_vns = {
+    'longitude': 'ylon_TC',
+    'latitude': 'ylat_TC',
+    'pressure': 'yCPRES',
+}
 
 
 # Extract synthetic TCs at 2 radius to get category change 
@@ -62,12 +60,12 @@ R1  = {2:6.2f}º , R2  = {3:6.2f}º'.format(
 )
 
 # Extract TCs inside R=14 and positions
-_, xds_in_r1 = Extract_Circle(
-    xds_Nakajo, pnt_lon, pnt_lat, r1)
+_, xds_in_r1 = Extract_Circle_Nakajo(
+    xds_Nakajo, pnt_lon, pnt_lat, r1, d_vns)
 
 # Extract TCs inside R=4 and positions
-_, xds_in_r2 = Extract_Circle(
-    xds_Nakajo, pnt_lon, pnt_lat, r2)
+_, xds_in_r2 = Extract_Circle_Nakajo(
+    xds_Nakajo, pnt_lon, pnt_lat, r2, d_vns)
 
 
 print('\nCalculating Syntethic TCs category-change probabilities...')
