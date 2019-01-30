@@ -17,7 +17,6 @@ from datetime import datetime
 from lib.objs.tkpaths import Site
 from lib.io.matlab import ReadGowMat
 from lib.waves import GetDistribution
-from lib.tcyclone import Extract_Circle
 
 
 # --------------------------------------
@@ -30,19 +29,16 @@ PR = site.params                       # site parameters
 
 # input files
 p_wvs_parts = ST.WAVES.partitions_p1
-p_hist_tcs = DB.TCs.noaa_fix
+p_hist_r2_params = ST.TCs.hist_r2_params # hist storms parameters
 
 # output files
 p_wvs_parts_noTCs = ST.WAVES.partitions_notcs
 p_wvs_fams_noTCs = ST.WAVES.families_notcs
 
-# wave point lon, lat, families sectors, and radius for TCs selection
+# wave families sectors
 wvs_sectors = ast.literal_eval(PR.WAVES.sectors)
-pnt_lon = float(PR.WAVES.point_longitude)
-pnt_lat = float(PR.WAVES.point_latitude)
-r2 = float(PR.TCS.r2)   # smaller one
 
-# also date limits for TCs removal from waves data, and TC time window (hours)
+# date limits for TCs removal from waves data, and TC time window (hours)
 tc_rm_date1 = PR.WAVES.tc_remov_date1
 tc_rm_date2 = PR.WAVES.tc_remov_date2
 tc_time_window = int(PR.WAVES.tc_remov_timew)
@@ -58,19 +54,8 @@ xds_wvs_fam = GetDistribution(xds_wvs_pts, wvs_sectors)
 
 
 # --------------------------------------
-# load historical TCs
-xds_hist_tcs = xr.open_dataset(p_hist_tcs)
-
-# extract TCs inside circle using GOW point as center 
-print(
-'\nExtracting Historical TCs from WMO database...\n \
-Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
-    pnt_lon, pnt_lat, r2)
-)
-
-_, xds_in = Extract_Circle(
-    xds_hist_tcs, pnt_lon, pnt_lat, r2)
-
+# load historical storms-parameters inside r2 
+xds_TCs_r2_params = xr.open_dataset(p_hist_r2_params)
 
 # remove TCs before 1979 and after 2015
 print(
@@ -81,14 +66,14 @@ date_ini = {0}\n date_end = {1}\n time_window(h) = {2}'.format(
 
 d1 = np.datetime64(tc_rm_date1)
 d2 = np.datetime64(tc_rm_date2)
-dmin_dates = xds_in.dmin_date.values
+dmin_dates = xds_TCs_r2_params.dmin_date.values
 
 p1 = np.where(dmin_dates >= d1)[0][0]
 p2 = np.where(dmin_dates <= d2)[0][-1]
-xds_in = xds_in.sel(storm = slice(p1, p2))
+xds_TCs_r2_params = xds_TCs_r2_params.sel(storm = slice(p1, p2))
 
 # storms inside circle
-storms = xds_in.storm.values[:]
+storms = xds_TCs_r2_params.storm.values[:]
 
 
 # for each storm: find hs_max instant and clean waves data inside "hs_max window"
@@ -98,7 +83,7 @@ xds_wvs_fam_noTCs = xds_wvs_fam.copy()
 for s in storms:
 
     # storm dates at dist_min and storm_end
-    xds_s = xds_in.sel(storm = slice(s, s))
+    xds_s = xds_TCs_r2_params.sel(storm = slice(s, s))
     date_dmin = xds_s.dmin_date.values[0]
     date_last = xds_s.last_date.values[0]
 
@@ -131,6 +116,10 @@ xds_wvs_pts_noTCs.to_netcdf(p_wvs_parts_noTCs, 'w')
 xds_wvs_fam_noTCs.to_netcdf(p_wvs_fams_noTCs, 'w')
 print('\nWaves Partitions (TCs removed) stored at:\n{0}'.format(p_wvs_parts_noTCs))
 print('\nWaves Families   (TCs removed) stored at:\n{0}'.format(p_wvs_fams_noTCs))
+
+print xds_wvs_pts_noTCs
+print ''
+print xds_wvs_fam_noTCs
 
 # TODO hay que hacer algo mas con estos intervalos hs_peak?
 
