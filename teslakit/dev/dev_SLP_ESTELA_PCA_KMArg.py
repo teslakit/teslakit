@@ -16,7 +16,6 @@ from lib.objs.tkpaths import Site
 from lib.objs.predictor import Predictor
 from lib.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat
 from lib.estela import spatial_gradient, mask_from_poly
-from lib.tcyclone import Extract_Circle
 
 
 # --------------------------------------
@@ -33,7 +32,7 @@ p_est_datamat = ST.ESTELA.estelamat       # estela data (.mat)
 p_gow_mat = ST.ESTELA.gowpoint            # gow point (.mat)
 p_wvs_parts_p1 = ST.WAVES.partitions_p1
 p_slp = ST.ESTELA.slp                     # site slp data (.nc)
-p_hist_tcs = DB.TCs.noaa_fix              # WMO historical TCs
+p_hist_r2_params = ST.TCs.hist_r2_params  # hist storms inside r2 parameters
 
 # output files
 p_est_pred = ST.ESTELA.pred_slp           # estela slp predictor
@@ -44,11 +43,6 @@ kma_date_ini = site.params.ESTELA_KMA_RG.date_ini
 kma_date_end = site.params.ESTELA_KMA_RG.date_end
 num_clusters = int(site.params.ESTELA_KMA_RG.num_clusters)
 kmarg_alpha = float(site.params.ESTELA_KMA_RG.alpha)
-
-# wave point lon, lat, and radius for TCs selection
-pnt_lon = float(site.params.WAVES.point_longitude)
-pnt_lat = float(site.params.WAVES.point_latitude)
-r2 = float(site.params.TCS.r2)   # smaller one
 
 
 # --------------------------------------
@@ -145,21 +139,11 @@ pred.Plot_KMArg_clusters_datamean('SLP', show=False, mask_name='mask_estela')
 
 
 # --------------------------------------
-# load storms, find inside circle and modify predictor KMA 
-xds_wmo_fix = xr.open_dataset(p_hist_tcs)
+# load historical storms-parameters inside r2
+xds_TCs_r2_params = xr.open_dataset(p_hist_r2_params)
 
-# extract TCs inside circle using GOW point as center 
-print(
-'\nExtracting Historical TCs from WMO database...\n \
-Lon = {0:.2f}º , Lat = {1:.2f}º, R2  = {2:6.2f}º'.format(
-    pnt_lon, pnt_lat, r2)
-)
-
-_, xds_in = Extract_Circle(
-    xds_wmo_fix, pnt_lon, pnt_lat, r2)
-
-storm_dates = xds_in.dmin_date.values[:]
-storm_categs = xds_in.category.values[:]
+storm_dates = xds_TCs_r2_params.dmin_date.values[:]
+storm_categs = xds_TCs_r2_params.category.values[:]
 
 # modify predictor KMA with circle storms data
 print('\nAdding Historical TCs to SLP_PREDICTOR KMA_RG bmus...')
