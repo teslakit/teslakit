@@ -18,4 +18,5 @@ cython
 pillow
 cftime==1.0.3.4
 Cartopy==0.17.0
+geographiclib
 
