@@ -34,14 +34,19 @@ wt_colors = ['b', 'g', 'r', 'c', 'm', 'k', 'y']
 
 def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
     '''
-    TODO
+    TODO: documentar correctamente
     '''
 
     # get some data
     clusters = sorted(set(bmus))
     n_clusters = len(clusters)
-    var_max = np.max(xds_datavar.values)
-    var_min = np.min(xds_datavar.values)
+
+    # TODO: AUTOMATIZAR VMIN VMAX
+    #var_max = np.max(xds_datavar.values)
+    #var_min = np.min(xds_datavar.values)
+    var_min = 990
+    var_max = 1030
+    scale = 1/100.0  # scale from Pa to mbar
 
     # prepare figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
@@ -65,14 +70,18 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
         pos_cluster = np.where(bmus==ic)[0][:]
         mean_cluster = xds_datavar.isel(time=pos_cluster).mean(dim='time')
 
+        # convert input units
+        mean_cluster_scaled = np.multiply(mean_cluster, scale)
+
         # grid plot
         ax = plt.subplot(gs[grid_row, grid_col])
-        ax.pcolormesh(
-            np.flipud(mean_cluster.values),
-            cmap='RdBu', shading='gouraud',
+        pcm = ax.pcolormesh(
+            np.flipud(mean_cluster_scaled.values),
+            cmap='bwr', shading='gouraud',
+            vmin = var_min, vmax = var_max,
         )
 
-        # TODO: plot with same climits
+        # remove axis ticks 
         ax.set_xticks([])
         ax.set_yticks([])
 
@@ -80,6 +89,13 @@ def Plot_KMArg_clusters_datamean(xds_datavar, bmus, p_export=None):
         if grid_row >= n_rows:
             grid_row = 0
             grid_col += 1
+
+    # common colorbar
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.02, 0.7])
+    cb = fig.colorbar(pcm, cax=cbar_ax)
+    cb.set_label('Pressure (mbar)')
+    cbar_ax.yaxis.set_label_position('left')
 
     # show / export
     if not p_export:
