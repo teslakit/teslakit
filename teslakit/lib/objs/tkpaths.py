@@ -34,9 +34,9 @@ class Site(object):
         print(self.pc)
 
     def ReadParameters(self):
-        'Read site parameters from site.ini file'
+        'Read site parameters from parameters.ini file'
 
-        p_ini = self.pc.p_site_ini
+        p_ini = self.pc.p_param_ini
 
         # use configparser lib
         cfg = configparser.ConfigParser()
@@ -61,7 +61,6 @@ class Site(object):
 
 class PathControl(object):
     'auxiliar object for handling database and site paths'
-    # TODO: COMMON AND SITE DATABASE CAN BE IMPROVED
 
     def __init__(self):
 
@@ -170,5 +169,5 @@ class PathControl(object):
 
         self.site = atdict(dd)
         self.p_site = p_site
-        self.p_site_ini = op.join(p_site, 'site.ini')
+        self.p_param_ini = op.join(p_site, 'parameters.ini')
 
