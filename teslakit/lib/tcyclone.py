@@ -4,94 +4,174 @@
 import numpy as np
 import xarray as xr
 from scipy.spatial import distance
+from geographiclib.geodesic import Geodesic
+
+def GeoDistance(lat1, lon1, lat2, lon2):
+    'Returns geodesic distance between points in degrees'
+
+    return Geodesic.WGS84.Inverse(
+        lat1, lon1, lat2, lon2
+    )['a12']
+
+def GeoAzimuth(lat1, lon1, lat2, lon2):
+    'Returns geodesic azimuth between point1 and point2'
+
+    return Geodesic.WGS84.Inverse(
+        lat1, lon1, lat2, lon2
+    )['azi1']
 
 
-def Extract_Circle(xds_TCs, p_lon, p_lat, r):
+def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
     '''
-    Extracts TCs inside circle
+    Extracts TCs inside circle - used with NWO database
 
     xds_TCs: tropical cyclones track database
-        lon,lat,pressure variables
+        lon, lat, pressure variables
         storm dimension
 
     circle defined by:
         p_lon, p_lat  -  circle center
         r             -  circle radius (degree)
 
+    d_vns: dictionary to set longitude, latitude, time and pressure varnames
+
     returns:
         xds_area: selection of xds_TCs inside circle
         xds_inside: contains TCs custom data inside circle
     '''
 
-    # TODO REFACTOR
+    # point longitude and latitude
     lonlat_p = np.array([[p_lon, p_lat]])
 
-    lon = xds_TCs.lon.values[:]
-    lat = xds_TCs.lat.values[:]
-    press = xds_TCs.pressure.values[:]
+    # get names of vars: longitude, latitude, pressure and time
+    nm_lon = d_vns['longitude']
+    nm_lat = d_vns['latitude']
+    nm_prs = d_vns['pressure']
+    nm_tim = d_vns['time']
 
-    store_date = 'dates' in xds_TCs.variables
-    if store_date:
-        time = xds_TCs.dates.values[:]
+    # storms longitude, latitude, pressure and time (if available)
+    lon = xds_TCs[nm_lon].values[:]
+    lat = xds_TCs[nm_lat].values[:]
+    prs = xds_TCs[nm_prs].values[:]
+    time = xds_TCs[nm_tim].values[:]
 
     # get storms inside circle area
     n_storms = xds_TCs.storm.shape[0]
     l_storms_area = []
-    l_pos_in = []  # inside circle position
-    l_press_in = []  # inside circle pressure
-    l_min_press_in = []  # inside circle min pressure
-    l_categ_in = []  # inside circle storm category
-    l_date_in = []  # inside circle date (day)
-    l_date_last = []  # last cyclone date 
+
+    # inside parameters holders
+    l_prs_min_in = []   # circle minimun pressure
+    l_prs_mean_in = []  # circle mean pressure
+    l_vel_mean_in = []  # circle mean translation speed
+    l_categ_in = []     # circle storm category
+    l_date_in = []      # circle date (day)
+    l_date_last = []    # last cyclone date 
+    l_gamma = []        # azimuth 
+    l_delta = []        # delta 
 
     for i_storm in range(n_storms):
+
+        # stack storm longitude, latitude
         lonlat_s = np.column_stack(
             (lon[i_storm], lat[i_storm])
         )
-        press_s = press[i_storm]
 
-        # TODO: cambiar de distancia euclidea a arclen great circle
-        dist = distance.cdist(lonlat_s, lonlat_p)
-        pos_in = np.where(dist<r)[0][:]
-        if pos_in.any():
+        # index for removing nans
+        ix_nonan = ~np.isnan(lonlat_s).any(axis=1)
+        lonlat_s = lonlat_s[ix_nonan]
+
+        # calculate geodesic distance (degree)
+        geo_dist = []
+        for lon_ps, lat_ps in lonlat_s:
+            geo_dist.append(GeoDistance(lat_ps, lon_ps, p_lat, p_lon))
+        geo_dist = np.asarray(geo_dist)
+
+        # find storm inside circle and calculate parameters
+        ix_in = np.where(geo_dist < r)[0][:]
+        if ix_in.any():
+
+            # storm translation velocity
+            geo_dist_ss = []
+            for i_row in range(lonlat_s.shape[0]-1):
+                i0_lat, i0_lon = lonlat_s[i_row][1], lonlat_s[i_row][0]
+                i1_lat, i1_lon = lonlat_s[i_row+1][1], lonlat_s[i_row+1][0]
+                geo_dist_ss.append(GeoDistance(i0_lat, i0_lon, i1_lat, i1_lon))
+            geo_dist_ss = np.asarray(geo_dist_ss)
+
+            vel = geo_dist_ss * 111.0/6.0  # km/h
+
+            # promediate vel 
+            velpm = (vel[:-1] + vel[1:])/2
+            velpm = np.append(vel[0], velpm)
+            velpm = np.append(velpm, vel[-1])
+
+            # calculate azimuth 
+            lat_in_end, lon_in_end = lonlat_s[ix_in[-1]][1], lonlat_s[ix_in[-1]][0]
+            lat_in_ini, lon_in_ini = lonlat_s[ix_in[0]][1], lonlat_s[ix_in[0]][0]
+            gamma = GeoAzimuth(lat_in_end, lon_in_end, lat_in_ini, lon_in_ini)
+            if gamma < 0.0: gamma += 360
+
+            # calculate delta
+            nd = 1000
+            st = 2*np.pi/nd
+            ang = np.arange(0, 2*np.pi + st, st)
+            xps = r * np.cos(ang) + p_lat
+            yps = r * np.sin(ang) + p_lon
+            angle_radius = []
+            for x, y in zip(xps, yps):
+                angle_radius.append(GeoAzimuth(lat_in_end, lon_in_end, x, y))
+            angle_radius = np.asarray(angle_radius)
+
+            im = np.argmin(np.absolute(angle_radius - gamma))
+            delta = GeoAzimuth(p_lat, p_lon, xps[im], yps[im]) # (-180, +180)
+            if delta < 0.0: delta += 360
+
+            # more parameters 
+            prs_s_in = prs[i_storm][ix_in]  # pressure
+            prs_s_min = np.min(prs_s_in)  # pressure minimun
+            prs_s_mean = np.mean(prs_s_in)
+
+            vel_s_in = velpm[ix_in]  # velocity
+            vel_s_mean = np.mean(vel_s_in) # velocity mean
+
+            categ = GetStormCategory(prs_s_min)  # category
+
+            dist_in = geo_dist[ix_in]
+            p_dm = np.where((dist_in==np.min(dist_in)))[0]  # closest to point
+
+            time_s_in = time[i_storm][ix_in]  # time
+            time_closest = np.datetime64(time_s_in[p_dm][0], 'D')
+
+            # store parameters
             l_storms_area.append(i_storm)
-            l_pos_in.append(pos_in)
+            l_prs_min_in.append(np.array(prs_s_min))
+            l_prs_mean_in.append(np.array(prs_s_mean))
+            l_vel_mean_in.append(np.array(vel_s_mean))
+            l_categ_in.append(np.array(categ))
+            l_date_in.append(time_closest)
+            l_gamma.append(gamma)
+            l_delta.append(delta)
 
-            # pressure, min pressure and category inside
-            press_s_in = press_s[pos_in]
-            press_s_min = np.min(press_s_in)
-
-            l_press_in.append(press_s_in)
-            l_min_press_in.append(np.array(press_s_min))
-            l_categ_in.append(np.array(GetStormCategory(press_s_min)))
-
-            if store_date:
-                time_s_in = time[i_storm][pos_in]
-                dist_in = dist[pos_in]
-                p_dm = np.where((dist_in==np.min(dist_in)))[0]
-                l_date_in.append(np.datetime64(time_s_in[p_dm][0],'D'))
-
-                # store last cyclone date too
-                # TODO: futurewarning
-                all_dates = filter(
-                    lambda a: a!= np.datetime64('NaT'), time[i_storm][:]
-                )
-                l_date_last.append(all_dates[-1])
+            # store last cyclone date too
+            l_date_last.append(time[i_storm][ix_nonan][-1])
 
     # cut storm dataset to selection
-    xds_area = xds_TCs.isel(storm=l_storms_area)
+    xds_TCs_sel = xds_TCs.isel(storm=l_storms_area)
 
-    # add data from inside the circle to a dataset
-    # TODO: CORREGIR DATASET, NO PUEDO USAR DIMENSIONES PARA SELECIONAR
-    xds_inside = xr.Dataset(
+    # store storms parameters 
+    xds_TCs_sel_params = xr.Dataset(
         {
-            'inside_pos':(('storm'), np.array(l_pos_in)),
-            'inside_pressure':(('storm'), np.array(l_press_in)),
-            'inside_pressure_min':(('storm'), np.array(l_min_press_in)),
+            'pressure_min':(('storm'), np.array(l_prs_min_in)),
+            'pressure_mean':(('storm'), np.array(l_prs_mean_in)),
+            'velocity_mean':(('storm'), np.array(l_vel_mean_in)),
+            'gamma':(('storm'), np.array(l_gamma)),
+            'delta':(('storm'), np.array(l_delta)),
             'category':(('storm'), np.array(l_categ_in)),
+            'dmin_date':(('storm'), np.array(l_date_in)),
+            'last_date':(('storm'), np.array(l_date_last)),
         },
         coords = {
-            'storm':(('storm'), xds_area.storm.values[:])
+            'storm':(('storm'), xds_TCs_sel.storm.values[:])
         },
         attrs = {
             'point_lon' : p_lon,
@@ -99,37 +179,99 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r):
             'point_r' : r,
         }
     )
-    if store_date:
-        xds_inside['dmin_date'] = (('storm',), np.array(l_date_in))
-        xds_inside['last_date'] = (('storm',), np.array(l_date_last))
 
-    return xds_area, xds_inside
+    return xds_TCs_sel, xds_TCs_sel_params
 
-def Extract_Square(xds_wmo):
+def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
     '''
-    Extracts storms inside square
+    Extracts TCs inside circle - optimized for Nakajo
 
-    xds_wmo: all storms database downlaoded from
-    ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r10/wmo/netcdf/Allstorms.ibtracs_wmo.v03r10.nc.gz
+    xds_TCs: tropical cyclones track database
+        lon, lat, pressure variables
+        storm dimension
 
-    square defined by:
+    circle defined by:
+        p_lon, p_lat  -  circle center
+        r             -  circle radius (degree)
+
+    d_vns: dictionary to set longitude, latitude, time and pressure varnames
+
+    returns:
+        xds_area: selection of xds_TCs inside circle
+        xds_inside: contains TCs custom data inside circle
     '''
-    # TODO
 
-    return None
+    # point longitude and latitude
+    lonlat_p = np.array([[p_lon, p_lat]])
 
-def Extract_Polygon(xds_wmo):
-    '''
-    Extracts storms inside polygon
+    # get names of vars: longitude, latitude, pressure and time
+    nm_lon = d_vns['longitude']
+    nm_lat = d_vns['latitude']
+    nm_prs = d_vns['pressure']
 
-    xds_wmo: all storms database downlaoded from
-    ftp://eclipse.ncdc.noaa.gov/pub/ibtracs/v03r10/wmo/netcdf/Allstorms.ibtracs_wmo.v03r10.nc.gz
+    # storms longitude, latitude, pressure and time (if available)
+    lon = xds_TCs[nm_lon].values[:]
+    lat = xds_TCs[nm_lat].values[:]
+    prs = xds_TCs[nm_prs].values[:]
 
-    polygon defined by:
-    '''
-    # TODO
+    # get storms inside circle area
+    n_storms = xds_TCs.storm.shape[0]
+    l_storms_area = []
 
-    return None
+    # inside parameters holders
+    l_prs_min_in = []   # circle minimun pressure
+    l_categ_in = []     # circle storm category
+
+    for i_storm in range(n_storms):
+
+        # stack storm longitude, latitude
+        lonlat_s = np.column_stack(
+            (lon[i_storm], lat[i_storm])
+        )
+
+        # index for removing nans
+        ix_nonan = ~np.isnan(lonlat_s).any(axis=1)
+        lonlat_s = lonlat_s[ix_nonan]
+
+        # calculate geodesic distance (degree)
+        geo_dist = []
+        for lon_ps, lat_ps in lonlat_s:
+            geo_dist.append(GeoDistance(lat_ps, lon_ps, p_lat, p_lon))
+        geo_dist = np.asarray(geo_dist)
+
+        # find storm inside circle and calculate parameters
+        ix_in = np.where(geo_dist < r)[0][:]
+        if ix_in.any():
+
+            prs_s_in = prs[i_storm][ix_in]          # pressure
+            prs_s_min = np.min(prs_s_in)            # pressure minimun
+            categ = GetStormCategory(prs_s_min)     # category
+
+            # store parameters
+            l_storms_area.append(i_storm)
+            l_prs_min_in.append(np.array(prs_s_min))
+            l_categ_in.append(np.array(categ))
+
+    # cut storm dataset to selection
+    xds_TCs_sel = xds_TCs.isel(storm=l_storms_area)
+
+    # store storms parameters 
+    xds_TCs_sel_params = xr.Dataset(
+        {
+            'pressure_min':(('storm'), np.array(l_prs_min_in)),
+            'category':(('storm'), np.array(l_categ_in)),
+        },
+        coords = {
+            'storm':(('storm'), xds_TCs_sel.storm.values[:])
+        },
+        attrs = {
+            'point_lon' : p_lon,
+            'point_lat' : p_lat,
+            'point_r' : r,
+        }
+    )
+
+    return xds_TCs_sel, xds_TCs_sel_params
 
 def GetStormCategory(pres_min):
     '''
