@@ -39,10 +39,6 @@ pnt_lat = float(PR.WAVES.point_latitude)
 r1 = float(PR.TCS.r1)   # bigger one
 r2 = float(PR.TCS.r2)   # smaller one
 
-# TODO
-# EL PROCESO RADIUS -> PARAMS -> COPULAS PARETO -> MDA -> RBF
-# ES PARA LOS STORMS EN R1 (14º) O R2 (4º) 
-
 
 # --------------------------------------
 # Select Historical TCs inside circle
@@ -58,7 +54,26 @@ d_vns = {
     'pressure': 'pres_wmo',
 }
 
-# Select TCs that crosses a circular area R
+
+# Select TCs that crosses a circular area R1
+print(
+'\nExtracting Historical TCs from WMO database...\n\
+    Lon = {0:.2f}º , Lat = {1:.2f}º, R = {2:6.2f}º'.format(
+    pnt_lon, pnt_lat, r1)
+)
+
+xds_TCs_r1, xds_TCs_r1_params = Extract_Circle(
+    xds_wmo, pnt_lon, pnt_lat, r1, d_vns)
+
+# store data
+xds_TCs_r1.to_netcdf(p_hist_r1)
+xds_TCs_r1_params.to_netcdf(p_hist_r1_params)
+
+print('\nHistorical TCs selection and parameters stored at:\n{0}\n{1}'.format(
+    p_hist_r1, p_hist_r1_params))
+
+
+# Select TCs that crosses a circular area R2
 print(
 '\nExtracting Historical TCs from WMO database...\n\
     Lon = {0:.2f}º , Lat = {1:.2f}º, R = {2:6.2f}º'.format(
