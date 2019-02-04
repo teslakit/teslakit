@@ -3,8 +3,9 @@
 
 import numpy as np
 import statsmodels.api as sm
+from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.interpolate import interp1d
-from scipy.stats import norm
+from scipy.stats import norm, genpareto
 from scipy.special import ndtri  # norm inv
 from scipy.stats import t  # t student
 import matplotlib.pyplot as plt
@@ -48,17 +49,6 @@ def ksdensity_CDF(x):
     # interpolate KDE CDF at x position (kde.support = x) 
     fint = interp1d(kde.support, kde.cdf)
 
-    # plot CDF
-    plotit = False
-    if plotit:
-        plt.plot(kde.support, kde.cdf,'k', label='')
-        plt.plot(x, fint(x),'.r', label='fit points')
-        plt.title('ksdensity CDF')
-        plt.xlabel('x')
-        plt.ylabel('CDF')
-        plt.legend()
-        plt.show()
-
     return fint(x)
 
 def ksdensity_ICDF(x, p):
@@ -77,15 +67,62 @@ def ksdensity_ICDF(x, p):
     p[p<np.min(kde.cdf)] = kde.cdf[0]
     p[p>np.max(kde.cdf)] = kde.cdf[-1]
 
-    plotit = False
-    if plotit:
-        plt.plot(kde.cdf, kde.support, 'k', label='')
-        plt.plot(p, fint(p), '.r', label='sim points')
-        plt.title('ksdensity CDF')
-        plt.xlabel('CDF')
-        plt.ylabel('x')
-        plt.legend()
-        plt.show()
+    return fint(p)
+
+def GeneralizedPareto_CDF(x):
+    '''
+    Generalized Pareto fit
+    Returns cumulative probability function at x.
+    '''
+
+    # fit a generalized pareto and get params 
+    shape, _, scale = genpareto.fit(x)
+
+    # get generalized pareto CDF
+    cdf = genpareto.cdf(x, shape, scale=scale)
+
+    return cdf
+
+def GeneralizedPareto_ICDF(x, p):
+    '''
+    Generalized Pareto fit
+    Returns inverse cumulative probability function at p points
+    '''
+
+    # fit a generalized pareto and get params 
+    shape, _, scale = genpareto.fit(x)
+
+    # get percent points (inverse of CDF) 
+    icdf = genpareto.ppf(p, shape, scale=scale)
+
+    return icdf
+
+def Empirical_CDF(x):
+    '''
+    Returns empirical cumulative probability function at x.
+    '''
+
+    # fit ECDF
+    ecdf = ECDF(x)
+    cdf = ecdf(x)
+
+    return cdf
+
+def Empirical_ICDF(x, p):
+    '''
+    Returns inverse empirical cumulative probability function at p points
+    '''
+
+    # fit ECDF
+    ecdf = ECDF(x)
+    cdf = ecdf(x)
+
+    # interpolate KDE CDF to get support values 
+    fint = interp1d(
+        cdf, x,
+        fill_value=(np.amin(x), np.amax(x)),
+        bounds_error=False
+    )
 
     return fint(p)
 
@@ -99,6 +136,7 @@ def copulafit(u, family='gaussian'):
     nuhat = None  # degrees of freedom (for t student) 
 
     if family=='gaussian':
+        u[u>=1.0] = 0.999999
         inv_n = ndtri(u)
         rhohat = np.corrcoef(inv_n.T)
 
@@ -141,6 +179,54 @@ def copularnd(family, rhohat, n):
         raise ValueError("Wrong family parameter. Use 'gaussian' or 't'")
 
     return u
+
+def CopulaSimulation(U_data, kernels, num_sim):
+    '''
+    Fill statistical space using copula simulation
+
+    U_data: 2D nump.arra, each variable in a column
+    kernels: list of kernels for each column at U_data (KDE | GPareto)
+    num_sim: number of simulations
+    '''
+
+    # kernel CDF dictionary
+    d_kf = {
+        'KDE' : (ksdensity_CDF, ksdensity_ICDF),
+        'GPareto' : (GeneralizedPareto_CDF, GeneralizedPareto_ICDF),
+        'ECDF' : (Empirical_CDF, Empirical_ICDF),
+    }
+
+    # check kernel input
+    if any([k not in d_kf.keys() for k in kernels]):
+        raise ValueError(
+            'wrong kernel: {0}, use: {1}'.format(
+                kernel, ' | '.join(d_kf.keys())
+            )
+        )
+
+    # normalize: calculate data CDF using kernels
+    U_cdf = np.zeros(U_data.shape) * np.nan
+    ic = 0
+    for d, k in zip(U_data.T, kernels):
+        cdf, _ = d_kf[k]  # get kernel cdf
+        U_cdf[:, ic] = cdf(d)
+        ic += 1
+
+    # fit data CDFs to a gaussian copula 
+    rhohat, _ = copulafit(U_cdf, 'gaussian')
+
+    # simulate data to fill probabilistic space
+    U_cop = copularnd('gaussian', rhohat, num_sim)
+
+    # de-normalize: calculate data ICDF
+    U_sim = np.zeros(U_cop.shape) * np.nan
+    ic = 0
+    for d, c, k in zip(U_data.T, U_cop.T, kernels):
+        _, icdf = d_kf[k]  # get kernel icdf
+        U_sim[:, ic] = icdf(d, c)
+        ic += 1
+
+    return U_sim
 
 def runmean(X, m, modestr):
     '''
