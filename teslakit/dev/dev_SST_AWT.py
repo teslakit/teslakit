@@ -15,7 +15,7 @@ import numpy as np
 # tk libs
 from lib.objs.tkpaths import Site
 from lib.KMA import KMA_simple
-from lib.statistical import Persistences, ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
+from lib.statistical import Persistences, CopulaSimulation 
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.plotting.KMA import Plot_Weather_Types, Plot_WTs_Dates
 from lib.plotting.KMA import Plot_3D_3PCs_WTs, Plot_Compare_WTs_hist
@@ -135,26 +135,17 @@ for i in range(num_clusters):
     # find all the best match units equal
     ind = np.where(kma_labels == num)[:]
 
-    # transfom data using kernel estimator
-    cdf_PC1 = ksdensity_CDF(PC1[ind])
-    cdf_PC2 = ksdensity_CDF(PC2[ind])
-    cdf_PC3 = ksdensity_CDF(PC3[ind])
-    U = np.column_stack((cdf_PC1.T, cdf_PC2.T, cdf_PC3.T))
+    # PCs for weather type
+    PC123 = np.column_stack((PC1[ind], PC2[ind], PC3[ind]))
 
-    # fit PCs CDFs to a gaussian copula 
-    rhohat, _ = copulafit(U, 'gaussian')
+    # statistical simulate PCs using copulas with KDE (kernel density estimation)
+    kernels = ['KDE', 'KDE', 'KDE']
+    PC123_rnd = CopulaSimulation(PC123, kernels, num_PCs_rnd)
 
-    # simulate data to fill probabilistic space
-    U_sim = copularnd('gaussian', rhohat, num_PCs_rnd)
+    # store data 
+    d_pcs_fit['WT #{0}'.format(num+1)] = PC123
+    d_pcs_rnd['WT #{0}'.format(num+1)] = PC123_rnd
 
-    # get back PCs values from kernel estimator
-    PC1_rnd = ksdensity_ICDF(PC1[ind], U_sim[:,0])
-    PC2_rnd = ksdensity_ICDF(PC2[ind], U_sim[:,1])
-    PC3_rnd = ksdensity_ICDF(PC3[ind], U_sim[:,2])
-
-    # store data  # TODO : num o i????
-    d_pcs_fit['WT #{0}'.format(num+1)] = np.column_stack((PC1[ind],PC2[ind],PC3[ind]))
-    d_pcs_rnd['WT #{0}'.format(num+1)] = np.column_stack((PC1_rnd, PC2_rnd, PC3_rnd))
 
 # store WTS PC123 fit and rnd_generation
 p_pick = op.join(p_export_figs, 'd_pcs_fit.pickle')
