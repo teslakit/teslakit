@@ -26,6 +26,7 @@ p_tests_Tairua = op.join(p_data,'tests','tests_ALR','tests_Tairua')
 p_tairua_KMA = op.join(p_tests_Tairua, 'data','DWT_NZ_16.mat')
 p_covars = op.join(p_tests_Tairua, 'covars')
 p_output = op.join(p_tests_Tairua, 'output')
+p_report = op.join(p_tests_Tairua, 'output', 'report_fit')
 p_PCvsPC = op.join(p_output, 'PCvsPC.png')
 
 
@@ -69,6 +70,7 @@ xds_PCs = xr.Dataset(
     coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 xds_PCs_year = xds_PCs
+
 # reindex annual data to daily data
 xds_PCs = xr_daily(xds_PCs)
 
@@ -165,7 +167,7 @@ Plot_PCvsPC(
 
 
 # TEST parameters
-name_test = 'test_7_globs'
+name_test = 'test_Laura'
 num_clusters = 16
 num_sims = 10
 fit_and_save = True
@@ -198,7 +200,8 @@ else:
 
 
 # Plot model p-values and params
-ALRW.Report_Fit()
+ALRW.Report_Fit(p_report)
+print p_report
 
 
 # ALR model simulations 
@@ -214,5 +217,5 @@ else:
 #ALRW.Report_Sim(xds_ALR, xds_cov_sim)
 
 # report validation (sim=fit)
-ALRW.Report_Sim(xds_ALR, xds_cov_fit)
+#ALRW.Report_Sim(xds_ALR, xds_cov_fit)
 

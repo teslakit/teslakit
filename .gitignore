@@ -1,6 +1,9 @@
 # Add any directories, files, or patterns you don't want to be tracked by version control
 *.pyc
+*.ipynb_*
+ipynbs/.ipynb_checkpoints/
 data/
+htmls/
 vses
 www.bom.gov.au/
 dist/
