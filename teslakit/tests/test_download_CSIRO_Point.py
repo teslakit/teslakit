@@ -28,9 +28,9 @@ latp = [-3.68]
 
 # download point gridded data
 xds_p_grid = Download_Gridded(p_nc_grid, lonp, latp)
-print xds_p_grid
+print(xds_p_grid)
 
 # download point spec data
 xds_p_spec = Download_Spec(p_nc_spec, lonp, latp)
-print xds_p_spec
+print(xds_p_spec)
 

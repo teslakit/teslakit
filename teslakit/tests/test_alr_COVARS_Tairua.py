@@ -201,8 +201,6 @@ else:
 
 # Plot model p-values and params
 ALRW.Report_Fit(p_report)
-print p_report
-
 
 # ALR model simulations 
 if sim_and_save:

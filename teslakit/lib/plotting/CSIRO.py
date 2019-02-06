@@ -185,7 +185,6 @@ def WorldGlobeZoom_Stations(xds_stations, bk='simple', lon0=0, lat0=0, p_export=
     # zoom
     #ax = fig.add_axes([0.1,0.1,0.8,0.8],facecolor='k')
     xc,yc = m1(lon0, lat0)
-    print xc, yc
     m = Basemap(
         projection='ortho',
         lon_0=lon0,
@@ -194,7 +193,6 @@ def WorldGlobeZoom_Stations(xds_stations, bk='simple', lon0=0, lat0=0, p_export=
         llcrnrx=xc-delta_x, llcrnry=yc-delta_y,
         urcrnrx=yc+delta_x, urcrnry=yc+delta_y,
     )
-    print m
 
     # draw parallels.
     parallels = np.arange(-90.,90.,10.)

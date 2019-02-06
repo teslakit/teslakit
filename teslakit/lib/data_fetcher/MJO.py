@@ -58,8 +58,9 @@ def Download_MJO(p_ncfile, init_year=None, log=False):
     ds_mjo.to_netcdf(p_ncfile,'w')
 
     if log:
-        print '\nMJO historical data downloaded to \n{0}\nMJO time: {1} - {2}\n'.format(
+        print('\nMJO historical data downloaded to \n{0}\nMJO time: {1} - {2}\n'.format(
             p_ncfile, ds_mjo.time.values[0],ds_mjo.time.values[-1])
+        )
 
     return ds_mjo
 

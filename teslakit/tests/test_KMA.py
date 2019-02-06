@@ -37,7 +37,7 @@ num_clusters = 6
 repres = 0.95
 xds_KMA = KMA_simple(
     xds_PCA, num_clusters, repres)
-print xds_KMA
+print(xds_KMA)
 
 
 # --------------------------------------
@@ -69,6 +69,6 @@ repres = 0.95
 alpha = 0.3
 xds_KMA = KMA_regression_guided(
     xds_PCA, xds_Yregres, num_clusters, repres, alpha)
-print xds_KMA
+print(xds_KMA)
 
 

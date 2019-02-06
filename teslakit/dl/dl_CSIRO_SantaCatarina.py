@@ -36,7 +36,3 @@ p_nc_grid = op.join(p_area, 'grid.nc')
 # GRIDDED
 Download_Gridded_Area(p_nc_grid, lonq, latq, gridq)
 
-
-# plot data
-xds = xr.open_dataset(p_nc_grid)
-print xds

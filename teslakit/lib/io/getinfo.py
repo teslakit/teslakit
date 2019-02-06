@@ -12,7 +12,7 @@ from lib.io.matlab import ReadMatfile
 
 def description(p):
     'returns description of the file'
-    print 'getting info... {0}'.format(p)
+    print('getting info... {0}'.format(p))
 
     txt = '\n\n\n-->{0}'.format(p)
     if op.isdir(p):

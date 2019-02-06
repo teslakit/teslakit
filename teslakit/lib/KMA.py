@@ -21,7 +21,6 @@ def sort_cluster_gen_corr_end(centers, dimdim):
     dimx = np.ceil(np.sqrt(dimdim)).astype(int)
 
     if not np.equal(dimx*dimy, dimdim):
-        print 'ne'
         # TODO: RAISE ERROR
         pass
 
@@ -118,8 +117,6 @@ def sort_cluster_gen_corr_end(centers, dimdim):
                             qx=q
                             go_out=False
 
-
-    # print qx
     return sc.flatten('F')
 
 def KMA_simple(xds_PCA, num_clusters, repres=0.95):
@@ -180,7 +177,7 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     ) + np.tile(var_anom_mean, (num_clusters, 1))
 
 
-    print 'KMEANS classification COMPLETE.'
+    print('KMEANS classification COMPLETE.')
     return xr.Dataset(
         {
             'order': (('n_clusters'), kma_order),
@@ -275,7 +272,7 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
     sorted_cenEOFs = kma.cluster_centers_[kma_order,:]
     sorted_centroids = centroids[kma_order,:]
 
-    print 'KMEANS regression-guided classification COMPLETE.'
+    print('KMEANS regression-guided classification COMPLETE.')
     return xr.Dataset(
         {
             # KMA data

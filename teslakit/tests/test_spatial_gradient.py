@@ -50,5 +50,5 @@ xds_SLP = xr.Dataset(
 # calculate daily gradients
 xds_SLP = spatial_gradient(xds_SLP, 'SLP')
 
-print xds_SLP
+print(xds_SLP)
 

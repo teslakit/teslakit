@@ -52,7 +52,7 @@ class Site(object):
 
         txt='\nSite Parameters'
         for k1 in sorted(self.params.keys()):
-            print ''
+            print('')
             for k2 in sorted(self.params[k1].keys()):
                 aux ='\n.params.{0}.{1}'.format(k1, k2)
                 txt+='{0:.<45} {1}'.format(aux, self.params[k1][k2])

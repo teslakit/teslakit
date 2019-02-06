@@ -116,6 +116,7 @@ xds_categ_cp = xr.Dataset(
     }
 )
 xds_categ_cp.to_netcdf(p_probs_synth)
-print xds_categ_cp
+print(xds_categ_cp)
+print('')
 print('\nSyntethic TCs category-change stored at:\n{0}'.format(p_probs_synth))
 

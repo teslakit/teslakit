@@ -117,10 +117,7 @@ xds_wvs_fam_noTCs.to_netcdf(p_wvs_fams_noTCs, 'w')
 print('\nWaves Partitions (TCs removed) stored at:\n{0}'.format(p_wvs_parts_noTCs))
 print('\nWaves Families   (TCs removed) stored at:\n{0}'.format(p_wvs_fams_noTCs))
 
-print xds_wvs_pts_noTCs
-print ''
-print xds_wvs_fam_noTCs
-
-# TODO hay que hacer algo mas con estos intervalos hs_peak?
-
+print(xds_wvs_pts_noTCs)
+print('')
+print(xds_wvs_fam_noTCs)
 

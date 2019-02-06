@@ -287,7 +287,7 @@ class ALR_WRP(object):
         y = self.xds_bmus_fit.bmus.values
 
         # fit model
-        print "\nFitting autoregressive logistic model ..."
+        print("\nFitting autoregressive logistic model ...")
         start_time = time.time()
 
         if self.model_library == 'statsmodels':
@@ -317,13 +317,13 @@ class ALR_WRP(object):
             self.model.fit(X, y)
 
         else:
-            print 'wrong config: {0} not in model_library'.format(
+            print('wrong config: {0} not in model_library'.format(
                 self.model_library
-            )
+            ))
             sys.exit()
 
         elapsed_time = time.time() - start_time
-        print "Optimization done in {0:.2f} seconds\n".format(elapsed_time)
+        print("Optimization done in {0:.2f} seconds\n".format(elapsed_time))
 
         # save fitted model
         self.SaveModel()
@@ -335,13 +335,13 @@ class ALR_WRP(object):
             os.makedirs(self.p_base)
 
         pickle.dump(self.model, open(self.p_save_model, 'wb'))
-        print 'ALR model saved at {0}'.format(self.p_save_model)
+        print('ALR model saved at {0}'.format(self.p_save_model))
 
     def LoadModel(self):
         'Load fitted model'
 
         self.model = pickle.load(open(self.p_save_model, 'rb'))
-        print 'ALR model loaded from {0}'.format(self.p_save_model)
+        print('ALR model loaded from {0}'.format(self.p_save_model))
 
     def Report_Fit(self, export=False):
         'Report containing model fitting info'
@@ -409,9 +409,9 @@ class ALR_WRP(object):
         elif self.model_library == 'sklearn':
             pred_prob_fun = self.model.predict_proba
         else:
-            print 'wrong config: {0} not in model_library'.format(
+            print('wrong config: {0} not in model_library'.format(
                 self.model_library
-            )
+            ))
             sys.exit()
 
         # get needed data
@@ -420,10 +420,10 @@ class ALR_WRP(object):
         mk_order = self.mk_order
 
         # print some info
-        print 'ALR model fit   : {0} --- {1}'.format(
-            time_fit[0], time_fit[-1])
-        print 'ALR model sim   : {0} --- {1}'.format(
-            time_sim[0], time_sim[-1])
+        print('ALR model fit   : {0} --- {1}'.format(
+            time_fit[0], time_fit[-1]))
+        print('ALR model sim   : {0} --- {1}'.format(
+            time_sim[0], time_sim[-1]))
 
         # generate time yearly fractional array
         time_yfrac = self.GetFracYears(time_sim)
@@ -432,11 +432,11 @@ class ALR_WRP(object):
         d_terms_settings_sim = self.d_terms_settings.copy()
 
         # start simulations
-        print "\nLaunching simulations...\n"
+        print("\nLaunching simulations...\n")
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
 
-            #print 'Sim. Num. {0}'.format(n+1)
+            #print('Sim. Num. {0}'.format(n+1))
             evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
 

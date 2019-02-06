@@ -70,7 +70,7 @@ xds_WAVES.update({
 xds_WAVES = xds_WAVES.sel(
     time = slice(kma_date_ini, kma_date_end)
 ).resample(time='1D').mean()
-print 'WVS: ',xds_WAVES.time.values[0],' - ',xds_WAVES.time.values[-1]
+print('WVS: ',xds_WAVES.time.values[0],' - ',xds_WAVES.time.values[-1])
 
 
 # --------------------------------------
@@ -82,7 +82,7 @@ print('\nResampling SLP data to daily mean...')
 xds_SLP_day = xds_SLP_site.sel(
     time = slice(kma_date_ini, kma_date_end)
 ).resample(time='1D').mean()
-print 'SLP: ',xds_SLP_day.time.values[0],' - ',xds_SLP_day.time.values[-1]
+print('SLP: ',xds_SLP_day.time.values[0],' - ',xds_SLP_day.time.values[-1])
 
 # calculate daily gradients
 print('\nCalculating SLP spatial gradient...')

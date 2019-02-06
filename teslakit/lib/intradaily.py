@@ -55,7 +55,7 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
         if len(sep_hydro)==0:
             bin_k = 'bin{0:02d}'.format(i_wt)
             d_bins[bin_k] = None
-            print '{0} empty'.format(bin_k)
+            print('{0} empty'.format(bin_k))
             continue
 
         hydro_indx = []
@@ -145,7 +145,7 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
 
         # store at dictionary
         d_bins[bin_k] = bin_hy
-        print '{0} calculated'.format(bin_k)
+        print('{0} calculated'.format(bin_k))
 
     return d_bins
 

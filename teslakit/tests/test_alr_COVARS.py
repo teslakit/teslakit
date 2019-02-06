@@ -241,10 +241,10 @@ dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 
 # print some info
-print 'ALR model fit   : {0} --- {1}'.format(
-    d_covars_bmus_fit[0], d_covars_bmus_fit[-1])
-print 'ALR model sim   : {0} --- {1}'.format(
-    dates_sim[0], dates_sim[-1])
+print('ALR model fit   : {0} --- {1}'.format(
+    d_covars_bmus_fit[0], d_covars_bmus_fit[-1]))
+print('ALR model sim   : {0} --- {1}'.format(
+    dates_sim[0], dates_sim[-1]))
 
 
 # launch simulation

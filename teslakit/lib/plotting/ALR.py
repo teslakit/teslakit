@@ -481,9 +481,9 @@ def Generate_Covariate_rng(covar_name, cov_values):
         )
 
     else:
-        print 'Cant plot {0}, missing rng params in plotting library'.format(
+        print('Cant plot {0}, missing rng params in plotting library'.format(
             name_covar
-        )
+        ))
         return None, None
 
     # interval

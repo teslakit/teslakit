@@ -55,5 +55,5 @@ xds_KMA = KMA_regression_guided(
     xds_PCA, xds_Yregres, num_clusters, repres, alpha)
 xds_KMA.to_netcdf(p_KMA_save)
 
-print xds_KMA
+print(xds_KMA)
 

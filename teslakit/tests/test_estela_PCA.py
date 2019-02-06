@@ -26,7 +26,7 @@ xds_SLP_estela_pred = xr.open_dataset(p_estela_pred)
 # Calculate PCA
 xds_PCA = CalcPCA_EstelaPred(xds_SLP_estela_pred, 'SLP')
 xds_PCA.to_netcdf(op.join(p_test, 'xds_SLP_PCA.nc'))
-print xds_PCA
+print(xds_PCA)
 
 
 # Plot EOFs

@@ -88,13 +88,13 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
                 # clean failed download and retry
                 if op.isfile(p_nc):
                     os.remove(p_nc)
-                print 'timed out. retry... ',
+                print('timed out. retry... ',end=' ')
                 sys.stdout.flush()
             except:
                 # clean failed download and retry
                 if op.isfile(p_nc):
                     os.remove(p_nc)
-                print 'failed. retry... ',
+                print('failed. retry... ',end=' ')
                 sys.stdout.flush()
 
             finally:
@@ -129,22 +129,22 @@ def Download_Gridded_Area(p_ncfile, lonq, latq, grid_code='glob_24m'):
 
 
     # download data from files
-    print 'downloading CSIRO gridded data... {0} files'.format(len(l_urls))
+    print('downloading CSIRO gridded data... {0} files'.format(len(l_urls)))
     for u in l_urls_b:
         p_u_tmp = op.join(p_tmp_b, op.basename(u))
 
-        print op.basename(u), ' ... ',
+        print(op.basename(u), ' ... ', end='')
         sys.stdout.flush()
         getrfile(u, p_u_tmp)
-        print 'downloaded.'
+        print('downloaded.')
 
     for u in l_urls_a:
         p_u_tmp = op.join(p_tmp_a, op.basename(u))
 
-        print op.basename(u), ' ... ',
+        print(op.basename(u), ' ... ', end='')
         sys.stdout.flush()
         getrfile(u, p_u_tmp)
-        print 'downloaded.'
+        print('downloaded.')
 
     # join .nc files in one file
     xds_out_1 = Join_NCs(p_tmp_b, p_ncfile.replace('.nc', '_before_201305.nc'))
@@ -191,9 +191,9 @@ def Download_Spec_Point(p_ncfile, lon_p, lat_p):
         lon_station = slons[station_ix]
         lat_station = slats[station_ix]
 
-        print 'station ix: {0}. Longitude: {1}, Latitude: {2}'.format(
+        print('station ix: {0}. Longitude: {1}, Latitude: {2}'.format(
             station_ix, lon_station, lat_station
-        )
+        ))
 
         # store frequency and direction
         frequency = ff['frequency'][:]
@@ -205,9 +205,9 @@ def Download_Spec_Point(p_ncfile, lon_p, lat_p):
         os.makedirs(p_tmp)
 
     # download data from files
-    print 'downloading CSIRO spec data... {0} files'.format(len(l_urls))
+    print('downloading CSIRO spec data... {0} files'.format(len(l_urls)))
     for u in l_urls:
-        print op.basename(u)
+        print(op.basename(u))
 
         # local downloaded file
         p_u_tmp = op.join(p_tmp, op.basename(u))
@@ -246,7 +246,7 @@ def Download_Spec_Point(p_ncfile, lon_p, lat_p):
             ndays = int((u_time[-1]-u_time[0])/np.timedelta64(1,'D'))
             ct = 0
             for di in range(0, ndays, ch_days):
-                print u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24)
+                print(u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24))
                 xds_temp['Efth'][ct:min(ct+ch_days*24,ndays*24),:,:] = \
                 xds_u[vn_efth][ct:min(ct+ch_days*24, ndays*24),station_ix,:,:]
                 ct+=ch_days*24
@@ -311,9 +311,9 @@ def Download_Spec_Area(p_ncfile, lonq, latq):
 
         # print stations to download
         for s,lo,la in zip(sid_stas, lon_stas, lat_stas):
-            print 'station ix: {0}. Longitude: {1}, Latitude: {2}'.format(
+            print('station ix: {0}. Longitude: {1}, Latitude: {2}'.format(
                 s, lo, la
-            )
+            ))
 
         # store frequency and direction
         frequency = ff['frequency'][:]
@@ -325,9 +325,9 @@ def Download_Spec_Area(p_ncfile, lonq, latq):
         os.makedirs(p_tmp)
 
     # download data from files
-    print 'downloading CSIRO spec data... {0} files'.format(len(l_urls))
+    print('downloading CSIRO spec data... {0} files'.format(len(l_urls)))
     for u in l_urls:
-        print op.basename(u)
+        print(op.basename(u))
 
         # local downloaded file
         p_u_tmp = op.join(p_tmp, op.basename(u))
@@ -368,7 +368,7 @@ def Download_Spec_Area(p_ncfile, lonq, latq):
             ndays = int((u_time[-1]-u_time[0])/np.timedelta64(1,'D'))
             ct = 0
             for di in range(0, ndays, ch_days):
-                print u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24)
+                print(u_time[ct],' - ',ct,':', min(ct+ch_days*24, ndays*24))
                 ct2 = min(ct+ch_days*24,ndays*24)
                 xds_temp['Efth'][ct:ct2,:,:,:] = \
                 xds_u.sel(station=sid_stas)[vn_efth][ct:ct2,:,:,:]
@@ -376,7 +376,7 @@ def Download_Spec_Area(p_ncfile, lonq, latq):
 
             # save temp file
             xds_temp.to_netcdf(p_u_tmp,'w')
-    print 'done.'
+    print('done.')
 
     # join .nc files in one file
     xds_out = Join_NCs(p_tmp, p_ncfile)
@@ -403,7 +403,7 @@ def Join_NCs(p_ncs_folder, p_out_nc):
     l_ncs = sorted(
         [op.join(p_ncs_folder,n) for n in os.listdir(p_ncs_folder) if
          n.endswith('.nc')])
-    print 'joining {0} netCDF4 files...'.format(len(l_ncs))
+    print('joining {0} netCDF4 files...'.format(len(l_ncs)))
 
     # first join by chk size in .nc packs 
     c = 1
@@ -413,7 +413,7 @@ def Join_NCs(p_ncs_folder, p_out_nc):
 
         xds_pack = xr.open_mfdataset(pack)
         p_pack = op.join(p_ncs_folder, 'xds_packed_{0:03d}.nc'.format(c))
-        print 'pack {0}'.format(op.basename(p_pack))
+        print('pack {0}'.format(op.basename(p_pack)))
         xds_pack.to_netcdf(p_pack,'w')
         xds_pack.close()
         c+=1
@@ -429,7 +429,7 @@ def Join_NCs(p_ncs_folder, p_out_nc):
     for p in l_packs:
         os.remove(p)
 
-    print 'done'
+    print('done')
     return xr.open_dataset(p_out_nc)
 
 
@@ -445,7 +445,7 @@ def Download_Spec_Stations(p_ncfile):
     l_urls = Generate_URLs('spec')
 
     # get stations 
-    print 'downloading CSIRO spec stations...'
+    print('downloading CSIRO spec stations...')
     with xr.open_dataset(l_urls[0]) as ff:
 
         # generate output dataset
@@ -459,7 +459,7 @@ def Download_Spec_Stations(p_ncfile):
                 'station' : ff.station,
             }
         )
-    print 'done.'
+    print('done.')
 
     # save to netcdf file
     xds_out.to_netcdf(p_ncfile, 'w')
@@ -483,7 +483,7 @@ def Download_Gridded_Coords(p_ncfolder):
     # Generate URL list 
     l_xds_grids = []
     for gc in grid_codes:
-        print 'downloading gridded coordinates: {0} ... '.format(gc)
+        print('downloading gridded coordinates: {0} ... '.format(gc))
         l_urls = Generate_URLs('gridded', gc)
         with xr.open_dataset(l_urls[0]) as ff:
 
@@ -507,7 +507,7 @@ def Download_Gridded_Coords(p_ncfolder):
             # save to netcdf file
             xds_out.to_netcdf(op.join(p_ncfolder,'{0}.nc'.format(gc)), 'w')
 
-    print 'done.'
+    print('done.')
 
     # Return grids
     return l_xds_grids

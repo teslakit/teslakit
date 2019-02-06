@@ -43,8 +43,6 @@ XX,YY = np.meshgrid(
 DD = xds_SLP_site.isel(time=5).SLP.values
 m.contourf(XX,YY,DD)
 
-print XX
-
 # draw parallels.
 parallels = np.arange(-90.,90.,10.)
 m.drawparallels(parallels, labels=[1,0,0,0],fontsize=6)

@@ -12,7 +12,7 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
     'Read data from CFS SLP database: netCDF files'
     # TODO: poder parar y retomar la extraccion
 
-    print 'Reading SLP data from files...'
+    print('Reading SLP data from files...')
 
     ncfiles_1 = sorted(
         [op.join(p_db,f) for f in os.listdir(p_db) \
@@ -50,7 +50,7 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
     np_SLP = np.nan * np.ones((len(time), len(latitude), len(longitude)))
     ti = 0
     for f in ncfiles:
-        print f
+        print(f)
         with nc4.Dataset(f,'r') as ds:
             time_len = len(ds.variables['time'])
             slp = ds.variables['PRMSL_L101'][:]
