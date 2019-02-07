@@ -25,6 +25,7 @@ def ReadSLP(p_db, lat1, lat2, lon1, lon2, resample, p_save = None):
     ncfiles = ncfiles_1 + ncfiles_2
 
     if not ncfiles:
+        print('No files for extraction')
         return None
 
     # get time array

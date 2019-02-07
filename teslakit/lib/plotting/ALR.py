@@ -113,8 +113,8 @@ def Plot_PValues(p_values, term_names, p_export=None):
     fig.colorbar(c, ax=ax)
 
     # Pval text
-    for i in xrange(p_values.shape[1]):
-        for j in xrange(p_values.shape[0]):
+    for i in range(p_values.shape[1]):
+        for j in range(p_values.shape[0]):
             v = p_values[j,i]
             if v<=0.1:
                 ax.text(i+0.5, j+0.5, '{0:.4f}'.format(v),
@@ -155,8 +155,8 @@ def Plot_Params(params, term_names, p_export=None):
 
     # text table and color
     c = ax.pcolor(params, cmap=plt.cm.bwr)
-    for i in xrange(params.shape[1]):
-        for j in xrange(params.shape[0]):
+    for i in range(params.shape[1]):
+        for j in range(params.shape[0]):
             v = params[j,i]
             ax.text(i+0.5, j+0.5, '{0:.1f}'.format(v),
                     va='center', ha='center', size=6)
@@ -277,7 +277,7 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
         row_val = m_plot[r,:]
         plt.bar(
             range(365), row_val, bottom=bottom_val,
-            width=1, color = np_colors_int[r]
+            width=1, color = np.array([np_colors_int[r]])
                )
 
         # store bottom
@@ -327,7 +327,7 @@ def Plot_Covariate(bmus_values, covar_values,
         row_val = m_plot[r,:]
         plt.bar(
             x_val, row_val, bottom=bottom_val,
-            width=interval, color = np_colors_int[r]
+            width=interval, color = np.array([np_colors_int[r]])
                )
 
         # store bottom
@@ -403,7 +403,7 @@ def Plot_Compare_PerpYear(num_clusters,
         row_val = m_plot_sim[r,:]
         ax_sim.bar(
             x_val, row_val, bottom=bottom_val,
-            width=1, color = np_colors_int[r]
+            width=1, color = np.array([np_colors_int[r]])
                )
 
         # store bottom
@@ -528,7 +528,7 @@ def Plot_Compare_Covariate(num_clusters,
         row_val = m_plot_sim[r,:]
         ax_sim.bar(
             x_val, row_val, bottom=bottom_val,
-            width=interval, color = np_colors_int[r]
+            width=interval, color = np.array([np_colors_int[r]])
                )
 
         # store bottom

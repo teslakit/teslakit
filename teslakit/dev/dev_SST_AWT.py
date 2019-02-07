@@ -88,7 +88,7 @@ xds_AWT = KMA_simple(
 # TODO: resultado KMA a veces funciona a veces no????? 
 
 # PCA, KMA  dates (annual array)
-dates_fit = [datetime(y,m1,01) for y in range(y1,yN+1)]
+dates_fit = [datetime(y,m1,1) for y in range(y1,yN+1)]
 xds_PCA['time']=(('n_components'), dates_fit)
 xds_AWT['time']=(('n_pcacomp'), dates_fit)
 
@@ -198,7 +198,7 @@ ALRW.FitModel(max_iter=10000)
 # Autoregressive Logistic Regression - simulate 
 
 # simulation dates (annual array)
-dates_sim = [datetime(y,m1,01) for y in range(y1_sim,y2_sim+1)]
+dates_sim = [datetime(y,m1,1) for y in range(y1_sim,y2_sim+1)]
 
 # launch simulation
 sim_num = 1

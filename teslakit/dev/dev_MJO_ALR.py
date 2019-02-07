@@ -12,6 +12,10 @@ import numpy as np
 import xarray as xr
 from datetime import date, timedelta, datetime
 
+# pandas - matplotlib
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 # tk libs
 from lib.objs.tkpaths import Site
 from lib.mjo import GetMJOCategories

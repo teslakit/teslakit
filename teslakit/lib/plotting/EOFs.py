@@ -141,8 +141,9 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
         # insert nans in data
         base = np.nan * np.ones(data_pos.shape)
         base[data_pos] = var_grd_1d
-        var = base[:len(base)/2]
-        grd = base[len(base)/2:]
+
+        var = base[:int(len(base)/2)]
+        grd = base[int(len(base)/2):]
 
         # reshape data to grid
         C1 = np.reshape(var, (len(lon), len(lat)))

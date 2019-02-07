@@ -125,7 +125,7 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     nlon = data_avg_lat.longitude.shape[0]
     ntime = data_avg_lat.time.shape[0]
     hovmoller=xr.DataArray(
-        np.reshape(data_avg_lat.values, (12*nlon, ntime/12), order='F'))
+        np.reshape(data_avg_lat.values, (12*nlon, ntime//12), order='F'))
     hovmoller = hovmoller.transpose()
 
     # mean and standard deviation
@@ -143,7 +143,7 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     ipca = PCA(n_components=var_anom_demean.shape[0])
     PCs = ipca.fit_transform(var_anom_demean)
 
-    print 'Principal Components Analysis COMPLETE'
+    print('Principal Components Analysis COMPLETE')
     return xr.Dataset(
         {
             'PCs': (('n_components', 'n_components'), PCs),
@@ -218,7 +218,7 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     PCs = ipca.fit_transform(pred_norm)
 
     # return dataset
-    print 'Principal Components Analysis COMPLETE'
+    print('Principal Components Analysis COMPLETE')
     return xr.Dataset(
         {
             'PCs': (('time', 'n_components'), PCs),

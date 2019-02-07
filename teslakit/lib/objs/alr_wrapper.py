@@ -262,7 +262,7 @@ class ALR_WRP(object):
         d1 = time_1.day
 
         # start "year cicle" at 01/01 
-        d_y0 = date(y0, 01, 01)
+        d_y0 = date(y0, 1, 1)
 
         # time array
         d_0 = date(y0, m0, d0)
@@ -281,9 +281,8 @@ class ALR_WRP(object):
     def FitModel(self, max_iter=1000):
         'Fits ARL model using sklearn'
 
-
         # get fitting data
-        X = np.concatenate(self.terms_fit.values(), axis=1)
+        X = np.concatenate(list(self.terms_fit.values()), axis=1)
         y = self.xds_bmus_fit.bmus.values
 
         # fit model
@@ -392,7 +391,7 @@ class ALR_WRP(object):
         'Plot terms used for model fitting'
 
         # get data for plotting
-        term_mx = np.concatenate(self.terms_fit.values(), axis=1)
+        term_mx = np.concatenate(list(self.terms_fit.values()), axis=1)
         term_ds = [npdt2dt(t) for t in self.xds_bmus_fit.time.values]
         term_ns = self.terms_fit_names
 
@@ -473,7 +472,7 @@ class ALR_WRP(object):
 
 
                 # Event sequence simulation  (sklearn)
-                X = np.concatenate(terms_i.values(),axis=1)
+                X = np.concatenate(list(terms_i.values()), axis=1)
                 prob = pred_prob_fun(X)  # statsmodels // sklearn functions
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)

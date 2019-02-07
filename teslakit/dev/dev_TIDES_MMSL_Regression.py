@@ -8,6 +8,10 @@ import sys
 from collections import OrderedDict
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
+# pandas - matplotlib
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
+
 # python libs
 import numpy as np
 import xarray as xr

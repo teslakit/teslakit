@@ -124,8 +124,8 @@ def Plot_Weather_Types(xds_AWT, longitude, p_export=None):
         n_cols = int(sqrt_clusters)
     else:
         l_div = GetDivisors(n_clusters)
-        n_rows = l_div[len(l_div)/2]
-        n_cols = n_clusters/n_rows
+        n_rows = l_div[len(l_div)//2]
+        n_cols = n_clusters//n_rows
 
     # plot figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
@@ -200,7 +200,7 @@ def Plot_WTs_Dates(xds_AWT, p_export=None):
             ax.text(
                 tx, ty, tt,
                 {'fontsize':6},
-                verticalalignment=text_cycler.next(),
+                verticalalignment = next(text_cycler),
             )
         ax.set_ylabel('WT',{'fontsize':8})
         ax.set_xlabel('Year',{'fontsize':8})
