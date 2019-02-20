@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import scipy.io as sio
+import os
 import os.path as op
 from scipy.io.matlab.mio5_params import mat_struct
 import h5py
@@ -250,4 +251,68 @@ def ReadNakajoMats(p_mfiles):
         }
     )
     return xds_out
+
+def ReadTCsSimulations(p_sims, point_file='Punto1.mat'):
+    'Read data from solved TCs simulations. Return xarray.Dataset'
+
+    p_sims = sorted(
+        [op.join(p_sims, x) for x in os.listdir(p_sims) if
+         op.isdir(op.join(p_sims, x))]
+    )
+
+    # storm parameters
+    n_sims = len(p_sims)
+    xds_storms_sims = xr.Dataset(
+        {
+            'hs':(('storm',), np.ones(n_sims) * np.nan),
+            'tp':(('storm',), np.ones(n_sims) * np.nan),
+            'dir':(('storm',), np.ones(n_sims) * np.nan),
+            'ss':(('storm',), np.ones(n_sims) * np.nan),
+            'twl':(('storm',), np.ones(n_sims) * np.nan),
+            'mu':(('storm',), np.ones(n_sims) * np.nan),
+        },
+        coords = {'storm':np.arange(n_sims)}
+    )
+    # fix CYC files
+    lst = p_sims[100]
+    p_sims.pop(100)
+    p_sims.append(lst)
+
+    # read file by file
+    for i_s, p_s in enumerate(p_sims):
+        p_mat = op.join(p_s, point_file)
+
+        d_mat = ReadMatfile(p_mat)
+        data = d_mat['data']
+        hs = data['hs']
+        tp = data['tp']
+        dr = data['dir']
+        ss = data['ss'] / 100.0
+        time = data['time']
+
+        # calculate TWL
+        twl = 0.053 * hs**0.5 * tp + ss
+
+        # calculate max TWL position
+        i_max = np.nanargmax(twl)
+        twl_max = np.nanmax(twl)
+
+        # calculate MU (12 - 12 hours window)
+        pos = np.arange(len(ss))
+        ix = np.where((pos>=i_max-12) & (pos<=i_max+12))
+        twl_w = twl[ix]
+
+        dt = 1.0 / len(twl_w)
+        time_norm = np.arange(dt,1+dt,dt)
+        mu = np.trapz(twl_w, time_norm) / twl_max
+
+        # store storm parameters
+        xds_storms_sims.hs[i_s] = hs[i_max]
+        xds_storms_sims.tp[i_s] = tp[i_max]
+        xds_storms_sims.dir[i_s] = dr[i_max]
+        xds_storms_sims.ss[i_s] = ss[i_max]
+        xds_storms_sims.twl[i_s] = twl[i_max]
+        xds_storms_sims.mu[i_s] = mu
+
+    return xds_storms_sims
 
