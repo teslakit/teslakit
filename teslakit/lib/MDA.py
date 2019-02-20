@@ -3,9 +3,9 @@
 
 import numpy as np
 
-def Normalize(data, ix_scalar, ix_directional):
+def Normalize(data, ix_scalar, ix_directional, minis=[], maxis=[]):
     '''
-    Normalize data subset for MaxDiss algorithm
+    Normalize data subset - norm = val - min) / (max - min)
 
     data - data to normalize, data variables at columns.
     ix_scalar - scalar columns indexes
@@ -13,26 +13,40 @@ def Normalize(data, ix_scalar, ix_directional):
     '''
 
     data_norm = np.zeros(data.shape) * np.nan
-    maxis = []
-    minis = []
 
-    # scalar data
-    for ix in ix_scalar:
-        v = data[:,ix]
-        mi = np.amin(v)
-        ma = np.amax(v)
-        data_norm[:,ix] = (v - mi) / (ma - mi)
-        minis.append(mi)
-        maxis.append(ma)
-    minis = np.array(minis)
-    maxis = np.array(maxis)
+    # calculate maxs and mins 
+    if minis==[] or maxis==[]:
+
+        # scalar data
+        for ix in ix_scalar:
+            v = data[:, ix]
+            mi = np.amin(v)
+            ma = np.amax(v)
+            data_norm[:, ix] = (v - mi) / (ma - mi)
+            minis.append(mi)
+            maxis.append(ma)
+
+        minis = np.array(minis)
+        maxis = np.array(maxis)
+
+    # max and mins given
+    else:
+
+        # scalar data
+        for c, ix in enumerate(ix_scalar):
+            v = data[:, ix]
+            mi = minis[c]
+            ma = maxis[c]
+            data_norm[:,ix] = (v - mi) / (ma - mi)
 
     # directional data
     for ix in ix_directional:
         v = data[:,ix]
         data_norm[:,ix] = v * np.pi / 180.0
 
+
     return data_norm, minis, maxis
+
 
 def DeNormalize(data_norm, ix_scalar, ix_directional, minis, maxis):
     '''
@@ -50,12 +64,12 @@ def DeNormalize(data_norm, ix_scalar, ix_directional, minis, maxis):
         v = data_norm[:,ix]
         mi = minis[c]
         ma = maxis[c]
-        data[:,ix] = v * (ma - mi) + mi
+        data[:, ix] = v * (ma - mi) + mi
 
     # directional data
     for ix in ix_directional:
         v = data_norm[:,ix]
-        data[:,ix] = v * 180 / np.pi
+        data[:, ix] = v * 180 / np.pi
 
     return data
 
