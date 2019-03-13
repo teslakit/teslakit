@@ -10,6 +10,32 @@ from datetime import datetime
 from sklearn import linear_model
 
 
+def Persistences(series):
+    'Return series persistences for each element'
+
+    # output dict
+    d_pers = {}
+    for e in set(series):
+        d_pers[e] = []
+
+    # analize series
+    e0 = None
+    while series.any():
+
+        # pol left
+        e1 = series[0]
+        series = np.delete(series, 0)
+
+        if e1 != e0:
+            d_pers[e1].append(1)
+        else:
+            d_pers[e1][-1]+=1
+
+        # step forward
+        e0 = e1
+
+    return d_pers
+
 def sort_cluster_gen_corr_end(centers, dimdim):
     '''
     SOMs alternative
@@ -194,7 +220,9 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
         }
     )
 
-def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha=0.5):
+def KMA_regression_guided(
+    xds_PCA, xds_Yregres, num_clusters,
+    repres=0.95, alpha=0.5, min_group_size=None):
     '''
     KMA Classification: regression guided
 
@@ -242,12 +270,34 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
         axis=1
     )
 
-    # TODO: INTRODUCIR BUCLE QUE REPITA KMEANS HASTA UN MIN DE DATOS
-    # KMEANS
-    kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
+    # KMeans
+    keep_iter = True
+    count_iter = 0
+    while keep_iter:
+        kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
 
-    # groupsize
-    _, group_size = np.unique(kma.labels_, return_counts=True)
+        # check minimun group_size
+        group_keys, group_size = np.unique(kma.labels_, return_counts=True)
+
+        # sort output
+        group_k_s = np.column_stack([group_keys, group_size])
+        group_k_s = group_k_s[group_k_s[:,0].argsort()]  # sort by cluster num
+
+        if not min_group_size:
+            keep_iter = False
+
+        else:
+            # keep iterating?
+            keep_iter = np.where(group_k_s[:,1] < min_group_size)[0].any()
+            count_iter += 1
+
+            # log kma iteration
+            print('KMA iteration info:')
+            for rr in group_k_s:
+                print('  cluster: {0}, size: {1}'.format(rr[0], rr[1]))
+            print('Try again: ', keep_iter)
+            print('Total attemps: ', count_iter)
+            print()
 
     # groups
     d_groups = {}
@@ -279,7 +329,7 @@ def KMA_regression_guided(xds_PCA, xds_Yregres, num_clusters, repres=0.95, alpha
             'bmus': (('n_components',), kma.labels_),
             'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
             'centroids': (('n_clusters','n_features'), centroids),
-            'group_size': (('n_clusters'), group_size),
+            'group_size': (('n_clusters'), group_k_s[:,1]),
 
             # sorted KMA data
             'sorted_order': (('n_clusters'), kma_order),
