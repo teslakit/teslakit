@@ -116,3 +116,8 @@ def GetDistribution(xds_wps, swell_sectors):
 
     return xds_parts
 
+def Calculate_TWL(hs, tp):
+    'Returns Total Water Level'
+
+    return 0.043*(hs*1.56*(tp/1.25)**2)**(0.5)
+
