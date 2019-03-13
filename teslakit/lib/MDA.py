@@ -110,6 +110,9 @@ def MaxDiss_Simplified_NoThreshold(data, num_centers, ix_scalar, ix_directional)
 
     # TODO: PARSED FROM MATLAB ORIGINAL. CAN REFACTOR
 
+    print('\nMaxDiss waves parameters: {0} --> {1}\n'.format(
+        data.shape[0], num_centers))
+
     # normalize scalar and directional data
     data_norm, minis, maxis = Normalize(data, ix_scalar, ix_directional)
 
@@ -143,7 +146,13 @@ def MaxDiss_Simplified_NoThreshold(data, num_centers, ix_scalar, ix_directional)
             train = np.delete(train, bmu, axis=0)
             d_last = np.delete(d_last, bmu, axis=0)
 
+            # log
+            fmt = '0{0}d'.format(len(str(num_centers)))
+            print('   MDA centroids: {1:{0}}/{2:{0}}'.format(
+                fmt, subset.shape[0], num_centers), end='\r')
+
         n_c = subset.shape[0]
+    print('\n')
 
     # normalize scalar and directional data
     centroids = DeNormalize(subset, ix_scalar, ix_directional, minis, maxis)
