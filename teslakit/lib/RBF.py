@@ -4,6 +4,9 @@
 import numpy as np
 import time
 from scipy.optimize import fminbound
+from sklearn.model_selection import KFold
+from sklearn.metrics import mean_squared_error
+import xarray as xr
 
 from lib.MDA import Normalize
 
@@ -200,3 +203,62 @@ def RBF_Reconstruction(
 
     return output
 
+def RBF_Validation(
+    subset, ix_scalar_subset, ix_directional_subset,
+    target, ix_scalar_target, ix_directional_target,
+    n_splits=3, shuffle=False):
+    '''
+    Radial Basis Function (Gaussian) k-fold mean squared error
+
+    subset                - subset used for fitting RBF (dim_input)
+    ix_scalar_subset      - scalar columns indexes for subset
+    ix_directional_subset - directional columns indexes for subset
+    target                - target used for fitting RBF (dim_output)
+    ix_scalar_target      - scalar columns indexes for target
+    ix_directional_target - directional columns indexes for target
+    '''
+
+    # get train-test combinations using kfold from sklearn
+    kF = KFold(n_splits=n_splits, shuffle=shuffle, random_state=None)
+
+    l_mse = []
+    l_trn_ix = []
+    l_tst_ix = []
+    for c, (train_index, test_index) in enumerate(kF.split(subset)):
+        print('RBFs Kfold Validation: {0}/{1}'.format(c+1, n_splits))
+
+        # get train and test data
+        X_train, X_test = subset[train_index], subset[test_index]
+        Y_train, Y_test = target[train_index], target[test_index]
+
+        # fit RBFs with train data and interpolate test data
+        Y_rbf = RBF_Reconstruction(
+            X_train, ix_scalar_subset, ix_directional_subset,
+            Y_train, ix_scalar_target, ix_directional_target,
+            X_test)
+
+        # calculate mean squared error
+        mse = mean_squared_error(Y_test, Y_rbf)
+        print('mean squared error : {0}'.format(mse))
+        print()
+
+        # store data for output
+        l_mse.append(mse)
+        l_trn_ix.append(train_index)
+        l_tst_ix.append(test_index)
+
+    # return validation data
+    return xr.Dataset(
+        {
+            'mean_squared_error': (('n_split',), l_mse),
+            'train_index': (
+                ('train','n_split',), np.column_stack(tuple(l_trn_ix))
+            ),
+            'test_index': (
+                ('test','n_split',), np.column_stack(tuple(l_tst_ix))
+            ),
+        },
+        coords = {
+            'n_split':np.arange(n_splits),
+        }
+    )
