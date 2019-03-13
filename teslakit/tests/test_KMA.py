@@ -67,8 +67,11 @@ xds_Yregres = SMRM(xds_PCA, xds_GOW, ['hs','t02','Fe'])
 num_clusters = 36
 repres = 0.95
 alpha = 0.3
+min_size = None  # any int will activate group_min_size iteration
 xds_KMA = KMA_regression_guided(
-    xds_PCA, xds_Yregres, num_clusters, repres, alpha)
+    xds_PCA, xds_Yregres, num_clusters,
+    repres, alpha, min_size
+)
 print(xds_KMA)
 
 
