@@ -3,7 +3,8 @@
 
 # TODO: BUSCAR UNA QUE FUNCIONE EN CUALQUIER TERMINAL
 
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1,
+                      length = 80, fill = '█'):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -20,8 +21,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     bar = fill * filledLength + '-' * (length - filledLength)
     print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
     # Print New Line on Complete
-    if iteration == total:
-        print()
+    if iteration == total: print()
 
 # example
 #from time import sleep
