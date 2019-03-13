@@ -14,8 +14,8 @@ import numpy as np
 
 # tk libs
 from lib.objs.tkpaths import Site
-from lib.KMA import KMA_simple
-from lib.statistical import Persistences, CopulaSimulation 
+from lib.KMA import KMA_simple, Persistences
+from lib.statistical import CopulaSimulation
 from lib.plotting.EOFs import Plot_EOFs_latavg as PlotEOFs
 from lib.plotting.KMA import Plot_Weather_Types, Plot_WTs_Dates
 from lib.plotting.KMA import Plot_3D_3PCs_WTs, Plot_Compare_WTs_hist
