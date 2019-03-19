@@ -18,6 +18,7 @@ from lib.objs.alr_wrapper import ALR_WRP
 from lib.custom_dateutils import xds_reindex_daily as xr_daily
 from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
 from lib.custom_dateutils import xds2datetime as x2d
+from lib.io.aux_nc import StoreBugXdset as sbxds
 
 
 # --------------------------------------
@@ -38,11 +39,13 @@ p_sst_PCs_sim_d = ST.SST.pcs_sim_d         # daily PCs sim
 p_mjo_sim =  ST.MJO.sim                    # daily MJO sim
 
 # output files
-p_alr_covars =  ST.ESTELA.alrw  # alr wrapper
+p_alr_covars =  ST.ESTELA.alrw             # alr wrapper
+p_dwt_sim = ST.ESTELA.sim_dwt              # daily weather types simulated with ALR
 
 # ALR parameters
 alr_markov_order = int(PR.SIMULATION.alr_covars_markov)
 alr_seasonality = ast.literal_eval(PR.SIMULATION.alr_covars_seasonality)
+n_sim = int(PR.SIMULATION.n_sim)
 
 
 # --------------------------------------
@@ -194,7 +197,13 @@ dates_sim = d_covars_sim
 
 # launch simulation
 xds_alr = ALRW.Simulate(sim_num, dates_sim, xds_cov_sim)
-evbmus_sim = np.squeeze(xds_alr.evbmus_sims.values[:])
 
-# TODO: GUARDAR COMO EN DEV_MJO_ALR
+# Store Daily Weather Types
+xds_DWT_sim = xds_alr.evbmus_sims.to_dataset()
+print(xds_DWT_sim)
+
+# xarray.Dataset.to_netcdf() wont work with this time array and time dtype
+sbxds(xds_DWT_sim, p_dwt_sim)
+print('\nDWTs Simulation stored at:\n{0}'.format(p_dwt_sim))
+
 
