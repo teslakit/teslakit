@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import netCDF4
+import numpy as np
 from datetime import datetime, date
+from lib.custom_dateutils import npdt64todatetime as n2d
 
 
 def StoreBugXdset(xds_data, p_ncfile):
@@ -38,6 +40,9 @@ def StoreBugXdset(xds_data, p_ncfile):
                 if isinstance(vals[0], date):
                     # parse datetime.date to datetime.datetime
                     vals = [datetime.combine(d,datetime.min.time()) for d in vals]
+                elif isinstance(vals[0], np.datetime64):
+                    # parse numpy.datetime64 to datetime.datetime
+                    vals = [n2d(d) for d in vals]
 
                 dv[:] = netCDF4.date2num(vals, units=units, calendar=calendar)
                 dv.units = units
