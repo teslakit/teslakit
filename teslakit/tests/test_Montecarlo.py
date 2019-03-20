@@ -15,6 +15,7 @@ import numpy as np
 from lib.io.matlab import ReadMatfile as rmf
 from lib.extremes import Climate_Emulator
 from lib.custom_dateutils import DateConverter_Mat2Py as d2d
+from lib.extremes import Climate_Emulator as CE
 
 
 # --------------------------------------
@@ -27,8 +28,8 @@ p_data = op.join(p_data, 'tests', 'test_ExtremesGEV')
 # Load test data (original matlab files)
 
 # waves and KMA MaxStorm
-xds_WT_wvs = xr.open_dataset(op.join(p_data, 'xds_WT_wvs_fam_noTCs.nc'))
-xds_WT_KMA = xr.open_dataset(op.join(p_data, 'xds_WT_KMA.nc'))
+xds_WVS_MaxStorm = xr.open_dataset(op.join(p_data, 'xds_WT_wvs_fam_noTCs.nc'))
+xds_KMA_MaxStorm = xr.open_dataset(op.join(p_data, 'xds_WT_KMA.nc'))
 
 # DWTs (Daily Weather Types simulated using ALR)
 p_DWTs = op.join(p_data, 'Nico_Montecarlo', 'DWT_1000years_mjo_awt_v2.mat')
@@ -72,17 +73,35 @@ pchange_TCs = rmf(p_probsTCs)['p_sint']
 
 
 
+# get WTs37,42 from matlab file
+p_WTTCs = op.join(p_data, 'Nico_Montecarlo', 'KWA_waves_2PART_TCs_nan.mat')
+dm_WTTCs = rmf(p_WTTCs)
 
-# TODO: SEGUIR AQUI
+# Load TCs-window waves-families data by category
+d_WT_TCs_wvs = {}
+for i in range(6):
 
-# DAILY WTS SIM
-# WT40, WT41, WT42...
-# parametros extremes: PARAM_GEV_SAMPLE, PROB_CHROM, SIGMA, 
+    k = 'wt{0}'.format(i+1+36)
+    sd = dm_WTTCs[k]
 
-
+    d_WT_TCs_wvs['{0}'.format(i)] = xr.Dataset(
+        {
+            'sea_Hs':(('time',), sd['seaHs']),
+            'sea_Dir':(('time',), sd['seaDir']),
+            'sea_Tp':(('time',), sd['seaTp']),
+            'swell_1_Hs':(('time',), sd['swl1Hs']),
+            'swell_1_Dir':(('time',), sd['swl1Dir']),
+            'swell_1_Tp':(('time',), sd['swl1Tp']),
+            'swell_2_Hs':(('time',), sd['swl2Hs']),
+            'swell_2_Dir':(('time',), sd['swl2Dir']),
+            'swell_2_Tp':(('time',), sd['swl2Tp']),
+        }
+    )
 
 
 # --------------------------------------
-# test chromosomes
+# test Climate Emulator
 
-# variables to get chrom probs
+# TODO
+CE(xds_WVS_MaxStorm, xds_KMA_MaxStorm)
+
