@@ -7,6 +7,7 @@ from scipy.stats import  gumbel_l, genextreme, spearmanr
 from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.special import ndtri  # norm inv
 from itertools import permutations
+import xarray as xr
 
 def ChromMatrix(vs):
     'Return chromosome matrix for np.array vs (n x nvars)'
@@ -324,11 +325,46 @@ def Correlation_Smooth_Partitions(
 
     return l_sigma
 
-def Climate_Emulator(var):
+def Climate_Emulator(xds_WVS_MS, xds_KMA_MS):
     '''
-    TODO
+    TODO: Doc
+
+    xds_WVS_MaxStorm - 
+    xds_KMA_MaxStorm - 
     '''
 
-    # TODO
-    return None
+    # get variables
+    bmus = xds_KMA_MS.bmus.values[:]
+    cenEOFs = xds_KMA_MS.cenEOFs.values[:]
+    n_clusters = len(xds_KMA_MS.n_clusters)
+
+
+    # Fit each wave family var to GEV distribution (using KMA bmus)
+    xds_gev_params = xr.Dataset(
+        coords={
+            'n_cluster' : np.arange(n_clusters)+1,
+            'parameter' : ['shape', 'location', 'scale'],
+        }
+    )
+    vars_fit = ['sea_Hs', 'sea_Tp', 'swell_1_Hs', 'swell_1_Tp', 'swell_2_Hs', 'swell_2_Tp']
+    for vn in vars_fit:
+        gp_pars = FitGEV_KMA_Frechet(bmus, n_clusters, xds_WVS_MS[vn].values)
+        xds_gev_params[vn] = (('n_cluster', 'parameter',), gp_pars)
+
+
+    # Calculate chromosomes and chromosomes probabilities
+    vars_chrom = ['sea_Hs', 'swell_1_Hs', 'swell_2_Hs']
+    np_vars_chrom = np.column_stack(
+        [xds_WVS_MS[vn].values for vn in vars_chrom]
+    )
+
+    chrom, chrom_probs = ChromosomesProbabilities_KMA(bmus, n_clusters, np_vars_chrom)
+
+    # Calculate sigma spearman for each KMA - waves chromosome
+    wvs_fams = ['sea', 'swell_1', 'swell_2']
+    sigma = Correlation_Smooth_Partitions(
+        bmus, cenEOFs, n_clusters, xds_WVS_MS, wvs_fams, xds_gev_params, chrom
+    )
+
+
 
