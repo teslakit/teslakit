@@ -34,6 +34,7 @@ p_hist_r2_params = ST.TCs.hist_r2_params # hist storms parameters
 # output files
 p_wvs_parts_noTCs = ST.WAVES.partitions_notcs
 p_wvs_fams_noTCs = ST.WAVES.families_notcs
+p_wvs_fams_TCs_categ = ST.WAVES.families_tcs_categ
 
 # wave families sectors
 wvs_sectors = ast.literal_eval(PR.WAVES.sectors)
@@ -80,12 +81,16 @@ storms = xds_TCs_r2_params.storm.values[:]
 xds_wvs_pts_noTCs = xds_wvs_pts.copy()
 xds_wvs_fam_noTCs = xds_wvs_fam.copy()
 
+# store removed waves (TCs window) families inside a storm category dictionary
+d_wvs_fam_cats = {'{0}'.format(k):[] for k in range(6)}
+
 for s in storms:
 
     # storm dates at dist_min and storm_end
     xds_s = xds_TCs_r2_params.sel(storm = slice(s, s))
     date_dmin = xds_s.dmin_date.values[0]
     date_last = xds_s.last_date.values[0]
+    cat = xds_s.category.values[0]
 
     xds_wvs_s = xds_wvs_pts.sel(
         time = slice(str(date_dmin), str(date_last))
@@ -111,13 +116,26 @@ for s in storms:
         (xds_wvs_fam_noTCs.time > w2)
     )
 
+    # store waves families inside storm-removal-window
+    xds_fams_s = xds_wvs_fam.sel(time = slice(w1, w2))
+    d_wvs_fam_cats['{0}'.format(cat)].append(xds_fams_s)
+
+# merge removal-window waves families data
+for k in d_wvs_fam_cats.keys():
+    d_wvs_fam_cats[k] = xr.merge(d_wvs_fam_cats[k])
+
+
 # store results
 xds_wvs_pts_noTCs.to_netcdf(p_wvs_parts_noTCs, 'w')
 xds_wvs_fam_noTCs.to_netcdf(p_wvs_fams_noTCs, 'w')
 print('\nWaves Partitions (TCs removed) stored at:\n{0}'.format(p_wvs_parts_noTCs))
-print('\nWaves Families   (TCs removed) stored at:\n{0}'.format(p_wvs_fams_noTCs))
-
 print(xds_wvs_pts_noTCs)
-print('')
+print('\nWaves Families   (TCs removed) stored at:\n{0}'.format(p_wvs_fams_noTCs))
 print(xds_wvs_fam_noTCs)
+
+# one file for each waves_families - category
+for k in d_wvs_fam_cats.keys():
+    p_s = op.join(p_wvs_fams_TCs_categ, 'waves_fams_cat{0}.nc'.format(k))
+    d_wvs_fam_cats[k].to_netcdf(p_s)
+print('\nWaves Families   (TCs windows) stored at:\n{0}'.format(p_wvs_fams_TCs_categ))
 
