@@ -3,11 +3,16 @@
 
 import numpy as np
 
-from scipy.stats import  gumbel_l, genextreme, spearmanr
+from scipy.stats import  gumbel_l, genextreme, spearmanr, norm
 from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.special import ndtri  # norm inv
 from itertools import permutations
 import xarray as xr
+from numpy.random import choice, multivariate_normal, randint
+from lib.statistical import Empirical_ICDF
+
+# TODO: REFACTOR ENTIRE LIB
+
 
 def ChromMatrix(vs):
     'Return chromosome matrix for np.array vs (n x nvars)'
@@ -315,6 +320,7 @@ def Correlation_Smooth_Partitions(
             corr, pval = spearmanr(to_corr, axis=1)
 
             # store data
+            # TODO: PASAR DE DICT A XR.DATASET
             sg = {}
             sg['wt'] = c
             sg['crom'] = uc
@@ -325,13 +331,21 @@ def Correlation_Smooth_Partitions(
 
     return l_sigma
 
-def Climate_Emulator(xds_WVS_MS, xds_KMA_MS):
+def Climate_Emulator(xds_WVS_MS, xds_KMA_MS, daily_WT, dict_WT_TCs_wvs):
     '''
     TODO: Doc
 
     xds_WVS_MaxStorm - 
     xds_KMA_MaxStorm - 
+    daily_WT - 
+    dict_WT_TCs_wvs - 
     '''
+
+    # TODO: REFACTOR + OPTIMIZACION MUY NECESARIA
+    # Cambiar filtro final de nans por quitar nans previamente y segun aparecen
+    # importante: reorganizar formato args input y gestion interna,
+    # Extremes merece un objeto propio organizado y optimizado
+
 
     # get variables
     bmus = xds_KMA_MS.bmus.values[:]
@@ -366,5 +380,112 @@ def Climate_Emulator(xds_WVS_MS, xds_KMA_MS):
         bmus, cenEOFs, n_clusters, xds_WVS_MS, wvs_fams, xds_gev_params, chrom
     )
 
+    # TODO: FOR TESTING
+    #import pickle
+    #xds_gev_params.to_netcdf('test_gevparams.nc')
+    #with open('test_sigma.pk', 'wb') as fW:
+    #    pickle.dump(sigma, fW, protocol=pickle.HIGHEST_PROTOCOL)
+    #print('done')
+    #xds_GEV_params = xr.open_dataset('test_gevparams.nc')
+    #with open('test_sigma.pk', 'rb') as fR:
+    #   sigma = pickle.load(fR)
 
 
+    # simulate one value for each storm 
+    dwt_df = np.diff(daily_WT)
+    ix_ch = np.where((dwt_df != 0))[0]+1
+    ix_ch = np.insert(ix_ch, 0,0)
+    daily_WT_sim = daily_WT[ix_ch]
+
+    # Simulate
+    sims_out = np.zeros((len(daily_WT_sim), 9))
+    c = 0
+    while c < len(daily_WT_sim):
+        WT = daily_WT_sim[c]
+        iwt = WT - 1
+
+        # KMA Weather Types
+        if WT <= n_clusters:
+
+            # get random chromosome (weigthed choice)
+            pr = chrom_probs[iwt] / np.sum(chrom_probs[iwt])
+            ci = choice(range(chrom.shape[0]), 1, p=pr)
+            crm = chrom[ci].astype(int).squeeze()
+
+            # get sigma correlation for this WT - crm combination 
+            ss = [x for x in sigma if x['wt']==WT and (x['crom']==crm).all()][0]
+            corr = ss['corr']
+
+            mvn_m = np.zeros(corr.shape[0])
+            sims = multivariate_normal(mvn_m, corr)
+            prob_sim = norm.cdf(sims, 0, 1)
+
+            # TODO: no estoy usando la GEV sampleada sino la normal (no fisher)
+            # solve normal inverse CDF for each active chromosome
+            ipbs = 0  # prob_sim aux. index
+            sim_row = np.zeros(9)
+            for i_c in np.where(crm == 1)[0]:
+
+                # get wave family chromosome variables
+                fam_n = wvs_fams[i_c]
+                pb_Hs = prob_sim[ipbs+0]
+                pb_Tp = prob_sim[ipbs+1]
+                pb_Dir = prob_sim[ipbs+2]
+                ipbs +=3
+                vv_Dir = xds_WVS_MS['{0}_Dir'.format(fam_n)].values[np.where((bmus==WT))]
+
+                # GEV ppf Hs 
+                vn = '{0}_Hs'.format(fam_n)
+                sha_g = xds_GEV_params.sel(parameter='shape')[vn].values[iwt]
+                loc_g = xds_GEV_params.sel(parameter='location')[vn].values[iwt]
+                sca_g = xds_GEV_params.sel(parameter='scale')[vn].values[iwt]
+                ppf_Hs = genextreme.ppf(pb_Hs, -1*sha_g, loc_g, sca_g)
+
+                # GEV ppf Tp 
+                # TODO: sea fam uses EICDF ??? FER
+                vn = '{0}_Tp'.format(fam_n)
+                sha_g = xds_GEV_params.sel(parameter='shape')[vn].values[iwt]
+                loc_g = xds_GEV_params.sel(parameter='location')[vn].values[iwt]
+                sca_g = xds_GEV_params.sel(parameter='scale')[vn].values[iwt]
+                ppf_Tp = genextreme.ppf(pb_Tp, -1*sha_g, loc_g, sca_g)
+
+                # EICDF dir
+                # TODO: si pb_Dir se acerca a 1, da nan el EICDF... 
+                ppf_Dir = Empirical_ICDF(vv_Dir, pb_Dir)
+
+                # store simulation data
+                is0,is1 = wvs_fams.index(fam_n)*3, (wvs_fams.index(fam_n)+1)*3
+                sim_row[is0:is1] = [ppf_Hs, ppf_Tp, ppf_Dir]
+
+        else:
+            # for TCs WTs select random wave state
+            xds_WTTC_wvs = dict_WT_TCs_wvs['{0}'.format(WT)]
+            ri = randint(len(xds_WTTC_wvs.sea_Hs.values[:]))
+            rd = xds_WTTC_wvs.isel(time=slice(ri,ri+1))  # TODO: REFACTOR
+            sim_row = np.array([
+                rd.sea_Hs.values[0], rd.sea_Tp.values[0], rd.sea_Dir.values[0],
+                rd.swell_1_Hs.values[0], rd.swell_1_Tp.values[0],
+                rd.swell_1_Dir.values[0],
+                rd.swell_2_Hs.values[0], rd.swell_2_Tp.values[0],
+                rd.swell_2_Dir.values[0],
+            ])
+
+        # no nans or values < 0 stored 
+        if ~np.isnan(sim_row).any() and len(np.where(sim_row<0)[0])==0:
+            sims_out[c] = sim_row
+            c+=1
+
+    return sims_out
+
+def Climate_Emulator_TCs(xds_WVS_MS, xds_KMA_MS, daily_WT, dict_WT_TCs_wvs, args):
+    '''
+    TODO: Doc
+
+    xds_WVS_MaxStorm - 
+    xds_KMA_MaxStorm - 
+    daily_WT - 
+    dict_WT_TCs_wvs - 
+
+    VARS TCS (prob_sint, TCs, MU, TAU )
+    '''
+    return None
