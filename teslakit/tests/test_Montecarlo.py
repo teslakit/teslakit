@@ -15,7 +15,7 @@ import numpy as np
 from lib.io.matlab import ReadMatfile as rmf
 from lib.extremes import Climate_Emulator
 from lib.custom_dateutils import DateConverter_Mat2Py as d2d
-from lib.extremes import Climate_Emulator as CE
+from lib.extremes import Climate_Emulator, Climate_Emulator_TCs
 
 
 # --------------------------------------
@@ -35,7 +35,8 @@ xds_KMA_MaxStorm = xr.open_dataset(op.join(p_data, 'xds_WT_KMA.nc'))
 p_DWTs = op.join(p_data, 'Nico_Montecarlo', 'DWT_1000years_mjo_awt_v2.mat')
 dm_DWTs = rmf(p_DWTs)
 daily_WT = dm_DWTs['bmusim'].T
-dates_DWT = dm_DWTs['datesim']  # TODO: convertir a python
+#dates_DWT = dm_DWTs['datesim']  # TODO: necesario? 
+
 
 
 # TCs simulated with numerical and RBFs (TCs params, and TCs num/RBF output)
@@ -84,7 +85,7 @@ for i in range(6):
     k = 'wt{0}'.format(i+1+36)
     sd = dm_WTTCs[k]
 
-    d_WT_TCs_wvs['{0}'.format(i)] = xr.Dataset(
+    d_WT_TCs_wvs['{0}'.format(i+1+36)] = xr.Dataset(
         {
             'sea_Hs':(('time',), sd['seaHs']),
             'sea_Dir':(('time',), sd['seaDir']),
@@ -102,6 +103,17 @@ for i in range(6):
 # --------------------------------------
 # test Climate Emulator
 
-# TODO
-CE(xds_WVS_MaxStorm, xds_KMA_MaxStorm)
+# iterate over daily_WT simulations
+for d_WT in daily_WT.T:
+
+    # Climate Emulator (No TCs)
+    sim_CE = Climate_Emulator(
+        xds_WVS_MaxStorm, xds_KMA_MaxStorm, d_WT[:1000], d_WT_TCs_wvs
+    )
+    print(sim_CE)
+    print(sim_CE.shape)
+
+    sys.exit()
+
+# TODO: Climate Emulator TCs
 
