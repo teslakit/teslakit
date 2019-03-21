@@ -95,10 +95,9 @@ def Empirical_ICDF(x, p):
     # interpolate KDE CDF to get support values 
     fint = interp1d(
         cdf, x,
-        fill_value=(np.amin(x), np.amax(x)),
+        fill_value=(np.nanmin(x), np.nanmax(x)),
         bounds_error=False
     )
-
     return fint(p)
 
 def copulafit(u, family='gaussian'):
