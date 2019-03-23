@@ -13,9 +13,12 @@ def GetDistribution(xds_wps, swell_sectors):
     Default: sea, swl1, swl2
 
     xds_wps (waves partitionss):
-        (time,), phs, pspr, pwfrac... {0-5 partitions}
+        xarray.Dataset (time,), phs, pspr, pwfrac... {0-5 partitions}
 
     sectors: list of degrees to cut wave energy [(a1, a2), (a2, a3), (a3, a1)]
+
+    returns 
+        xarray.Dataset (time,), fam_V, {fam: sea,swell_1,swell2. V: Hs,Tp,Dir}
     '''
 
     # fix data
