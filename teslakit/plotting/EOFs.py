@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
 import os
 import os.path as op
+import calendar
+
+# pip
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from scipy.interpolate import interp1d
-import calendar
 from datetime import datetime, timedelta
 
-from lib.custom_dateutils import xds2datetime
+# tk
+from teslakit.custom_dateutils import xds2datetime
 
 # fig aspect and size
 _faspect = (1+5**0.5)/2.0

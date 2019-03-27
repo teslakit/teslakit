@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
 import os
 import os.path as op
-import numpy as np
 from math import sqrt
 import itertools
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-import matplotlib.gridspec as gridspec
-import matplotlib.patches as patches
-from scipy.interpolate import interp1d
 import calendar
 from datetime import datetime, timedelta
 
-from lib.custom_dateutils import xds2datetime
-from lib.util.operations import GetDivisors
+# pip
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
+from scipy.interpolate import interp1d
+
+# tk
+from teslakit.custom_dateutils import xds2datetime
+from teslakit.util.operations import GetDivisors
 
 # fig aspecti, size, export png dpi
 _faspect = (1+5**0.5)/2.0

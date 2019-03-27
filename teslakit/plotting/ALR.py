@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
 import os
 import os.path as op
+from datetime import datetime, timedelta
+
+# pip
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from scipy.interpolate import interp1d
-from datetime import datetime, timedelta
 
-from lib.plotting.util import MidpointNormalize
-from lib.custom_dateutils import xds2datetime as xds2dt
+# tk
+from teslakit.plotting.util import MidpointNormalize
+from teslakit.custom_dateutils import xds2datetime as xds2dt
 
 def GetClusterColors(num_clusters):
     'Interpolate custom colormap to number of clusters'
