@@ -41,7 +41,8 @@ p_hist_r2_params = ST.TCs.hist_r2_params  # hist storms inside r2 parameters
 
 # output files
 p_est_pred = ST.ESTELA.pred_slp           # estela slp predictor
-p_dbins = ST.ESTELA.hydrographs           # intradaily mu tau hydrographs
+p_mutau_wt = ST.ESTELA.hydrog_mutau       # intradaily WTs mu,tau data folder
+
 
 # parameters for KMA_REGRESSION_GUIDED
 kma_date_ini = site.params.ESTELA_KMA_RG.date_ini
@@ -159,12 +160,13 @@ pred.Mod_KMA_AddStorms(storm_dates, storm_categs)
 # Calculate intradaily MU TAU hydrographs 
 xds_WAVES_p1 = ReadGowMat(p_wvs_parts_p1)
 
-print('\nCalculating MU TAU hydrographs...')
-dict_bins = pred.Calc_MU_TAU_Hydrographs(xds_WAVES_p1)
+print('\nCalculating MU TAU hydrographs')
+l_xds_MUTAU = pred.Calc_MU_TAU_Hydrographs(xds_WAVES_p1)
 
-# TODO: add hydrograph plots lib/plotting/intradaily
+# TODO: plot report hydrographs
 
-# store hydrographs
-pickle.dump(dict_bins, open(p_dbins,'wb'))
-print('\nMU, TAU hydrographs stored at:\n{0}'.format(p_dbins))
-
+# store hydrographs MU TAU
+if not op.isdir(p_mutau_wt): os.makedirs(p_mutau_wt)
+for x in l_xds_MUTAU:
+    n_store = 'MUTAU_WT{0:02}'.format(x.WT)
+    x.to_netcdf(op.join(p_mutau_wt, n_store), 'w')
