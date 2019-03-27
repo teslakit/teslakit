@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
+from datetime import datetime, date
+
+# pip
 import netCDF4
 import numpy as np
-from datetime import datetime, date
-from lib.custom_dateutils import npdt64todatetime as n2d
+
+# tk
+from teslakit.custom_dateutils import npdt64todatetime as n2d
 
 
 def StoreBugXdset(xds_data, p_ncfile):
     '''
     Stores xarray.Dataset to .nc file while avoiding bug with time data (>2262)
     '''
+    # TODO: update pip libs and check if this is needed
 
     # get metadata from xarray.Dataset
     dim_names = xds_data.dims.keys()
