@@ -136,6 +136,6 @@ print(xds_wvs_fam_noTCs)
 # one file for each waves_families - category
 for k in d_wvs_fam_cats.keys():
     p_s = op.join(p_wvs_fams_TCs_categ, 'waves_fams_cat{0}.nc'.format(k))
-    d_wvs_fam_cats[k].to_netcdf(p_s)
+    d_wvs_fam_cats[k].to_netcdf(p_s, 'w')
 print('\nWaves Families   (TCs windows) stored at:\n{0}'.format(p_wvs_fams_TCs_categ))
 
