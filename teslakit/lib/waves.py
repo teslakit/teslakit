@@ -17,7 +17,7 @@ def GetDistribution(xds_wps, swell_sectors):
 
     sectors: list of degrees to cut wave energy [(a1, a2), (a2, a3), (a3, a1)]
 
-    returns 
+    returns
         xarray.Dataset (time,), fam_V, {fam: sea,swell_1,swell2. V: Hs,Tp,Dir}
     '''
 
@@ -89,6 +89,7 @@ def GetDistribution(xds_wps, swell_sectors):
 
         # calculate swell Hs, Tp, Dir
         swell_Hs = np.sqrt(np.nansum(np.power(sect_hs,2), axis=1))
+
         swell_Tp = np.sqrt(
             np.nansum(np.power(sect_hs,2), axis=1) /
             np.nansum(np.power(sect_hs,2)/np.power(sect_tp,2), axis=1)
@@ -110,6 +111,11 @@ def GetDistribution(xds_wps, swell_sectors):
         # out of bound dir correction
         swell_Dir[np.where((swell_Dir>360))] = swell_Dir[np.where((swell_Dir>360))]-360
         swell_Dir[np.where((swell_Dir<0))] = swell_Dir[np.where((swell_Dir<0))]+360
+
+        # fix swell all-nans to 0s nansum behaviour
+        p_fix = np.where(swell_Hs==0)
+        swell_Hs[p_fix] = np.nan
+        swell_Dir[p_fix] = np.nan
 
         # append data to partitons dataset
         xds_parts['swell_{0}_Hs'.format(c)] = ('time', swell_Hs)
