@@ -14,19 +14,17 @@ import xarray as xr
 from scipy.special import ndtri  # norm inv
 from scipy.stats import  genextreme, spearmanr, norm
 from statsmodels.distributions.empirical_distribution import ECDF
-from numpy.random import choice, multivariate_normal, randint
+from numpy.random import choice, multivariate_normal, randint, rand
 from lib.statistical import Empirical_ICDF
 
 # tk
 from lib.waves import Calculate_TWL
+from lib.tcyclone import GetStormCategory
 from lib.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape
 
 
 class Climate_Emulator(object):
     'KMA - DWTs Climate Emulator'
-
-    # TODO: hay un bug importante que esta confundiendo 0s y nans en los datos
-    # de oleaje y se mueve por toda la clase (ajuste, simulacion). Arreglar urgente
 
     def __init__(self, p_base):
 
@@ -40,12 +38,13 @@ class Climate_Emulator(object):
         self.sigma = None           # Pearson sigma correlation
 
         # chromosomes
-        self.chrom = None
+        self.chrom = None           # chromosomes and chromosomes probs
 
         # parameters
+        self.fams = ['sea', 'swell_1', 'swell_2']  # climate emulator waves families
         self.gev_vars_fit = [
-            'sea_Hs', 'sea_Tp', 'swell_1_Hs', 'swell_1_Tp', 'swell_2_Hs', 'swell_2_Tp']
-        self.fams = ['sea', 'swell_1', 'swell_2']
+            'sea_Hs', 'sea_Tp', 'swell_1_Hs', 'swell_1_Tp', 'swell_2_Hs', 'swell_2_Tp'
+        ]
 
         # paths
         self.p_base = p_base
@@ -57,6 +56,12 @@ class Climate_Emulator(object):
         self.p_GEV_Sigma = op.join(p_base, 'GEV_SigmaCorrelation.nc')
         #self.p_report_fit = op.join(p_base, 'report_fit')
         #self.p_report_sim = op.join(p_base, 'report_sim')
+
+        # output simulation storage paths
+        self.p_sim = op.join(p_base, 'Simulation')
+        self.p_sim_wvs_notcs = op.join(self.p_sim, 'WAVES_noTCs')
+        self.p_sim_wvs_tcs = op.join(self.p_sim, 'WAVES_TCs')
+        self.p_sim_tcs = op.join(self.p_sim, 'TCs')  # simulated TCs
 
     def FitExtremes(self, xds_KMA, xds_WVS_parts, xds_WVS_fams):
         '''
@@ -103,8 +108,7 @@ class Climate_Emulator(object):
     def Save(self):
         'Saves fitted climate emulator data'
 
-        if not op.isdir(self.p_base):
-            os.makedirs(self.p_base)
+        if not op.isdir(self.p_base): os.makedirs(self.p_base)
 
         # store .nc files    
         self.WVS_MS.to_netcdf(self.p_WVS_MS)
@@ -126,6 +130,15 @@ class Climate_Emulator(object):
 
         # store pickle
         self.sigma = pickle.load(open(self.p_GEV_Sigma, 'rb'))
+
+    def StoreSim(self, p_store, ls_xdsets, code):
+        'Store waves and TCs simulations (list of xr.Dataset) at p_store folder'
+
+        if not op.isdir(p_store): os.makedirs(p_store)
+
+        for c, xds in enumerate(ls_xdsets):
+            p_nc = op.join(p_store, '{0}{1:02}.nc'.format(code, c+1))
+            xds.to_netcdf(p_nc, 'w')
 
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'
@@ -200,7 +213,11 @@ class Climate_Emulator(object):
         return xds_GEV_Par
 
     def Calc_Chromosomes(self, xds_KMA_MS, xds_WVS_MS):
-        'Calculate chromosomes and probabilities from KMA.bmus data'
+        '''
+        Calculate chromosomes and probabilities from KMA.bmus data
+
+        Returns xarray.Dataset vars: chrom, chrom_probs. dims: WT, wave_family
+        '''
 
         bmus = xds_KMA_MS.bmus.values[:]
         n_clusters = len(xds_KMA_MS.n_clusters)
@@ -209,7 +226,6 @@ class Climate_Emulator(object):
 
         # get chromosomes matrix
         np_vc = np.column_stack([xds_WVS_MS[vn].values for vn in l_vc])
-        np_vc[np_vc == 0] = np.nan  # TODO: remove this. fix waves data
         chrom = ChromMatrix(np_vc)
 
         # calculate chromosomes probabilities
@@ -310,8 +326,6 @@ class Climate_Emulator(object):
                     vv_Hs = xds_chr_wvs['{0}_Hs'.format(fam_n)].values[:]
                     vv_Tp = xds_chr_wvs['{0}_Tp'.format(fam_n)].values[:]
                     vv_Dir = xds_chr_wvs['{0}_Dir'.format(fam_n)].values[:]
-                    vv_Hs[np.isnan(vv_Hs)] = 0  # TODO: remove this. fix waves data
-                    vv_Tp[np.isnan(vv_Tp)] = 0  # TODO: remove this. fix waves data
 
                     # GEV cdf Hs 
                     vn = '{0}_Hs'.format(fam_n)
@@ -349,7 +363,7 @@ class Climate_Emulator(object):
 
         return d_sigma
 
-    def Simulate(self, xds_DWT, dict_WT_TCs_wvs):
+    def Simulate_Waves(self, xds_DWT, dict_WT_TCs_wvs):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -372,6 +386,7 @@ class Climate_Emulator(object):
         chrom_probs = xds_chrom.probs.values[:]
 
         # iterate DWT simulations
+        ls_wvs = []
         for dwt in dwt_bmus_sim.T:
 
             # generate waves
@@ -379,12 +394,58 @@ class Climate_Emulator(object):
                 bmus, n_clusters, chrom, chrom_probs, sigma, xds_WVS_MS,
                 xds_GEV_Par, dict_WT_TCs_wvs, dwt
             )
-            print(wvs_sim)
+            ls_wvs.append(wvs_sim)
 
-            # TODO: generate TCs if activated
+        # store simulations
+        self.StoreSim(self.p_sim_wvs_notcs, ls_wvs, 'wvs_sim_noTCs_')
+
+        return ls_wvs
+
+    def Simulate_TCs(self, xds_DWT, dict_WT_TCs_wvs, xds_TCs_params,
+                     xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT):
+        '''
+        Climate Emulator DWTs TCs simulation
+
+        xds_DWT - xarray.Dataset, vars: evbmus_sims (time,n_sim,)
+        dict_WT_TCs_wvs - dict of xarray.Dataset (waves data) for TCs WTs
+
+        xds_TCs_params - xr.Dataset. vars(storm): pressure_min
+        xds_TCs_simulation - xr.Dataset. vars(storm): mu, hs, ss, tp, dir
+        prob_change_TCs - cumulative probabilities of TC category change
+        MU_WT, TAU_WT - intradaily hidrographs for each WT
+        '''
+
+        # max. storm waves and KMA
+        xds_KMA_MS = self.KMA_MS
+
+        # vars needed
+        dwt_bmus_sim = xds_DWT.evbmus_sims.values[:]
+        n_clusters = len(xds_KMA_MS.n_clusters)
+
+        # iterate DWT simulations
+        ls_tcs = []
+        ls_wvs_upd = []
+        for n_sim, dwt in enumerate(dwt_bmus_sim.T):
+
+            # load waves simulation, will be modified
+            p_wvs_nc = op.join(self.p_sim_wvs_notcs, 'wvs_sim_noTCs_{0:02}.nc'.format(n_sim+1))
+            wvs_sim = xr.open_dataset(p_wvs_nc)
+
+            # generate TCs
+            tcs_sim, wvs_upd_sim = self.GenerateTCs(
+                n_clusters, dwt,
+                xds_TCs_params, xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT,
+                wvs_sim
+            )
+            ls_tcs.append(tcs_sim)
+            ls_wvs_upd.append(wvs_upd_sim)
 
 
-            import sys; sys.exit()
+        # store simulations
+        self.StoreSim(self.p_sim_tcs, ls_tcs, 'TCs_sim_')
+        self.StoreSim(self.p_sim_wvs_tcs, ls_wvs_upd, 'wvs_sim_TCs_')
+
+        return ls_tcs, ls_wvs_upd
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
                       xds_WVS_MS, xds_GEV_Par, TC_WVS, DWT):
@@ -408,10 +469,6 @@ class Climate_Emulator(object):
         ix_ch = np.where((dwt_df != 0))[0]+1
         ix_ch = np.insert(ix_ch, 0,0)
         DWT_sim = DWT[ix_ch]
-
-
-        # TODO: quitar
-        DWT_sim = DWT_sim[:100]
 
         # Simulate
         sims_out = np.zeros((len(DWT_sim), 9))
@@ -457,7 +514,8 @@ class Climate_Emulator(object):
                     ppf_Hs = genextreme.ppf(pb_Hs, -1*sha_g, loc_g, sca_g)
 
                     # GEV ppf Tp 
-                    # TODO: sea fam uses EICDF ??? FER
+                    # TODO: por defecto usar GEVs, pero switch para emipircal
+                    # ICDF
                     vn = '{0}_Tp'.format(fam_n)
                     sha_g = xds_GEV_Par.sel(parameter='shape')[vn].values[iwt]
                     loc_g = xds_GEV_Par.sel(parameter='location')[vn].values[iwt]
@@ -497,7 +555,6 @@ class Climate_Emulator(object):
                 ])
 
             # no nans or values < 0 stored 
-            # TODO: remove nans above, delete if
             if ~np.isnan(sim_row).any() and len(np.where(sim_row<0)[0])==0:
                 sims_out[c] = sim_row
                 c+=1
@@ -505,21 +562,163 @@ class Climate_Emulator(object):
         # return generated waves 
         return xr.Dataset(
             {
-                'sea_Hs':(('time',), sims_out[:,0]),
-                'sea_Tp':(('time',), sims_out[:,1]),
-                'sea_Dir':(('time',), sims_out[:,2]),
-                'swell_1_Hs':(('time',), sims_out[:,3]),
-                'swell_1_Tp':(('time',), sims_out[:,4]),
-                'swell_1_Dir':(('time',), sims_out[:,5]),
-                'swell_2_Hs':(('time',), sims_out[:,6]),
-                'swell_2_Tp':(('time',), sims_out[:,7]),
-                'swell_2_Dir':(('time',), sims_out[:,8]),
+                'sea_Hs':(('storm',), sims_out[:,0]),
+                'sea_Tp':(('storm',), sims_out[:,1]),
+                'sea_Dir':(('storm',), sims_out[:,2]),
+                'swell_1_Hs':(('storm',), sims_out[:,3]),
+                'swell_1_Tp':(('storm',), sims_out[:,4]),
+                'swell_1_Dir':(('storm',), sims_out[:,5]),
+                'swell_2_Hs':(('storm',), sims_out[:,6]),
+                'swell_2_Tp':(('storm',), sims_out[:,7]),
+                'swell_2_Dir':(('storm',), sims_out[:,8]),
 
-                'DWT_sim':(('time',), DWT_sim),
+                'DWT_sim':(('storm',), DWT_sim),
             },
         )
 
+    def GenerateTCs(self, n_clusters, DWT,
+                    TCs_params, TCs_simulation, prob_TCs, MU_WT, TAU_WT,
+                    xds_wvs_sim):
+        '''
+        Climate Emulator DWTs TCs simulation
 
+        n_clusters - KMA number of clusters
+        DWT - np.array with DWT bmus sim series (dims: time,)
+
+        TCs_params - xr.Dataset. vars(storm): pressure_min
+        TCs_simulation - xr.Dataset. vars(storm): mu, hs, ss, tp, dir
+        prob_TCs - cumulative probabilities of TC category change
+        MU_WT, TAU_WT - intradaily hidrographs for each WT
+        xds_wvs_sim - xr.Dataset, waves simulated without TCs (for updating)
+
+        returns xarray.Datasets with updated Waves and simulated Tcs data
+        '''
+
+        wvs_fams = self.fams
+
+        # simulate one value for each storm 
+        dwt_df = np.diff(DWT)
+        ix_ch = np.where((dwt_df != 0))[0]+1
+        ix_ch = np.insert(ix_ch, 0,0)
+        DWT_sim = DWT[ix_ch]
+
+        # get simulated waves for updating
+        sim_wvs = np.column_stack([
+            xds_wvs_sim.sea_Hs.values[:],
+            xds_wvs_sim.sea_Tp.values[:],
+            xds_wvs_sim.sea_Dir.values[:],
+            xds_wvs_sim.swell_1_Hs.values[:],
+            xds_wvs_sim.swell_1_Tp.values[:],
+            xds_wvs_sim.swell_1_Dir.values[:],
+            xds_wvs_sim.swell_2_Hs.values[:],
+            xds_wvs_sim.swell_2_Tp.values[:],
+            xds_wvs_sim.swell_2_Dir.values[:],
+        ])
+
+        # Simulate
+        sims_out = np.zeros((len(DWT_sim), 3))
+        c = 0
+        while c < len(DWT_sim):
+            WT = DWT_sim[c]
+            iwt = WT - 1
+
+            # KMA Weather Types tcs generation
+            if WT <= n_clusters:
+
+                # get random MU,TAU from current WT
+                ri = randint(len(MU_WT[iwt]))
+                mu_s = MU_WT[iwt][ri]
+                tau_s = TAU_WT[iwt][ri]
+                ss_s = 0
+
+
+            # TCs Weather Types waves generation
+            else:
+                # get probability of category change for this WT
+                prob_t = np.append(prob_TCs[:, iwt-n_clusters], 1)
+
+                ri = rand()
+                si = np.where(prob_t >= ri)[0][0]
+
+                if si == len(prob_t)-1:
+                    # TC does not enter. random mu_s, 0.5 tau_s, 0 ss_s
+                    all_MUs = np.concatenate(MU_WT)
+                    ri = randint(len(all_MUs))
+                    # TODO: check mu 0s, set nans (?)
+
+                    mu_s = all_MUs[ri]
+                    tau_s = 0.5
+                    ss_s = 0
+
+                else:
+                    s_pmin = TCs_params.pressure_min.values[:]
+                    p1, p2 = {
+                        0:(1000, np.nanmax(s_pmin)+1),
+                        1:(979, 1000),
+                        2:(964, 979),
+                        3:(944, 964),
+                        4:(920, 944),
+                        5:(np.nanmin(s_pmin)-1, 920),
+                    }[si]
+
+                    psi = np.where((s_pmin > p1) & (s_pmin <= p2))[0]
+
+                    if psi.any():
+                        ri = randint(len(psi))
+                        mu_s = TCs_simulation.mu.values[ri]
+                        ss_s = TCs_simulation.ss.values[ri]
+                        tau_s = 0.5
+
+                        # Get waves sea family from simulated TCs (num+rbf)
+                        sea_Hs = TCs_simulation.hs.values[ri]
+                        sea_Tp = TCs_simulation.tp.values[ri]
+                        sea_Dir = TCs_simulation.dir.values[ri]
+
+                        # update data for simulated waves (sea family)
+                        sim_wvs[c, :] = [sea_Hs, sea_Tp, sea_Dir, 0, 0, 0, 0, 0, 0]
+
+                    else:
+                        # TODO: no deberia caer aqui. comentar duda
+                        mu_s = 0
+                        ss_s = 0
+                        tau_s = 0
+
+            sim_row = np.array([mu_s, tau_s, ss_s])
+
+            # no nans or values < 0 stored 
+            if ~np.isnan(sim_row).any() and len(np.where(sim_row<0)[0])==0:
+                sims_out[c] = sim_row
+                c+=1
+
+        # generate updated waves simulation xarray.Dataset 
+        xds_WVS_sim_updated = xr.Dataset(
+            {
+                'sea_Hs':(('storm',), sim_wvs[:,0]),
+                'sea_Tp':(('storm',), sim_wvs[:,1]),
+                'sea_Dir':(('storm',), sim_wvs[:,2]),
+                'swell_1_Hs':(('storm',), sim_wvs[:,3]),
+                'swell_1_Tp':(('storm',), sim_wvs[:,4]),
+                'swell_1_Dir':(('storm',), sim_wvs[:,5]),
+                'swell_2_Hs':(('storm',), sim_wvs[:,6]),
+                'swell_2_Tp':(('storm',), sim_wvs[:,7]),
+                'swell_2_Dir':(('storm',), sim_wvs[:,8]),
+
+                'DWT_sim':(('storm',), DWT_sim),
+            },
+        )
+
+        # generated TCs 
+        xds_TCs_sim = xr.Dataset(
+            {
+                'mu':(('storm',), sims_out[:,0]),
+                'tau':(('storm',), sims_out[:,1]),
+                'ss':(('storm',), sims_out[:,2]),
+
+                'DWT_sim':(('storm',), DWT_sim),
+            },
+        )
+
+        return xds_TCs_sim, xds_WVS_sim_updated
 
 
 def ChromMatrix(vs):
