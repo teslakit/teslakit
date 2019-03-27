@@ -33,6 +33,7 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
     xds_WAVES: (time) hs, tp, dir
 
     returns dictionary of Hydrograph objects for each WT
+    and list of xarray.Datasets containing MU and TAU
     '''
 
     # solve intradaily bins
@@ -40,6 +41,7 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
     time_KMA = xds_BMUS.time.values[:]
 
     d_bins = {}
+    l_mutau_xdsets = []
     for i_wt in sorted(set(bmus)):
 
         # find WT indexes at KMA bmus
@@ -53,7 +55,7 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
         sep_hydro = np.where((diff_time > 1.0))[0]
 
         if len(sep_hydro)==0:
-            bin_k = 'bin{0:02d}'.format(i_wt)
+            bin_k = 'WT {0:02d}'.format(i_wt)
             d_bins[bin_k] = None
             print('{0} empty'.format(bin_k))
             continue
@@ -145,7 +147,19 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
 
         # store at dictionary
         d_bins[bin_k] = bin_hy
-        print('{0} calculated'.format(bin_k))
+        #print('{0} calculated'.format(bin_k))
 
-    return d_bins
+        # store mu, tau xarray.Dataset
+        xds_hg_wt = xr.Dataset(
+            {
+                'MU':(('time',), np.array(MU)),
+                'TAU':(('time',), np.array(TAU)),
+                'hs_max':(('time',), np.array(Hs_max)),
+                'twl_max':(('time',), np.array(TWL_max)),
+            },
+            attrs={'WT':i_wt+1}
+        )
+        l_mutau_xdsets.append(xds_hg_wt)
+
+    return d_bins, l_mutau_xdsets
 
