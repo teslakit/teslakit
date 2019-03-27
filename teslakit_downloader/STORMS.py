@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
 import sys
 import os
 import os.path as op
@@ -9,6 +10,7 @@ import gzip
 import shutil
 import time
 
+# pip
 import numpy as np
 import xarray as xr
 

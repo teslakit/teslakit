@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
 import time
-import numpy as np
 import os
 import os.path as op
+from datetime import datetime, timedelta
+
+# pip
+import numpy as np
 import netCDF4 as nc4
 import xarray as xr
-from datetime import datetime, timedelta
 
 
 def Download_MJO(p_ncfile, init_year=None, log=False):

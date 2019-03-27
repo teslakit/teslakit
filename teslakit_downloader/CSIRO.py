@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+#common
 import time
 import sys
-import numpy as np
 import os
 import os.path as op
-import netCDF4 as nc4
-import xarray as xr
 from datetime import datetime, timedelta
 import threddsclient
 import signal
+
+# pip
+import numpy as np
+import netCDF4 as nc4
+import xarray as xr
 
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
