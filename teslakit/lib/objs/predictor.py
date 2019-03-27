@@ -97,7 +97,7 @@ class Predictor(object):
         '''
         Calculates TWL hydrographs
 
-        returns dictionary containing hydrographs storage objects
+        returns list of xarray.Dataset with TWL hydrographs MU,TAU arrays for each WT
         '''
 
         # get sorted bmus from kma
@@ -106,10 +106,10 @@ class Predictor(object):
             coords = {'time': self.KMA.time.values[:]}
         )
 
-        # Calculate hydrographs 
-        dict_bins = Calculate_Hydrographs(xds_BMUS, xds_WAVES)
+        # Calculate hydrographs for each WT
+        _, l_xds_MUTAU = Calculate_Hydrographs(xds_BMUS, xds_WAVES)
 
-        return dict_bins
+        return l_xds_MUTAU
 
     def Mod_KMA_AddStorms(self, storm_dates, storm_categories):
         '''
