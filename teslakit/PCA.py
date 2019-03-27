@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
+import datetime
+
+# pip
 import numpy as np
 import xarray as xr
-import datetime
 from sklearn.decomposition import PCA
-from matplotlib import path
-
-# tk libs
-from lib.util.terminal import printProgressBar as pb
 
 
 def running_mean(x, N, mode_str='mean'):

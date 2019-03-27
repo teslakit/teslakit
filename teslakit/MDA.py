@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pip
 import numpy as np
 
 def Normalize(data, ix_scalar, ix_directional, minis=[], maxis=[]):

@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pip
 import numpy as np
 import xarray as xr
-from lib.custom_dateutils import npdt64todatetime
+
+# tk
+from teslakit.custom_dateutils import npdt64todatetime
 
 class Hydrograph(object):
     'Stores hydrograph data'

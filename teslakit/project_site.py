@@ -5,8 +5,9 @@
 import os
 import os.path as op
 import configparser
+from shutil import copyfile
 
-from lib.io.getinfo import description
+from teslakit.io.getinfo import description
 
 class atdict(dict):
     __getattr__= dict.__getitem__
@@ -58,6 +59,28 @@ class Site(object):
                 txt+='{0:.<45} {1}'.format(aux, self.params[k1][k2])
         print(txt)
 
+    def MakeDirs(self):
+        'Makes all dirs and files needed for a new teslakit project site'
+
+        # make site folder
+        if not op.isdir(self.pc.p_site): os.makedirs(self.pc.p_site)
+
+        # copy site.ini template
+        p_ini_base = op.join(self.pc.p_docs, 'ini_files')
+        for fn in ['files.ini', 'parameters.ini']:
+            copyfile(op.join(p_ini_base, fn), op.join(self.pc.p_site, fn))
+
+        # create site subfolders
+        self.pc.SetSite(self.name)
+        for sf in self.pc.site.keys():
+            p_sf = op.join(self.pc.p_site, sf)
+            if not op.isdir(p_sf): os.makedirs(p_sf)
+
+        # create export figs subfolders
+        for k in self.pc.site.export_figs.keys():
+            p_sf = self.pc.site.export_figs[k]
+            if not op.isdir(p_sf): os.makedirs(p_sf)
+
 
 class PathControl(object):
     'auxiliar object for handling database and site paths'
@@ -65,7 +88,9 @@ class PathControl(object):
     def __init__(self):
 
         # teslakit data
-        p_data = op.join(os.sep.join(op.realpath(__file__).split(op.sep)[0:-3]),'data')
+        p_source = os.sep.join(op.realpath(__file__).split(op.sep)[0:-2])
+        p_data = op.join(p_source, 'data')
+        p_docs = op.join(p_source, 'docs')
 
         # teslakit database and sites
         p_DB = op.join(p_data, 'database')
@@ -74,6 +99,7 @@ class PathControl(object):
 
         # string paths
         self.p_data = p_data
+        self.p_docs = p_docs
         self.p_DB = p_DB
         self.p_DB_ini = p_DB_ini
         self.p_sites = p_sites

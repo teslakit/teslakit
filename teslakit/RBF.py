@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
+# common
 import time
+
+# pip
+import numpy as np
 from scipy.optimize import fminbound
 from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error
 import xarray as xr
 
-from lib.MDA import Normalize
+# tk
+from teslakit.MDA import Normalize
 
 # RBF Phi functions
 def rbfphi_linear(r, const):

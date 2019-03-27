@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
+from datetime import datetime
+
+# pip
 import numpy as np
 import xarray as xr
-from datetime import datetime
 
 def GetMJOCategories(rmm1, rmm2, phase):
     '''

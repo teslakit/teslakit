@@ -1,34 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
-import pandas as pd
-import time
-#np.set_printoptions(threshold=np.nan)
-from collections import OrderedDict
-from sklearn import linear_model
-import statsmodels.discrete.discrete_model as sm
-import scipy.stats as stat
-from datetime import datetime, date, timedelta
-import xarray as xr
+# common
 import pickle
+import time
 import sys
 import os
 import os.path as op
+from collections import OrderedDict
+from datetime import datetime, date, timedelta
 
-from lib.custom_dateutils import npdt64todatetime as npdt2dt
-from lib.util.terminal import printProgressBar as pb
-from lib.plotting.ALR import Plot_PValues, Plot_Params, Plot_Terms
-from lib.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
-
+# pip
+import numpy as np
+import pandas as pd
+from sklearn import linear_model
+import statsmodels.discrete.discrete_model as sm
+import scipy.stats as stat
+import xarray as xr
 
 # fix library
 from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
+# tk
+from teslakit.custom_dateutils import npdt64todatetime as npdt2dt
+from teslakit.util.terminal import printProgressBar as pb
+from teslakit.plotting.ALR import Plot_PValues, Plot_Params, Plot_Terms
+from teslakit.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
+
 
 class ALR_WRP(object):
-    'AutoRegressive Logistic Enveloper'
+    'AutoRegressive Logistic methodology Wrapper'
 
     def __init__(self, p_base):
 
@@ -58,7 +60,6 @@ class ALR_WRP(object):
         self.p_save_sim_xds = op.join(p_base, 'xds_output.nc')
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
-
 
     def SetFitData(self, cluster_size, xds_bmus_fit, d_terms_settings):
         '''
@@ -344,6 +345,7 @@ class ALR_WRP(object):
 
     def Report_Fit(self, export=False):
         'Report containing model fitting info'
+        # TODO: estudiar si da error al coger pval y params
 
         if export:
 

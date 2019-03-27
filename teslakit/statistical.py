@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+# pip
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.interpolate import interp1d
-from scipy.stats import norm, genpareto
+from scipy.stats import norm, genpareto, t
 from scipy.special import ndtri  # norm inv
-from scipy.stats import t  # t student
 import matplotlib.pyplot as plt
 
 
@@ -88,6 +89,8 @@ def Empirical_ICDF(x, p):
     Returns inverse empirical cumulative probability function at p points
     '''
 
+    # TODO: revisar que el fill_value funcione correctamente
+
     # fit ECDF
     ecdf = ECDF(x)
     cdf = ecdf(x)
@@ -96,6 +99,7 @@ def Empirical_ICDF(x, p):
     fint = interp1d(
         cdf, x,
         fill_value=(np.nanmin(x), np.nanmax(x)),
+        #fill_value=(np.min(x), np.max(x)),
         bounds_error=False
     )
     return fint(p)
@@ -158,7 +162,7 @@ def CopulaSimulation(U_data, kernels, num_sim):
     '''
     Fill statistical space using copula simulation
 
-    U_data: 2D nump.arra, each variable in a column
+    U_data: 2D nump.array, each variable in a column
     kernels: list of kernels for each column at U_data (KDE | GPareto)
     num_sim: number of simulations
     '''

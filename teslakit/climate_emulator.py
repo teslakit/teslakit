@@ -15,12 +15,12 @@ from scipy.special import ndtri  # norm inv
 from scipy.stats import  genextreme, spearmanr, norm
 from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
-from lib.statistical import Empirical_ICDF
 
 # tk
-from lib.waves import Calculate_TWL
-from lib.tcyclone import GetStormCategory
-from lib.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape
+from teslakit.statistical import Empirical_ICDF
+from teslakit.waves import Calculate_TWL
+from teslakit.storms import GetStormCategory
+from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape
 
 
 class Climate_Emulator(object):

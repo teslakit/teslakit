@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# common
+from datetime import datetime
+
+# pip
 import numpy as np
 import xarray as xr
 from scipy import stats
 from scipy.spatial import distance_matrix
 from sklearn.cluster import KMeans
-from datetime import datetime
 from sklearn import linear_model
 
 
@@ -147,7 +150,7 @@ def sort_cluster_gen_corr_end(centers, dimdim):
 
 def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     '''
-    KMA Classification
+    KMeans Classification for PCA data
 
     xds_PCA:
         (n_components, n_components) PCs
@@ -202,8 +205,6 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
         np.tile(var_anom_std, (num_clusters, 1))
     ) + np.tile(var_anom_mean, (num_clusters, 1))
 
-
-    print('KMEANS classification COMPLETE.')
     return xr.Dataset(
         {
             'order': (('n_clusters'), kma_order),
@@ -224,7 +225,7 @@ def KMA_regression_guided(
     xds_PCA, xds_Yregres, num_clusters,
     repres=0.95, alpha=0.5, min_group_size=None):
     '''
-    KMA Classification: regression guided
+    KMeans Classification for PCA data: regression guided
 
     xds_PCA:
         (n_components, n_components) PCs
@@ -322,7 +323,6 @@ def KMA_regression_guided(
     sorted_cenEOFs = kma.cluster_centers_[kma_order,:]
     sorted_centroids = centroids[kma_order,:]
 
-    print('KMEANS regression-guided classification COMPLETE.')
     return xr.Dataset(
         {
             # KMA data
