@@ -4,7 +4,7 @@ Python library for statistical calculations and methodologies for handling globa
 
 ## Project Map
 
-![picture](img/map.svg)
+![picture](docs/img/map.svg)
 
 ## Getting Started
 
@@ -88,7 +88,7 @@ pip install requests
 pip install -r requirements/requirements.txt
 
 # custom python libraries 
-pip install -r requirements/dev.txt
+pip install -r requirements/extra.txt
 ```
 
 then install teslakit:
