@@ -91,11 +91,6 @@ pip install -r requirements/requirements.txt
 pip install -r requirements/extra.txt
 ```
 
-then install teslakit:
-
-```
-python setup.py install
-```
 
 ## Running the tests 
 
