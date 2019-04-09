@@ -252,17 +252,25 @@ def RBF_Validation(
         l_tst_ix.append(test_index)
 
     # return validation data
+    sx = np.max([len(r) for r in l_trn_ix])
+    sy = len(l_trn_ix)
+    np_train = np.zeros((sx, sy)) * np.nan
+    for c, r in enumerate(l_trn_ix):
+        np_train[:len(r), c] = r
+
+    sx = np.max([len(r) for r in l_tst_ix])
+    sy = len(l_tst_ix)
+    np_test = np.zeros((sx, sy)) * np.nan
+    for c, r in enumerate(l_tst_ix):
+        np_test[:len(r), c] = r
+
     return xr.Dataset(
         {
             'mean_squared_error': (('n_split',), l_mse),
-            'train_index': (
-                ('train','n_split',), np.column_stack(tuple(l_trn_ix))
-            ),
-            'test_index': (
-                ('test','n_split',), np.column_stack(tuple(l_tst_ix))
-            ),
+            'train_index': (('train', 'n_split',), np_train),
+            'test_index': (('test', 'n_split',), np_test),
         },
-        coords = {
-            'n_split':np.arange(n_splits),
+        coords={
+            'n_split': np.arange(n_splits),
         }
     )
