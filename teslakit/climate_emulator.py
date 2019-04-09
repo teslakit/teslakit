@@ -21,10 +21,14 @@ from teslakit.statistical import Empirical_ICDF
 from teslakit.waves import Calculate_TWL
 from teslakit.storms import GetStormCategory
 from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape
+from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
+        Plot_SigmaCorrelation
 
 
 class Climate_Emulator(object):
     'KMA - DWTs Climate Emulator'
+
+    # TODO: confundido con KMA.bmus o KMA.sorted_bmus, hablar con Fer
 
     def __init__(self, p_base):
 
@@ -54,8 +58,9 @@ class Climate_Emulator(object):
         self.p_GEV_Par = op.join(p_base, 'GEV_Parameters.nc')
         self.p_GEV_Par_S = op.join(p_base, 'GEV_PSampling.nc')
         self.p_GEV_Sigma = op.join(p_base, 'GEV_SigmaCorrelation.nc')
-        #self.p_report_fit = op.join(p_base, 'report_fit')
-        #self.p_report_sim = op.join(p_base, 'report_sim')
+
+        self.p_report_fit = op.join(p_base, 'report_fit')
+        self.p_report_sim = op.join(p_base, 'report_sim')
 
         # output simulation storage paths
         self.p_sim = op.join(p_base, 'Simulation')
@@ -719,6 +724,44 @@ class Climate_Emulator(object):
         )
 
         return xds_TCs_sim, xds_WVS_sim_updated
+
+    def Report_Fit(self, export=False):
+        'Report for extremes model fitting'
+
+        # get data
+        vars_gev_params = [x for x in self.gev_vars_fit if 'Hs' in x]
+        xds_GEV_Par = self.GEV_Par
+        xds_chrom = self.chrom
+        d_sigma = self.sigma
+
+        if export:
+
+            # report folder
+            p_save = self.p_report_fit
+            if not op.isdir(p_save):
+                os.mkdir(p_save)
+
+            # Plot GEV params for each WT
+            for gvn in vars_gev_params:
+                p_plot = op.join(p_save, 'GEV_params_{0}.png'.format(gvn))
+                Plot_GEVParams(xds_GEV_Par[gvn], p_plot)
+
+            # Plot cromosomes probabilities
+            p_plot = op.join(p_save, 'chromosomes_probs.png')
+            Plot_ChromosomesProbs(xds_chrom, p_plot)
+
+
+        else:
+
+            # Plot GEV params for each WT
+            for gvn in vars_gev_params:
+                Plot_GEVParams(xds_GEV_Par[gvn])
+
+            # Plot cromosomes probabilities
+            Plot_ChromosomesProbs(xds_chrom)
+
+            # Plot sigma correlation triangle
+            Plot_SigmaCorrelation(xds_chrom, d_sigma)
 
 
 def ChromMatrix(vs):
