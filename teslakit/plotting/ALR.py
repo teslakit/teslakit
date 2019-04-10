@@ -314,7 +314,7 @@ def Plot_Covariate(bmus_values, covar_values,
 
     # generate common covar_rng
     covar_rng, interval = Generate_Covariate_rng(
-        name_covar, np.concatenate((cov_values_sim, cov_values_hist)))
+        name_covar, covar_values)
 
     # generate plot matrix
     m_plot = Generate_Covariate_Matrix(
