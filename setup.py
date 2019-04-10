@@ -8,8 +8,6 @@ import teslakit
 
 NAME = 'teslakit'
 
-
-# TODO: igual no es necesaria tanta metafuncion
 def _strip_comments(l):
     return l.split('#', 1)[0].strip()
 
@@ -38,7 +36,7 @@ def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
 def install_requires():
-    return reqs('default.txt')
+    return reqs('requirements.txt')
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -56,13 +54,13 @@ setup(
     license='MIT',
     packages=setuptools.find_packages(exclude=['test*']),
     #include_package_data=True,
-    #package_data={'attributes': ['wavespectra/core/attributes.yml']},
+    #package_data={'attributes': ['teslakit/core/attributes.yml']},
     platforms=['any'],
     install_requires=install_requires(),
     #extras_require=extras_require(),
     #setup_requires=['pytest-runner'],
     #tests_require=reqs('test.txt'),
-    python_requires=">=2.7, <3",
+    python_requires=">=3.7",
     #classifiers=CLASSIFIERS,
     #project_urls=PROJECT_URLS,
     #**kwargs
