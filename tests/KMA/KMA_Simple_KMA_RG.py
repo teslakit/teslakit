@@ -1,29 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # python libs
-import xarray as xr
 import numpy as np
+import xarray as xr
 
 # tk libs
-from lib.io.matlab import ReadGowMat
-from lib.KMA import KMA_simple
-from lib.KMA import KMA_regression_guided
-from lib.KMA import SimpleMultivariateRegressionModel as SMRM
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadGowMat
+from teslakit.KMA import KMA_simple
+from teslakit.KMA import KMA_regression_guided
+from teslakit.KMA import SimpleMultivariateRegressionModel as SMRM
 
-# data storage
-p_data = op.join(op.dirname(__file__), '..', 'data')
-p_test = op.join(p_data, 'tests', 'tests_KMA')
+# TODO: REVISAR TEST
+
+# --------------------------------------
+# test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'KMA')
 
 p_xds_pca_kmasimple = op.join(p_test, 'xds_PCA_KMASIMPLE.nc')
-
 p_xds_pca_kmarg = op.join(p_test, 'xds_PCA_KMARG.nc')
 p_mat_GOW = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')
+
 
 # --------------------------------------
 # KMA SIMPLE
@@ -37,7 +43,6 @@ num_clusters = 6
 repres = 0.95
 xds_KMA = KMA_simple(
     xds_PCA, num_clusters, repres)
-print(xds_KMA)
 
 
 # --------------------------------------

@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common
+import os
 import os.path as op
 import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
-# python libs
+# pip
 import xarray as xr
 from datetime import datetime, timedelta
 import numpy as np
 from datetime import date, timedelta, datetime
 
-# tk libs
-from lib.objs.tkpaths import Site
-from lib.statistical import ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
-from lib.objs.alr_wrapper import ALR_WRP
-from lib.custom_dateutils import xds_reindex_daily as xr_daily
-from lib.io.aux_nc import StoreBugXdset as sbxds
+# tk
+from teslakit.project_site import Site
+from teslakit.statistical import ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
+from teslakit.ALR import ALR_WRP
+from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
+from teslakit.io.aux_nc import StoreBugXdset as sbxds
 
+
+# TODO: revisar
 
 # --------------------------------------
 # Site paths and parameters

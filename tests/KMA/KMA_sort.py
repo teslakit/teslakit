@@ -1,16 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip
 import xarray as xr
 
-# tk libs
+# tk 
 from lib.custom_stats import sort_cluster_gen_corr_end
+
+# TODO: revisar datos test
+
+# --------------------------------------
+# test data storage
+
+pc = pathcontrol()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'estela', 'test_estela_pca')
+
 
 # data storage
 p_data = op.join(op.dirname(__file__),'..','data')

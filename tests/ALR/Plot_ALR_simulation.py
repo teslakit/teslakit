@@ -1,27 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
-import h5py
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
+# pip
 import xarray as xr
 import numpy as np
 from datetime import datetime, timedelta
+import h5py
 
-# tk libs
-from lib.io.matlab import ReadMatfile as rmat
-from lib.custom_dateutils import datevec2datetime
-from lib.plotting.ALR import Plot_PerpYear, Plot_Compare_PerpYear
-from lib.plotting.ALR import Plot_Covariate, Plot_Compare_Covariate
-from lib.custom_dateutils import xds2datetime as x2d
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile as rmat
+from teslakit.custom_dateutils import datevec2datetime
+from teslakit.plotting.ALR import Plot_PerpYear, Plot_Compare_PerpYear
+from teslakit.plotting.ALR import Plot_Covariate, Plot_Compare_Covariate
+from teslakit.custom_dateutils import xds2datetime as x2d
 
 
-# data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_tests_plot_data = op.join(p_data,'tests','tests_ALR','tests_plot','data')
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ALR')
+
+p_tests_plot_data = op.join(p_test, 'tests_plot', 'data')
+
 
 # bmus and dates sim (dates previously fixed)
 p_kma_sim = op.join(p_tests_plot_data,'TAIRUA_v1.mat')
@@ -29,10 +38,8 @@ p_kma_sim = op.join(p_tests_plot_data,'TAIRUA_v1.mat')
 # bmus and dates historical (dates previously fixed)
 p_kma_hist = op.join(p_tests_plot_data,'DWT_NZ_16_fixed.mat')
 
-# MJO
+# MJO and PCs
 p_mjo = op.join(p_tests_plot_data,'MJO_june.mat')
-
-# PCs
 p_pcs = op.join(p_tests_plot_data,'PCs_for_AWT.mat')
 
 
@@ -80,13 +87,13 @@ num_sim = 1000
 # hist
 time_hist = [x2d(t) for t in xds_KMA_hist.time]
 bmus_values_hist = np.reshape(xds_KMA_hist.bmus.values,[-1,1])
-#Plot_PerpYear(bmus_values_hist, time_hist, num_wts)
+Plot_PerpYear(bmus_values_hist, time_hist, num_wts)
 
 # sim
 #num_sim = 1000
 time_sim = [x2d(t) for t in xds_KMA_sims.time]
 bmus_values_sim = xds_KMA_sims.bmus.values
-#Plot_PerpYear(bmus_values_sim, time_sim, num_wts, num_sim)
+Plot_PerpYear(bmus_values_sim, time_sim, num_wts, num_sim)
 
 # compare
 Plot_Compare_PerpYear(
@@ -105,22 +112,22 @@ xds_PCs_hist = xds_PCs.sel(
     time=slice(time_hist[0],time_hist[-1])
 )
 time_hist_covars = [x2d(t) for t in xds_PCs_hist.time]
-#Plot_Covariate(
-#    bmus_values_hist, xds_PCs_hist.PC1.values,
-#    time_hist, time_hist_covars,
-#    num_wts,'PC1_HIST')
+Plot_Covariate(
+    bmus_values_hist, xds_PCs_hist.PC1.values,
+    time_hist, time_hist_covars,
+    num_wts, 'PC1_HIST')
 
 # Plot PC1 - simulation
 xds_PCs_sim = xds_PCs.sel(
     time=slice(time_sim[0],time_sim[-1])
 )
 time_sim_covars = [x2d(t) for t in xds_PCs_sim.time]
-#Plot_Covariate(
-#    bmus_values_sim, xds_PCs_sim.PC1.values,
-#    time_sim, time_sim_covars,
-#    num_wts, 'PC1-SIM',
-#    num_sim,
-#)
+Plot_Covariate(
+    bmus_values_sim, xds_PCs_sim.PC1.values,
+    time_sim, time_sim_covars,
+    num_wts, 'PC1-SIM',
+    num_sim,
+)
 
 
 # compare PCs
@@ -155,6 +162,4 @@ Plot_Compare_Covariate(
 )
 
 # TODO: plot mjo comparison
-
-
 

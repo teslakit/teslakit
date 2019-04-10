@@ -1,37 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip 
 import xarray as xr
 import numpy as np
 from datetime import datetime, timedelta
 
-# tk libs
-from lib.objs.alr_wrapper import ALR_WRP
-from lib.io.matlab import ReadMatfile as rmat
-from lib.custom_dateutils import xds2datetime as x2d
-from lib.custom_dateutils import xds_reindex_daily as xr_daily
-from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.ALR import ALR_WRP
+from teslakit.io.matlab import ReadMatfile as rmat
+from teslakit.custom_dateutils import xds2datetime as x2d
+from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
+from teslakit.custom_dateutils import xds_common_dates_daily as xcd_daily
 
 
-# data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_data = op.join(p_data, 'tests', 'tests_ALR', 'tests_ALR_statsmodel')
+# --------------------------------------
+# Test data storage
 
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ALR')
 
-# TODO CON TAIRUA MEJORAMOS EL CODIGO, COMPROBAR COMPATIBILIDAD
+p_data = op.join(p_test, 'test_ALR_statsmodel')
 
 
 # --------------------------------------
 # Get data used to FIT ALR model and preprocess
 
-# KMA: bmus
-# TODO: ESTOS SALEN DE UN PREPROCESO (ESTELA + TCS)
+# KMA: bmus (ESTELA + TCs)
 p_mat = op.join(p_data, 'KMA_daily_42.mat')
 d_mat = rmat(p_mat)['KMA']
 xds_KMA_fit = xr.Dataset(
@@ -42,9 +45,7 @@ xds_KMA_fit = xr.Dataset(
 )
 
 
-# MJO: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
-# TODO: ESTOS DATOS SON HISTORICOS (COVARIATES).
-# TODO: CAMBIAR A LEER DE LA BASE EN NETCDF
+# MJO historical: rmm1, rmm2 (first date 1979-01-01 in order to avoid nans)
 p_mat = op.join(p_data, 'MJO.mat')
 d_mat = rmat(p_mat)
 xds_MJO_fit = xr.Dataset(
@@ -55,11 +56,10 @@ xds_MJO_fit = xr.Dataset(
     coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 # reindex to daily data after 1979-01-01 (avoid NaN) 
-xds_MJO_fit = xr_daily(xds_MJO_fit, datetime(1979,01,01))
+xds_MJO_fit = xr_daily(xds_MJO_fit, datetime(1979, 1, 1))
 
 
-# AWT: PCs (annual data, parse to daily)
-# TODO: VIENE DE DEV_AWT / PREDICTOR.CALCPCA
+# AWT: PCs (SST annual data, parse to daily)
 p_mat = op.join(p_data, 'PCs_for_AWT.mat')
 d_mat = rmat(p_mat)['AWT']
 xds_PCs_fit = xr.Dataset(
@@ -77,10 +77,8 @@ xds_PCs_fit = xr_daily(xds_PCs_fit)
 
 # --------------------------------------
 # Get data used to SIMULATE with ALR model 
-# TODO: ESTOS DATOS SON LOS QUE VIENEN DEL PROCESO PREVIO (DEV_X)
 
-# MJO: rmm1, rmm2 (daily data)
-# TODO: A PARTIR DE EVBMUS_SIM EN DEV_MJO_ALR 
+# MJO Simulated: rmm1, rmm2 (daily data)
 p_mat = op.join(p_data, 'MJO_500_part1.mat')
 d_mat = rmat(p_mat)
 xds_MJO_sim = xr.Dataset(
@@ -92,8 +90,7 @@ xds_MJO_sim = xr.Dataset(
 )
 
 
-# AWT: PCs (annual data, parse to daily)
-# TODO: ESTE SALE DE LAS COPULAS
+# AWT: PCs (Generated with copula simulation. Annual data, parse to daily)
 p_mat = op.join(p_data, 'AWT_PCs_500_part1.mat')
 d_mat = rmat(p_mat)['AWT']
 xds_PCs_sim = xr.Dataset(
@@ -117,7 +114,7 @@ xds_PCs_sim = xr_daily(xds_PCs_sim)
 # model sim: xds_MJO_sim, xds_PCs_sim
 
 # covariates: FIT
-d_covars_fit = xcd_daily([xds_MJO_fit, xds_PCs_fit])
+d_covars_fit = xcd_daily([xds_MJO_fit, xds_PCs_fit, xds_KMA_fit])
 
 # PCs covar 
 cov_PCs = xds_PCs_fit.sel(time=slice(d_covars_fit[0],d_covars_fit[-1]))
@@ -138,14 +135,15 @@ i0 = d_covars_fit.index(x2d(xds_KMA_fit.time[0]))
 cov_KMA = cov_T[i0:,:]
 d_covars_fit = d_covars_fit[i0:]
 
-# normalize
-cov_norm_fit = (cov_KMA - cov_T.mean(axis=0)) / cov_T.std(axis=0)
+# generate xarray.Dataset
+cov_names = ['PC1', 'PC2', 'PC3', 'MJO1', 'MJO2']
 xds_cov_fit = xr.Dataset(
     {
-        'cov_norm': (('time','n_covariates'), cov_norm_fit),
+        'cov_values': (('time','cov_names'), cov_T),
     },
     coords = {
         'time': d_covars_fit,
+        'cov_names': cov_names,
     }
 )
 
@@ -168,10 +166,11 @@ cov_5 = cov_MJO.rmm2.values.reshape(-1,1)
 cov_T_sim = np.hstack((cov_1, cov_2, cov_3, cov_4, cov_5))
 xds_cov_sim = xr.Dataset(
     {
-        'cov_T': (('time','n_covariates'), cov_T_sim),
+        'cov_values': (('time','cov_names'), cov_T_sim),
     },
     coords = {
         'time': d_covars_sim,
+        'cov_names': cov_names,
     }
 )
 
@@ -184,21 +183,18 @@ xds_cov_sim = xr.Dataset(
 # model fit: xds_KMA_fit, xds_cov_sim, num_clusters
 # model sim: xds_cov_sim, sim_num, sim_years
 
-# TODO: TEST NO ACTUALIZADO A PARTIR DE AQUI
-
 # use bmus inside covariate time frame
-d_covars_bmus_fit = [
-        max(d_covars_fit[0], x2d(xds_KMA_fit.time[0])),
-        min(d_covars_fit[-1], x2d(xds_KMA_fit.time[-1]))]
-
 xds_bmus_fit = xds_KMA_fit.sel(
-    time=slice(d_covars_bmus_fit[0], d_covars_bmus_fit[-1])
-).bmus
+    time=slice(d_covars_fit[0], d_covars_fit[-1])
+)
 
 
 # Autoregressive logistic wrapper
+name_test = 'mk_test'
 num_clusters = 42
-ALRW = ALR_WRP(xds_bmus_fit, num_clusters)
+sim_num = 2
+fit_and_save = True # False for loading
+p_test_ALR = op.join(p_data, name_test)
 
 # ALR terms
 d_terms_settings = {
@@ -206,32 +202,28 @@ d_terms_settings = {
     'constant' : True,
     'long_term' : False,
     'seasonality': (True, [2, 4]),
-    'covariates': (True, xds_cov_fit.cov_norm.values),
+    'covariates': (True, xds_cov_fit),
 }
 
-ALRW.SetFittingTerms(d_terms_settings)
 
-
-# name test 
-name_test = 'mk_test'
-fit_and_save = True # False for loading
+# Autoregressive logistic wrapper
+ALRW = ALR_WRP(p_test_ALR)
+ALRW.SetFitData(
+    num_clusters, xds_bmus_fit, d_terms_settings)
 
 
 # ALR model fitting
 p_save = op.join(p_data, '{0}.sav'.format(name_test))
-fit_and_save = False
 if fit_and_save:
     ALRW.FitModel(max_iter=20000)
-    ALRW.SaveModel(p_save)
 else:
     ALRW.LoadModel(p_save)
 
 # Plot model p-values and params
 p_report = op.join(p_data, 'r_{0}'.format(name_test))
-ALRW.Report_pvalue(p_report)
+ALRW.Report_Fit(p_report)
 
 # ALR model simulations 
-sim_num = 2
 sim_years = 300
 
 # start simulation at PCs available data
@@ -242,14 +234,14 @@ dates_sim = [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
 
 # print some info
 print('ALR model fit   : {0} --- {1}'.format(
-    d_covars_bmus_fit[0], d_covars_bmus_fit[-1]))
+    d_covars_fit[0], d_covars_fit[-1]))
 print('ALR model sim   : {0} --- {1}'.format(
     dates_sim[0], dates_sim[-1]))
 
 
 # launch simulation
 xds_ALR = ALRW.Simulate(
-    sim_num, dates_sim, cov_T_sim)
+    sim_num, dates_sim, xds_cov_sim)
 
 
 # Save results for matlab plot 
@@ -268,5 +260,4 @@ with h5py.File(p_mat_output, 'w') as hf:
         [d.month for d in dates_sim],
         [d.day for d in dates_sim])).T
 
-# TODO: INTRODUCIR AQUI UN PLOT_COMPARE_PCS ?
 

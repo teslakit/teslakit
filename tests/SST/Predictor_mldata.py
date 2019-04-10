@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip
 import xarray as xr
 
-# tk libs
-from lib.io.matlab import ReadMatfile
-from lib.PCA import CalcRunningMean
-from lib.custom_dateutils import DateConverter_Mat2Py
-from lib.objs.tkpaths import PathControl
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile
+from teslakit.PCA import CalcRunningMean
+from teslakit.custom_dateutils import DateConverter_Mat2Py
 
 # --------------------------------------
 # data storage and path control
 pc = PathControl()
 
+# TODO: revisar datos
 
 # data storage
 p_pred_mat = op.join(pc.p_DB, 'SST', 'SST_1854_2017.mat')

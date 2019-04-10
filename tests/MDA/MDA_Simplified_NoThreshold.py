@@ -1,32 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip
 import xarray as xr
 import numpy as np
 
-# custom libs
-from lib.MDA import MaxDiss_Simplified_NoThreshold
+# tk
+from teslakit.project_site import PathControl
+from teslakit.MDA import MaxDiss_Simplified_NoThreshold
 
 
 # --------------------------------------
-# files
-p_data = op.join(op.dirname(__file__),'..','data')
-p_data = op.join(p_data, 'tests', 'tests_MDA')
+# test data storage
 
-p_input = op.join(p_data, 'TCs_sim_r2_params.nc')
-p_output = op.join(p_data, 'TCs_MDA_params.nc')
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'MDA')
+
+# input
+p_input = op.join(p_test, 'TCs_sim_r2_params.nc')
+
+# output
+p_output = op.join(p_test, 'TCs_MDA_params.nc')
 
 
+# --------------------------------------
 # load input data
 xds_input = xr.open_dataset(p_input)
-print (xds_input)
+print(xds_input)
 
 # input: 100000 storm parameters
 pmean = xds_input.pressure_mean.values[:]
@@ -60,6 +67,6 @@ xds_output = xr.Dataset(
         'storm':(('storm'), np.arange(num_sel_mda))
     },
 )
-print (xds_output)
+print(xds_output)
 xds_output.to_netcdf(p_output)
 

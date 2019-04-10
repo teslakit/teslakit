@@ -1,24 +1,34 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
+# pip
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 
-# tk libs
-from lib.io.matlab import ReadMatfile
-from lib.estela import spatial_gradient
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile
+from teslakit.estela import spatial_gradient
 
-# data storage
-p_data = op.join(op.dirname(__file__),'..','data')
+# TODO: RESIVAR DATOS TEST
 
-p_mat_mg = op.join(p_data, 'tests', 'tests_spatial_gradient', 'meshgrid.mat')
-p_mat_slp = op.join(p_data, 'tests', 'tests_spatial_gradient', 'slp.mat')
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ESTELA', 'test_spatial_gradient')
+
+# input
+p_mat_mg = op.join(p_test, 'meshgrid.mat')
+p_mat_slp = op.join(p_test, 'slp.mat')
 
 
 # --------------------------------------
@@ -42,7 +52,6 @@ xds_SLP = xr.Dataset(
         'time': range(SLP.shape[0]),
         'latitude': latitude,
         'longitude': longitude,
-
     }
 )
 

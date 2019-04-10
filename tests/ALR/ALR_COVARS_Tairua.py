@@ -1,34 +1,45 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip
 import xarray as xr
 import numpy as np
 from datetime import datetime
 
-# tk libs
-from lib.objs.alr_wrapper import ALR_WRP
-from lib.io.matlab import ReadMatfile as rmat
-from lib.custom_dateutils import xds_common_dates_daily as xcd_daily
-from lib.custom_dateutils import xds_reindex_daily as xr_daily
-from lib.plotting.EOFs import Plot_PCvsPC
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.ALR import ALR_WRP
+from teslakit.io.matlab import ReadMatfile as rmat
+from teslakit.custom_dateutils import xds_common_dates_daily as xcd_daily
+from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
+from teslakit.plotting.EOFs import Plot_PCvsPC
 
 
-# data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_tests_Tairua = op.join(p_data,'tests','tests_ALR','tests_Tairua')
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ALR')
+
+
+# Tairua test 
+p_tests_Tairua = op.join(p_test, 'test_Tairua')
+
+# input files
 p_tairua_KMA = op.join(p_tests_Tairua, 'data','DWT_NZ_16.mat')
 p_covars = op.join(p_tests_Tairua, 'covars')
+
+# output files
 p_output = op.join(p_tests_Tairua, 'output')
 p_report = op.join(p_tests_Tairua, 'output', 'report_fit')
 p_PCvsPC = op.join(p_output, 'PCvsPC.png')
-
 
 
 # --------------------------------------
@@ -55,7 +66,7 @@ xds_MJO = xr.Dataset(
     coords = {'time': [datetime(r[0],r[1],r[2]) for r in d_mat['Dates']]}
 )
 # reindex to daily data after 1979-01-01 (avoid NaN) 
-xds_MJO = xr_daily(xds_MJO, datetime(1979,01,01))
+xds_MJO = xr_daily(xds_MJO, datetime(1979, 1, 1))
 
 
 # AWT: PCs (annual data, parse to daily)
@@ -73,9 +84,6 @@ xds_PCs_year = xds_PCs
 
 # reindex annual data to daily data
 xds_PCs = xr_daily(xds_PCs)
-
-
-
 
 
 # --------------------------------------
@@ -113,7 +121,6 @@ xds_cov_fit = xr.Dataset(
 
 # SIMULATION (1979-2016)
 d_covars_sim = xcd_daily([xds_MJO, xds_PCs])
-# TODO: TAMBIEN PUEDO HACER D_COVAR_SIM = D_FIT_SIM
 
 # PCs covar 
 cov_PCs = xds_PCs.sel(time=slice(d_covars_sim[0],d_covars_sim[-1]))
@@ -137,9 +144,6 @@ xds_cov_sim = xr.Dataset(
         'cov_names': cov_names,
     }
 )
-
-
-
 
 
 # --------------------------------------

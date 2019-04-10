@@ -1,29 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
+# pip
 import numpy as np
 import xarray as xr
 
-# tk libs
-from lib.io.matlab import ReadMatfile, ReadGowMat
-from lib.KMA import KMA_regression_guided
-from lib.KMA import SimpleMultivariateRegressionModel as SMRM
+# tk
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile, ReadGowMat
+from teslakit.KMA import KMA_regression_guided
+from teslakit.KMA import SimpleMultivariateRegressionModel as SMRM
 
-# data storage
-p_data = op.join(op.dirname(__file__), '..', 'data')
-p_test = op.join(p_data, 'tests', 'tests_estela', 'test_estela_PCA')
 
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ESTELA', 'test_estela_PCA')
+
+# input
 p_PCA = op.join(p_test, 'xds_SLP_PCA.nc')
 p_WAVES = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')
 
+# output
 p_KMA_save = op.join(p_test, 'xds_test_KMArg.nc')  # to save test results
 
 
+# --------------------------------------
 # load PCA and GOW WAVES data
 xds_PCA = xr.open_dataset(p_PCA)
 xds_WAVES = ReadGowMat(p_WAVES)

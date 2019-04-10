@@ -1,24 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
+# pip
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 
-# tk libs
-from lib.io.matlab import ReadMatfile
-from lib.PCA import CalcPCA_EstelaPred
-from lib.plotting.EOFs import Plot_EOFs_EstelaPred
+# tk 
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile
+from teslakit.PCA import CalcPCA_EstelaPred
+from teslakit.plotting.EOFs import Plot_EOFs_EstelaPred
 
-# data storage
-p_data = op.join(op.dirname(__file__), '..', 'data')
-p_test = op.join(p_data, 'tests', 'tests_estela', 'test_estela_PCA')
 
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ESTELA', 'test_estela_PCA')
+
+
+# --------------------------------------
 # use teslakit test data 
 p_estela_pred = op.join(p_test, 'xds_SLP_estela_pred.nc')
 xds_SLP_estela_pred = xr.open_dataset(p_estela_pred)
@@ -27,7 +36,6 @@ xds_SLP_estela_pred = xr.open_dataset(p_estela_pred)
 xds_PCA = CalcPCA_EstelaPred(xds_SLP_estela_pred, 'SLP')
 xds_PCA.to_netcdf(op.join(p_test, 'xds_SLP_PCA.nc'))
 print(xds_PCA)
-
 
 # Plot EOFs
 n_plot = 3

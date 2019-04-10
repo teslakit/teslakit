@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
+import os
 import os.path as op
 import sys
 sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
+#pip
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import xarray as xr
 
-# data storage
-p_data = op.join(op.dirname(__file__),'..','data')
-p_test = op.join(p_data,'tests', 'tests_estela', 'Roi_Kwajalein')
+
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ESTELA', 'Roi_Kwajalein')
 p_SLP_save = op.join(p_test, 'SLP.nc')
 
 

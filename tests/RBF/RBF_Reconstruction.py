@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
-# python libs
+# pip 
 import xarray as xr
 import numpy as np
 
-# custom libs
-from lib.io.matlab import ReadMatfile
-from lib.RBF import RBF_Reconstruction
+# tk
+from teslakit.project_site import PathControl
+from teslakit.io.matlab import ReadMatfile
+from teslakit.RBF import RBF_Reconstruction
 
 
 # --------------------------------------
-# files
-p_data = op.join(op.dirname(__file__),'..','data')
-p_test = op.join(p_data,'tests','tests_RBF')
+# test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'RBF')
 
 # input
 p_subset = op.join(p_test, 'MDA_1000.mat')
@@ -29,7 +32,7 @@ p_dataset = op.join(p_test, 'MULTIVARIATE_100000parameters.mat')
 # output
 p_out = op.join(p_test, 'output_dataset_norm.npy')
 
-
+# --------------------------------------
 # load subset-target data
 subset = ReadMatfile(p_subset)['Subset']  # pmean, vmean, gamma, delta
 target = ReadMatfile(p_target)['datos_n']  # Hs, Tp, SS, TWL, Dir, MU
