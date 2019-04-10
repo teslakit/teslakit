@@ -15,6 +15,7 @@ class atdict(dict):
     __delattr__= dict.__delitem__
 
 
+# TODO: method for downloading site data from internet data servers?
 class Site(object):
     'Project site: collection of parameters and file paths'
 
@@ -90,6 +91,7 @@ class PathControl(object):
         # teslakit data
         p_source = os.sep.join(op.realpath(__file__).split(op.sep)[0:-2])
         p_data = op.join(p_source, 'data')
+        p_test_data = op.join(p_data, 'tests')
         p_docs = op.join(p_source, 'docs')
 
         # teslakit database and sites
@@ -99,6 +101,7 @@ class PathControl(object):
 
         # string paths
         self.p_data = p_data
+        self.p_test_data = p_test_data
         self.p_docs = p_docs
         self.p_DB = p_DB
         self.p_DB_ini = p_DB_ini
