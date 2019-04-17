@@ -99,18 +99,20 @@ def GetDistribution(xds_wps, swell_sectors):
             np.nansum(np.power(sect_hs,2) * sect_tp * np.cos(sect_dir*np.pi/180), axis=1)
         )
 
+        # dir correction and denormalization 
+        swell_Dir[np.where((swell_Dir<0))] = swell_Dir[np.where((swell_Dir<0))]+2*np.pi
+        swell_Dir = swell_Dir*180/np.pi
+
         # dont do arctan2 if there is only one dir
         i_onedir = np.where(
             (np.count_nonzero(~np.isnan(sect_dir),axis=1)==1)
         )[0]
         swell_Dir[i_onedir] = np.nanmin(sect_dir[i_onedir], axis=1)
 
-        # dir correction 
-        swell_Dir[np.where((swell_Dir<0))]=(swell_Dir[np.where((swell_Dir<0))]+2*np.pi)*180/np.pi
-
         # out of bound dir correction
         swell_Dir[np.where((swell_Dir>360))] = swell_Dir[np.where((swell_Dir>360))]-360
         swell_Dir[np.where((swell_Dir<0))] = swell_Dir[np.where((swell_Dir<0))]+360
+
 
         # fix swell all-nans to 0s nansum behaviour
         p_fix = np.where(swell_Hs==0)
