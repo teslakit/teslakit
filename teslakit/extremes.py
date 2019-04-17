@@ -105,6 +105,7 @@ def SampleGEV_KMA_Smooth(bmus, n_clusters, param_GEV, var):
     print('SampleGEV_KMA_Smooth no programada. devuelve param_GEV')
     return param_GEV
     # TODO: NECESITO SACAR LA MATRIZ DE INFORMACION FISHER
+    # TODO: o quizas evaluar nlogl diferencialmente 
 
     # gev parameters
     shape_gev = param_GEV[:,0]
@@ -160,4 +161,51 @@ def SampleGEV_KMA_Smooth(bmus, n_clusters, param_GEV, var):
                 #param_SIM = [shape_gev[i], mu_strips[i], psi_strips[i]]
 
     return None
+
+def GEV_ACOV(theta, x):
+    '''
+    Returns asyntotyc variance matrix using Fisher Information matrix inverse
+
+    theta = (shape, location, scale) GEV parameters
+    '''
+
+    # TODO: hace falta una funcion acov generica para varios parametros y
+    # funcion L dada
+
+    # gev shape, location and scale parameters
+    k, u, s = theta
+
+    # parameter differential
+    pm = 0.0001
+    dt_k = pm * k
+    dt_u = pm * u
+    dt_s = pm * s
+
+    # second derivative evaluation 
+    # dxx = (f(x+dt_x) - 2f(x) + f(x-dt_x)) / (dt_x**2)
+    # dxy = (f(x,y) - f(x-dt_x,y) - f(x,y-dt_y) + f(x-dt_x, u-dt_y)) / (dt_x*dt_y)
+
+    f = genextreme.nnlf  # GEV loglikelihood
+
+    dkk = (f((k+dt_k,u,s),x) - 2*f(theta,x) + f((k-dt_k,u,s),x))/(dt_k**2)
+    duu = (f((k,u+dt_u,s),x) - 2*f(theta,x) + f((k,u-dt_u,s),x))/(dt_u**2)
+    dss = (f((k,u,s+dt_s),x) - 2*f(theta,x) + f((k,u,s-dt_s),x))/(dt_s**2)
+
+    dku = (f(theta,x) - f((k-dt_k,u,s),x) - f((k,u-dt_u,s),x) + f((k-dt_k,u-dt_u,s),x))/(dt_k*dt_u)
+    dks = (f(theta,x) - f((k-dt_k,u,s),x) - f((k,u,s-dt_s),x) + f((k-dt_k,u,s-dt_s),x))/(dt_k*dt_s)
+    dus = (f(theta,x) - f((k,u-dt_u,s),x) - f((k,u,s-dt_s),x) + f((k,u-dt_u,s-dt_s),x))/(dt_s*dt_u)
+
+    # Fisher Information matrix
+    FI = np.array(
+        [
+            [dkk, dku, dks],
+            [dku, duu, dus],
+            [dks, dus, dss]
+        ]
+    )
+
+    # asynptotic variance covariance matrix
+    acov = np.linalg.inv(FI)
+
+    return acov
 
