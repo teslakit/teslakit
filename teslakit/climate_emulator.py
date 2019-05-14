@@ -20,7 +20,7 @@ from numpy.random import choice, multivariate_normal, randint, rand
 from teslakit.statistical import Empirical_ICDF
 from teslakit.waves import Calculate_TWL
 from teslakit.storms import GetStormCategory
-from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape
+from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, GEV_ACOV
 from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
 
@@ -48,6 +48,9 @@ class Climate_Emulator(object):
         self.fams = ['sea', 'swell_1', 'swell_2']  # climate emulator waves families
         self.gev_vars_fit = [
             'sea_Hs', 'sea_Tp', 'swell_1_Hs', 'swell_1_Tp', 'swell_2_Hs', 'swell_2_Tp'
+        ]
+        self.gev_vars_samp = [
+            'sea_Hs', 'swell_1_Hs', 'swell_1_Tp', 'swell_2_Hs', 'swell_2_Tp'
         ]
 
         # paths
@@ -272,8 +275,6 @@ class Climate_Emulator(object):
     def Calc_SigmaCorrelation(self, xds_KMA_MS, xds_WVS_MS, xds_GEV_Par):
         'Calculate Sigma Pearson correlation for each WT-chromosome combo'
 
-        # TODO: alguna diferencia con matlab, corregir 
-
         bmus = xds_KMA_MS.bmus.values[:]
         cenEOFs = xds_KMA_MS.cenEOFs.values[:]
         n_clusters = len(xds_KMA_MS.n_clusters)
@@ -368,6 +369,105 @@ class Climate_Emulator(object):
 
         return d_sigma
 
+    def GEV_Parameters_Sampling(self, n_sims):
+        '''
+        Sample new GEV/GUMBELL parameters using GEV/GUMBELL asymptotic variances
+
+        num_simsi  - number of GEV parameters to sample
+        '''
+        # TODO: pasar a teslakit/extremes
+
+        xds_GEV_Par = self.GEV_Par
+        vars_gev = self.gev_vars_samp
+        xds_KMA_MS = self.KMA_MS
+        xds_WVS_MS = self.WVS_MS
+
+        # get KMA data
+        bmus = xds_KMA_MS.bmus.values[:]
+        n_clusters = len(xds_KMA_MS.n_clusters)
+        cenEOFs = xds_KMA_MS.cenEOFs.values[:]
+
+        # dataset for storing parameters
+        xds_par_samp = xr.Dataset(
+            {
+            },
+            coords={
+                'parameter' : ['shape', 'location', 'scale'],
+                'n_cluster' : np.arange(n_clusters)+1,
+                'simulation':range(n_sims),
+            },
+        )
+
+        # simulate variables
+        for vn in vars_gev:
+
+            # GEV/GUMBELL parameters
+            pars_GEV = xds_GEV_Par[vn]
+            sha = pars_GEV.sel(parameter='shape').values[:]
+            sca = pars_GEV.sel(parameter='scale').values[:]
+            loc = pars_GEV.sel(parameter='location').values[:]
+
+            # location parameter Extremal Index (Gev) 
+            index = np.ones(sha.shape)
+            mu_b = loc - (sca/sha) * (1-np.power(index, sha))
+            psi_b = sca * np.power(index, sha)
+
+            # location parameter Extremal Index (Gumbell) 
+            # TODO!!! VEO PEQUENAS DIFERENCIAS EN POS GUMBEL FRENTE A MATLAB
+            sha_gbl = 0.0000000001
+            pos_gbl = np.where(sha == sha_gbl)[0]
+            cls_gbl = pos_gbl + 1  # Gumbell Weather Types
+
+            # update mu_b
+            mu_b[pos_gbl] = -loc[pos_gbl] + sca[pos_gbl] * np.log(index[pos_gbl])
+
+            # output holder 
+            out_ps = np.ndarray((n_clusters, n_sims, 3)) * np.nan
+
+            # sample Gumbel or GEV parameters for each WT 
+            for i in range(n_clusters):
+                c = i+1  # WT ID
+
+                # get var values at cluster and remove nans
+                p_bmus = np.where((bmus==c))[0]
+                var_wvs = xds_WVS_MS[vn].isel(time=p_bmus).values[:]
+                var_wvs = var_wvs[~np.isnan(var_wvs)]
+
+                # Gumbel WTs: parameters sampling
+                if c in cls_gbl:
+                    # TODO: GUMBEL
+
+                    # programar acov gumbel
+                    # generar con multivariate normal
+                    # shape se mete a mano
+                    pass
+
+                # GEV WTs: parameters sampling
+                else:
+                    # TODO: signo acov correcto?
+                    # TODO: PARECE QUE ACOV NO FUNCIONA SIEMPRE, NLOGL inf
+                    theta = (sha[i], loc[i], sca[i])
+                    acov = GEV_ACOV(theta, var_wvs)
+
+                    # gev params used for multivar. normal random generation
+                    theta_gen = np.array([sha[i], mu_b[i], psi_b[i]])
+                    theta_sim = multivariate_normal(theta_gen, acov, n_sims)
+
+                # store sampled GEV/GUMBELL params
+                out_ps[i,:,:] = theta_sim
+
+            # smooth shape parameter
+            # TODO: ALTO COSTE COMPUTACIONAL. ACTIVAR
+            # de momento puedo guardar esto tras calcularlo
+            for j in range(n_sims):
+                shape_wts = out_ps[:,j,0]
+                out_ps[:,j,0] = Smooth_GEV_Shape(cenEOFs, shape_wts)
+
+            # append output to dataset
+            xds_par_samp[vn] = (('n_cluster','simulation', 'parameter'), out_ps)
+
+        return xds_par_samp
+
     def Simulate_Waves(self, xds_DWT, dict_WT_TCs_wvs):
         '''
         Climate Emulator DWTs waves simulation
@@ -391,15 +491,22 @@ class Climate_Emulator(object):
         chrom_probs = xds_chrom.probs.values[:]
 
         # iterate DWT simulations
-        ls_wvs = []
+        out_wvs = []
         for dwt in dwt_bmus_sim.T:
+
+            # get number of simulations
+            idw, iuc = np.unique(dwt, return_counts=True)
+            num_sims = np.max(iuc)
+
+            # Sample GEV/GUMBELL parameters 
+            xds_GEV_Par_Sampled = self.GEV_Parameters_Sampling(num_sims)
 
             # generate waves
             wvs_sim = self.GenerateWaves(
                 bmus, n_clusters, chrom, chrom_probs, sigma, xds_WVS_MS,
-                xds_GEV_Par, dict_WT_TCs_wvs, dwt
+                xds_GEV_Par_Sampled, dict_WT_TCs_wvs, dwt
             )
-            ls_wvs.append(wvs_sim)
+            out_wvs.append(wvs_sim)
 
         # store simulations
         self.StoreSim(self.p_sim_wvs_notcs, ls_wvs, 'wvs_sim_noTCs_')
@@ -445,7 +552,6 @@ class Climate_Emulator(object):
             ls_tcs.append(tcs_sim)
             ls_wvs_upd.append(wvs_upd_sim)
 
-
         # store simulations
         self.StoreSim(self.p_sim_tcs, ls_tcs, 'TCs_sim_')
         self.StoreSim(self.p_sim_wvs_tcs, ls_wvs_upd, 'wvs_sim_TCs_')
@@ -453,7 +559,7 @@ class Climate_Emulator(object):
         return ls_tcs, ls_wvs_upd
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
-                      xds_WVS_MS, xds_GEV_Par, TC_WVS, DWT):
+                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -461,6 +567,7 @@ class Climate_Emulator(object):
         n_clusters - KMA number of clusters
         chrom, chrom_probs - chromosomes and probabilities
         sigma - pearson correlation for each WT
+        xds_GEV_Par_Sampled - GEV/GUMBELL parameters sampled for simulation
         TC_WVS - dictionary. keys: WT, vals: xarray.Dataset TCs waves fams
         DWT - np.array with DWT bmus sim series (dims: time,)
 
@@ -502,6 +609,11 @@ class Climate_Emulator(object):
                 ipbs = 0  # prob_sim aux. index
                 sim_row = np.zeros(9)
                 for i_c in np.where(crm == 1)[0]:
+
+                    # random sampled GEV 
+                    # TODO hablar con Fer esto, puede no tener sentido
+                    rd = np.random.randint(0,len(xds_GEV_Par_Sampled.simulation))
+                    xds_GEV_Par = xds_GEV_Par_Sampled.isel(simulation=rd)
 
                     # get wave family chromosome variables
                     fam_n = wvs_fams[i_c]
