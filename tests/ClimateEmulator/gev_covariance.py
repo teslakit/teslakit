@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# basic import
+import os
+import os.path as op
+import sys
+sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
+
+# python libs
+import numpy as np
+from scipy.stats import  gumbel_l, genextreme
+
+# custom libs
+from teslakit.io.matlab import ReadMatfile as rmf
+from teslakit.project_site import PathControl
+from teslakit.extremes import GEV_ACOV
+
+
+# --------------------------------------
+# Test data storage
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ClimateEmulator', 'GEV_ACOV')
+
+# input files
+p_mat = op.join(p_test,'gevacov.mat')
+
+
+# --------------------------------------
+# Load GEV params and data from matlab file 
+dm = rmf(p_mat)['mldata']
+shape, scale, loc = dm['param_GEV']
+data = dm['data']
+
+shape = shape*-1  # matlab and python use different shape
+
+# nlogL value
+nLogL = genextreme.nnlf((shape, loc, scale), data)
+
+print(shape, loc, scale)
+print(nLogL)
+print()
+
+# asynptotic variances
+acov = GEV_ACOV((shape, loc, scale), data)
+
+print(acov)
+
