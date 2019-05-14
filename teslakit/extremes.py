@@ -46,7 +46,7 @@ def FitGEV_KMA_Frechet(bmus, n_clusters, var):
             theta_gev_fix = (-shape_gev, loc_gev, scale_gev)
 
             # apply significance test if Frechet
-            if shape_gev < 0:  # TODO: signo alreves ??? hablar con Fer
+            if shape_gev < 0:
                 if nLogL_gl - nLogL_gev >= 1.92:
                     param_GEV[i,:] = list(theta_gev_fix)
                 else:
@@ -97,70 +97,11 @@ def Smooth_GEV_Shape(cenEOFs, param):
 
 def SampleGEV_KMA_Smooth(bmus, n_clusters, param_GEV, var):
     '''
-    TODO: resolver/encontrar la matriz de informacion Fisher
-    Generar un gev_params_sample (n_clustersx3) por simulacion
-    respetando los param_GEV (n_clusterx3) input
     '''
 
-    print('SampleGEV_KMA_Smooth no programada. devuelve param_GEV')
+    # TODO: en CLIMATE_EMULATOR. REFACTOR SI NECESARIO
+
     return param_GEV
-    # TODO: NECESITO SACAR LA MATRIZ DE INFORMACION FISHER
-    # TODO: o quizas evaluar nlogl diferencialmente 
-
-    # gev parameters
-    shape_gev = param_GEV[:,0]
-    loc_gev = param_GEV[:,1]
-    scale_gev = param_GEV[:,2]
-
-    # location parameter
-    index = np.ones((1, n_clusters))
-    mu_strips = loc_gev - np.multiply(
-        np.divide(scale_gev, shape_gev),
-        1 - np.power(index, shape_gev)
-    ).squeeze()
-
-    psi_strips = np.multiply(
-        scale_gev, np.power(index, shape_gev)
-    )
-
-    # Gumbel parameters
-    pos_gumbel = np.where((shape_gev==0.0000000001))[0]
-    loc_gumbel = -1*loc_gev[pos_gumbel]
-    scale_gumbel = scale_gev[pos_gumbel]
-
-    mu_strips[pos_gumbel] = loc_gumbel + np.multiply(
-        scale_gumbel, np.log(index[:,pos_gumbel].squeeze())
-    )
-
-    # KMA bmus
-    for i in range(n_clusters):
-        c = i+1
-        pos = np.where((bmus==c))[0]
-
-        if len(pos) == 0:
-            #param_SIM[i,:] = [np.nan, np.nan, np.nan]
-            pass
-
-        else:
-
-            # get variable at cluster position
-            var_c = var[pos]
-            var_c = var_c[~np.isnan(var_c)]
-
-            if i in pos_gumbel:
-                pass
-
-            else:
-                # TODO ACOV?
-                acov = genextreme.stats(
-                    -1*shape_gev[i], loc_gev[i], scale_gev[i],
-                    moments='sk'
-                )
-                pass
-
-                #param_SIM = [shape_gev[i], mu_strips[i], psi_strips[i]]
-
-    return None
 
 def GEV_ACOV(theta, x):
     '''
@@ -171,6 +112,8 @@ def GEV_ACOV(theta, x):
 
     # TODO: hace falta una funcion acov generica para varios parametros y
     # funcion L dada
+
+    # TODO: simbolo shape correcto en todas partes?
 
     # gev shape, location and scale parameters
     k, u, s = theta
@@ -186,6 +129,12 @@ def GEV_ACOV(theta, x):
     # dxy = (f(x,y) - f(x-dt_x,y) - f(x,y-dt_y) + f(x-dt_x, u-dt_y)) / (dt_x*dt_y)
 
     f = genextreme.nnlf  # GEV loglikelihood
+
+    # TODO: EN ALGUN CASO NO RESUELVE Y DA INFINITO
+    if np.isinf(f((k,u,s),x)):
+
+        print ('GEV acov error: cant evaluate nLogL')
+        return np.ones((3,3))*0.0001
 
     dkk = (f((k+dt_k,u,s),x) - 2*f(theta,x) + f((k-dt_k,u,s),x))/(dt_k**2)
     duu = (f((k,u+dt_u,s),x) - 2*f(theta,x) + f((k,u-dt_u,s),x))/(dt_u**2)
