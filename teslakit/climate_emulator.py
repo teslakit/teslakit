@@ -30,6 +30,9 @@ class Climate_Emulator(object):
 
     # TODO: confundido con KMA.bmus o KMA.sorted_bmus, hablar con Fer
 
+    # TODO: corregir errores gumbel_l: pos y acov
+    # TODO: simplificar al maximo
+
     def __init__(self, p_base):
 
         # max. Total Water level for each storm data
@@ -59,7 +62,7 @@ class Climate_Emulator(object):
         self.p_KMA_MS = op.join(p_base, 'KMA_MaxStorm.nc')
         self.p_chrom = op.join(p_base, 'chromosomes.nc')
         self.p_GEV_Par = op.join(p_base, 'GEV_Parameters.nc')
-        self.p_GEV_Par_S = op.join(p_base, 'GEV_PSampling.nc')
+        self.p_GEV_Par_S = op.join(p_base, 'GEV_PSampling.nc') # TODO: usar?
         self.p_GEV_Sigma = op.join(p_base, 'GEV_SigmaCorrelation.nc')
 
         self.p_report_fit = op.join(p_base, 'report_fit')
@@ -375,7 +378,6 @@ class Climate_Emulator(object):
 
         num_simsi  - number of GEV parameters to sample
         '''
-        # TODO: pasar a teslakit/extremes
 
         xds_GEV_Par = self.GEV_Par
         vars_gev = self.gev_vars_samp
@@ -399,7 +401,6 @@ class Climate_Emulator(object):
         )
 
         # simulate variables
-        vars_gev = ['swell_1_Hs']  # TODO: quitar
         for vn in vars_gev:
 
             # GEV/GUMBELL parameters
@@ -436,12 +437,19 @@ class Climate_Emulator(object):
 
                 # Gumbel WTs: parameters sampling
                 if c in cls_gbl:
-                    # TODO: GUMBEL
+                    # TODO: no consigo replicar matlab acov con gumbel_l
 
-                    # programar acov gumbel
-                    # generar con multivariate normal
-                    # shape se mete a mano
-                    pass
+                    # GUMBELL Loglikelihood function acov
+                    theta = (loc[i], sca[i])
+                    acov = ACOV(gumbel_l.nnlf, theta, var_wvs)
+
+                    # GUMBELL params used for multivar. normal random generation
+                    theta_gen = np.array([mu_b[i], sca[i]])
+                    theta_gbl = multivariate_normal(theta_gen, acov, n_sims)
+
+                    # mount "GEV" params for simulation
+                    theta_sim = np.ones((n_sims,3))*sha_gbl
+                    theta_sim[:,1:] = theta_gbl
 
                 # GEV WTs: parameters sampling
                 else:
@@ -457,14 +465,13 @@ class Climate_Emulator(object):
                     theta_sim = multivariate_normal(theta_gen, acov, n_sims)
 
                 # store sampled GEV/GUMBELL params
-                out_ps[i,:,:] = theta_sim
+                out_ps[i,:,:] = theta_sim[:,:]
 
             # smooth shape parameter
-            # TODO: ALTO COSTE COMPUTACIONAL. ACTIVAR
-            # de momento puedo guardar esto tras calcularlo
             for j in range(n_sims):
                 shape_wts = out_ps[:,j,0]
-                out_ps[:,j,0] = Smooth_GEV_Shape(cenEOFs, shape_wts)
+                # TODO: ALTO COSTE COMPUTACIONAL. ACTIVAR
+                #out_ps[:,j,0] = Smooth_GEV_Shape(cenEOFs, shape_wts)
 
             # append output to dataset
             xds_par_samp[vn] = (('n_cluster','simulation', 'parameter'), out_ps)
