@@ -12,7 +12,7 @@ from itertools import permutations
 import numpy as np
 import xarray as xr
 from scipy.special import ndtri  # norm inv
-from scipy.stats import  genextreme, spearmanr, norm
+from scipy.stats import  genextreme, gumbel_l, spearmanr, norm
 from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
 
@@ -20,7 +20,7 @@ from numpy.random import choice, multivariate_normal, randint, rand
 from teslakit.statistical import Empirical_ICDF
 from teslakit.waves import Calculate_TWL
 from teslakit.storms import GetStormCategory
-from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, GEV_ACOV
+from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
 
@@ -399,6 +399,7 @@ class Climate_Emulator(object):
         )
 
         # simulate variables
+        vars_gev = ['swell_1_Hs']  # TODO: quitar
         for vn in vars_gev:
 
             # GEV/GUMBELL parameters
@@ -446,10 +447,12 @@ class Climate_Emulator(object):
                 else:
                     # TODO: signo acov correcto?
                     # TODO: PARECE QUE ACOV NO FUNCIONA SIEMPRE, NLOGL inf
-                    theta = (sha[i], loc[i], sca[i])
-                    acov = GEV_ACOV(theta, var_wvs)
 
-                    # gev params used for multivar. normal random generation
+                    # GEV Loglikelihood function acov
+                    theta = (sha[i], loc[i], sca[i])
+                    acov = ACOV(genextreme.nnlf, theta, var_wvs)
+
+                    # GEV params used for multivar. normal random generation
                     theta_gen = np.array([sha[i], mu_b[i], psi_b[i]])
                     theta_sim = multivariate_normal(theta_gen, acov, n_sims)
 

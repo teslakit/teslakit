@@ -95,66 +95,61 @@ def Smooth_GEV_Shape(cenEOFs, param):
 
     return param_c
 
-def SampleGEV_KMA_Smooth(bmus, n_clusters, param_GEV, var):
-    '''
-    '''
-
-    # TODO: en CLIMATE_EMULATOR. REFACTOR SI NECESARIO
-
-    return param_GEV
-
-def GEV_ACOV(theta, x):
+def ACOV(f, theta, x):
     '''
     Returns asyntotyc variance matrix using Fisher Information matrix inverse
+    Generalized functions, parameters and data.
 
-    theta = (shape, location, scale) GEV parameters
+    f     - function to evaluate: GEV, GUMBELL, ...
+    theta - function parameters: for GEV (shape, location, scale)
+    x     - data used for function evaluation
+
+
+    Second derivative evaluation - variance and covariance
+    dxx = (f(x+dt_x) - 2f(x) + f(x-dt_x)) / (dt_x**2)
+    dxy = (f(x,y) - f(x-dt_x,y) - f(x,y-dt_y) + f(x-dt_x, u-dt_y)) / (dt_x*dt_y)
     '''
 
-    # TODO: hace falta una funcion acov generica para varios parametros y
-    # funcion L dada
+    # parameters differential
+    pm = 0.00001
+    params = np.asarray(theta)
+    dt_p = pm * params
 
-    # TODO: simbolo shape correcto en todas partes?
+    # Fisher information matrix holder 
+    ss = len(params)
+    FI = np.ones((ss,ss)) * np.nan
 
-    # gev shape, location and scale parameters
-    k, u, s = theta
-
-    # parameter differential
-    pm = 0.0001
-    dt_k = pm * k
-    dt_u = pm * u
-    dt_s = pm * s
-
-    # second derivative evaluation 
-    # dxx = (f(x+dt_x) - 2f(x) + f(x-dt_x)) / (dt_x**2)
-    # dxy = (f(x,y) - f(x-dt_x,y) - f(x,y-dt_y) + f(x-dt_x, u-dt_y)) / (dt_x*dt_y)
-
-    f = genextreme.nnlf  # GEV loglikelihood
-
-    # TODO: EN ALGUN CASO NO RESUELVE Y DA INFINITO
-    if np.isinf(f((k,u,s),x)):
-
+    # TODO: evaluar f falla en algunos casos?? 
+    if np.isinf(f(theta, x)):
         print ('GEV acov error: cant evaluate nLogL')
-        return np.ones((3,3))*0.0001
+        return np.ones((ss,ss))*0.0001
 
-    dkk = (f((k+dt_k,u,s),x) - 2*f(theta,x) + f((k-dt_k,u,s),x))/(dt_k**2)
-    duu = (f((k,u+dt_u,s),x) - 2*f(theta,x) + f((k,u-dt_u,s),x))/(dt_u**2)
-    dss = (f((k,u,s+dt_s),x) - 2*f(theta,x) + f((k,u,s-dt_s),x))/(dt_s**2)
+    # variance and covariance
+    for i in range(ss):
 
-    dku = (f(theta,x) - f((k-dt_k,u,s),x) - f((k,u-dt_u,s),x) + f((k-dt_k,u-dt_u,s),x))/(dt_k*dt_u)
-    dks = (f(theta,x) - f((k-dt_k,u,s),x) - f((k,u,s-dt_s),x) + f((k-dt_k,u,s-dt_s),x))/(dt_k*dt_s)
-    dus = (f(theta,x) - f((k,u-dt_u,s),x) - f((k,u,s-dt_s),x) + f((k,u-dt_u,s-dt_s),x))/(dt_s*dt_u)
+        # diferential parameter FI evaluation
+        p1 = np.asarray(theta); p1[i] = p1[i] + dt_p[i]
+        p2 = np.asarray(theta); p2[i] = p2[i] - dt_p[i]
 
-    # Fisher Information matrix
-    FI = np.array(
-        [
-            [dkk, dku, dks],
-            [dku, duu, dus],
-            [dks, dus, dss]
-        ]
-    )
+        # variance
+        FI[i,i] = (f(tuple(p1), x) - 2*f(theta,x) + f(tuple(p2), x))/(dt_p[i]**2)
+
+        for j in range(i+1,ss):
+
+            # diferential parameter FI evaluation
+            p1 = np.asarray(theta); p1[i] = p1[i] - dt_p[i]
+            p2 = np.asarray(theta); p2[j] = p2[j] - dt_p[j]
+            p3 = np.asarray(theta); p3[i] = p3[i] - dt_p[i]; p3[j] = p3[j] - dt_p[j]
+
+            # covariance
+            cov = (f(theta,x) - f(tuple(p1),x) - f(tuple(p2),x) + f(tuple(p3),x)) \
+                    / (dt_p[i]*dt_p[j])
+            FI[i,j] = cov
+            FI[j,i] = cov
 
     # asynptotic variance covariance matrix
     acov = np.linalg.inv(FI)
 
     return acov
+
 
