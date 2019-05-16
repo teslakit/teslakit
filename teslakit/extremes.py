@@ -58,25 +58,33 @@ def FitGEV_KMA_Frechet(bmus, n_clusters, var):
 
 def Smooth_GEV_Shape(cenEOFs, param):
     '''
-    TODO: Documentar
+    Smooth GEV shape parameter (for each KMA cluster) by promediation with neighbour EOFs centroids
+
+    cenEOFs -
+    param   - GEV shape parameter for each KMA cluster
+
+    returns smoothed GEV shape parameter as a np.array
     '''
+
+    # number of clusters
     n_cs = cenEOFs.shape[0]
 
-    D = np.empty((n_cs, n_cs))
+    # calculate distances (optimized)
+    cenEOFs_b = cenEOFs.reshape(cenEOFs.shape[0], 1, cenEOFs.shape[1])
+    D = np.sqrt(np.einsum('ijk, ijk->ij', cenEOFs-cenEOFs_b, cenEOFs-cenEOFs_b))
+    np.fill_diagonal(D, np.nan)
+
+    # sort distances matrix to find neighbours
     sort_ord = np.empty((n_cs, n_cs), dtype=int)
     D_sorted = np.empty((n_cs, n_cs))
-
-    param_c = np.empty(n_cs)
-
     for i in range(n_cs):
-        for k in range(n_cs):
-            D[i,k] = np.sqrt(np.sum(np.power(cenEOFs[i,:]-cenEOFs[k,:], 2)))
-        D[i,i] = np.nan
-
         order = np.argsort(D[i,:])
         sort_ord[i,:] = order
         D_sorted[i,:] = D[i, order]
 
+    # TODO: optimizar mas: pasar siguiente for a calculo matricial
+    # calculate smooth parameter
+    param_c = np.empty(n_cs)
     for i in range(n_cs):
         denom = np.sum(
             [1/D_sorted[i,0], 1/D_sorted[i,1],
