@@ -28,9 +28,7 @@ from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
 class Climate_Emulator(object):
     'KMA - DWTs Climate Emulator'
 
-    # TODO: confundido con KMA.bmus o KMA.sorted_bmus, hablar con Fer
-
-    # TODO: corregir errores gumbel_l: pos y acov
+    # TODO: corregir errores gumbel_l: pos y acov - afectan a todo
     # TODO: simplificar al maximo
 
     def __init__(self, p_base):
@@ -470,8 +468,7 @@ class Climate_Emulator(object):
             # smooth shape parameter
             for j in range(n_sims):
                 shape_wts = out_ps[:,j,0]
-                # TODO: ALTO COSTE COMPUTACIONAL. ACTIVAR
-                #out_ps[:,j,0] = Smooth_GEV_Shape(cenEOFs, shape_wts)
+                out_ps[:,j,0] = Smooth_GEV_Shape(cenEOFs, shape_wts)
 
             # append output to dataset
             xds_par_samp[vn] = (('n_cluster','simulation', 'parameter'), out_ps)
