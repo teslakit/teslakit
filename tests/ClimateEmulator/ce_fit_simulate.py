@@ -99,11 +99,14 @@ CE.Load()
 
 # --------------------------------------
 # Fit climate emulator and save 
-#CE.FitExtremes(xds_KMA, xds_WVS_pts, xds_WVS_fam)
+CE.FitExtremes(xds_KMA, xds_WVS_pts, xds_WVS_fam)
 
 
 # --------------------------------------
 # Simulate Max. Storms Waves (No TCs)
 ls_wvs_sim = CE.Simulate_Waves(xds_DWT, d_WTTCs)
 
+print(ls_wvs_sim)
+print()
+print(ls_wvs_sim[0])
 
