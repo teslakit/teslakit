@@ -9,11 +9,11 @@ def FitGEV_KMA_Frechet(bmus, n_clusters, var):
     '''
     Returns stationary GEV/Gumbel_L params for KMA bmus and varible series
 
-    bmus - KMA bmus (time series of KMA centroids)
-    n_clusters - number of KMA clusters
-    var - time series of variable to fit to GEV/Gumbel_L
+    bmus        - KMA bmus (time series of KMA centroids)
+    n_clusters  - number of KMA clusters
+    var         - time series of variable to fit to GEV/Gumbel_L
 
-    returns np.array [n_clusters x 3 parameters (shape, loc, scale)]
+    returns np.array (n_clusters x parameters). parameters = (shape, loc, scale)
     for gumbel distributions shape value will be ~0 (0.0000000001)
     '''
 
@@ -47,6 +47,8 @@ def FitGEV_KMA_Frechet(bmus, n_clusters, var):
 
             # apply significance test if Frechet
             if shape_gev < 0:
+
+                # TODO: cant replicate ML exact solution
                 if nLogL_gl - nLogL_gev >= 1.92:
                     param_GEV[i,:] = list(theta_gev_fix)
                 else:
@@ -58,12 +60,13 @@ def FitGEV_KMA_Frechet(bmus, n_clusters, var):
 
 def Smooth_GEV_Shape(cenEOFs, param):
     '''
-    Smooth GEV shape parameter (for each KMA cluster) by promediation with neighbour EOFs centroids
+    Smooth GEV shape parameter (for each KMA cluster) by promediation
+    with neighbour EOFs centroids
 
-    cenEOFs -
-    param   - GEV shape parameter for each KMA cluster
+    cenEOFs  - (n_clusters, n_features) KMA centroids
+    param    - GEV shape parameter for each KMA cluster
 
-    returns smoothed GEV shape parameter as a np.array
+    returns smoothed GEV shape parameter as a np.array (n_clusters)
     '''
 
     # number of clusters
@@ -82,24 +85,14 @@ def Smooth_GEV_Shape(cenEOFs, param):
         sort_ord[i,:] = order
         D_sorted[i,:] = D[i, order]
 
-    # TODO: optimizar mas: pasar siguiente for a calculo matricial
-    # calculate smooth parameter
-    param_c = np.empty(n_cs)
-    for i in range(n_cs):
-        denom = np.sum(
-            [1/D_sorted[i,0], 1/D_sorted[i,1],
-             1/D_sorted[i,2], 1/D_sorted[i,3]]
-        )
-
-        param_c[i] = 0.5 * np.sum(
-            [
-                param[i],
-                param[sort_ord[i,0]] * np.divide(1/D_sorted[i,0], denom),
-                param[sort_ord[i,1]] * np.divide(1/D_sorted[i,1], denom),
-                param[sort_ord[i,2]] * np.divide(1/D_sorted[i,2], denom),
-                param[sort_ord[i,3]] * np.divide(1/D_sorted[i,3], denom),
-            ]
-        )
+    # calculate smoothed parameter
+    denom = np.sum(1/D_sorted[:,:4], axis=1)
+    param_c = 0.5 * np.sum(np.column_stack(
+        [
+            param[:],
+            param[sort_ord[:,:4]] * (1/D_sorted[:,:4])/denom[:,None]
+        ]
+    ), axis=1)
 
     return param_c
 
@@ -108,10 +101,9 @@ def ACOV(f, theta, x):
     Returns asyntotyc variance matrix using Fisher Information matrix inverse
     Generalized functions, parameters and data.
 
-    f     - function to evaluate: GEV, GUMBELL, ...
-    theta - function parameters: for GEV (shape, location, scale)
-    x     - data used for function evaluation
-
+    f      - function to evaluate: GEV, GUMBELL, ...
+    theta  - function parameters: for GEV (shape, location, scale)
+    x      - data used for function evaluation
 
     Second derivative evaluation - variance and covariance
     dxx = (f(x+dt_x) - 2f(x) + f(x-dt_x)) / (dt_x**2)
@@ -129,7 +121,7 @@ def ACOV(f, theta, x):
 
     # TODO: evaluar f falla en algunos casos?? 
     if np.isinf(f(theta, x)):
-        print ('GEV acov error: cant evaluate nLogL')
+        print ('ACOV error: nLogL = Inf. {0}'.format(theta))
         return np.ones((ss,ss))*0.0001
 
     # variance and covariance
