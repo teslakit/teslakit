@@ -29,7 +29,7 @@ def datevec2datetime(d_vec):
 def DateConverter_Mat2Py(datearray_matlab):
     'Parses matlab datenum array to python datetime list'
 
-    return [datematlab2datetime(x) for x in datearray_matlab]
+    return [datematlab2datetime(int(x)) for x in datearray_matlab]
 
 def xds2datetime(d64):
     'converts xr.Dataset np.datetime64[ns] into datetime'
