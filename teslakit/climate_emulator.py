@@ -567,6 +567,7 @@ class Climate_Emulator(object):
 
         # vars needed
         dwt_bmus_sim = xds_DWT.evbmus_sims.values[:]
+        dwt_time_sim = xds_DWT.time.values[:]
         bmus = xds_KMA_MS.bmus.values[:]
         n_clusters = len(xds_KMA_MS.n_clusters)
         chrom = xds_chrom.chrom.values[:]
@@ -586,7 +587,7 @@ class Climate_Emulator(object):
             # generate waves
             wvs_sim = self.GenerateWaves(
                 bmus, n_clusters, chrom, chrom_probs, sigma, xds_WVS_MS,
-                xds_GEV_Par_Sampled, dict_WT_TCs_wvs, dwt
+                xds_GEV_Par_Sampled, dict_WT_TCs_wvs, dwt, dwt_time_sim
             )
             ls_wvs_sim.append(wvs_sim)
 
@@ -614,6 +615,7 @@ class Climate_Emulator(object):
 
         # vars needed
         dwt_bmus_sim = xds_DWT.evbmus_sims.values[:]
+        dwt_time_sim = xds_DWT.time.values[:]
         n_clusters = len(xds_KMA_MS.n_clusters)
 
         # iterate DWT simulations
@@ -627,7 +629,7 @@ class Climate_Emulator(object):
 
             # generate TCs
             tcs_sim, wvs_upd_sim = self.GenerateTCs(
-                n_clusters, dwt,
+                n_clusters, dwt, dwt_time_sim,
                 xds_TCs_params, xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT,
                 wvs_sim
             )
@@ -673,7 +675,7 @@ class Climate_Emulator(object):
         return ppf_VV
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
-                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT):
+                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -703,6 +705,7 @@ class Climate_Emulator(object):
         ix_ch = np.where((dwt_df != 0))[0]+1
         ix_ch = np.insert(ix_ch, 0,0)
         DWT_sim = DWT[ix_ch]
+        DWT_time_sim = DWT_time[ix_ch]
 
         # Simulate
         sims_out = np.zeros((len(DWT_sim), 9))
@@ -786,15 +789,16 @@ class Climate_Emulator(object):
         # dataset for storing output
         xds_wvs_sim = xr.Dataset(
             {
-                'DWT_sim': (('storm',), DWT_sim),
+                'DWT': (('time',), DWT_sim),
             },
+            coords = {'time': DWT_time_sim}
         )
         for c,vn in enumerate(wvs_fams_vars):
-            xds_wvs_sim[vn] = (('storm',), sims_out[:,c])
+            xds_wvs_sim[vn] = (('time',), sims_out[:,c])
 
         return xds_wvs_sim
 
-    def GenerateTCs(self, n_clusters, DWT,
+    def GenerateTCs(self, n_clusters, DWT, DWT_time,
                     TCs_params, TCs_simulation, prob_TCs, MU_WT, TAU_WT,
                     xds_wvs_sim):
         '''
@@ -831,6 +835,7 @@ class Climate_Emulator(object):
         ix_ch = np.where((dwt_df != 0))[0]+1
         ix_ch = np.insert(ix_ch, 0,0)
         DWT_sim = DWT[ix_ch]
+        DWT_time_sim = DWT_time[ix_ch]
 
         # get simulated waves for updating
         sim_wvs = np.column_stack([
@@ -920,21 +925,23 @@ class Climate_Emulator(object):
         # update waves simulation
         xds_WVS_sim_updated = xr.Dataset(
             {
-                'DWT_sim': (('storm',), DWT_sim),
+                'DWT': (('time',), DWT_sim),
             },
+            coords = {'time': DWT_time_sim}
         )
         for c, vn in enumerate(wvs_fams_vars):
-            xds_WVS_sim_updated[vn] = (('storm',), sim_wvs[:,c])
+            xds_WVS_sim_updated[vn] = (('time',), sim_wvs[:,c])
 
         # generated TCs 
         xds_TCs_sim = xr.Dataset(
             {
-                'mu':  (('storm',), sims_out[:,0]),
-                'tau': (('storm',), sims_out[:,1]),
-                'ss':  (('storm',), sims_out[:,2]),
+                'mu':  (('time',), sims_out[:,0]),
+                'tau': (('time',), sims_out[:,1]),
+                'ss':  (('time',), sims_out[:,2]),
 
-                'DWT_sim': (('storm',), DWT_sim),
+                'DWT': (('time',), DWT_sim),
             },
+            coords = {'time': DWT_time_sim}
         )
 
         return xds_TCs_sim, xds_WVS_sim_updated
