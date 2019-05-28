@@ -195,6 +195,21 @@ class Climate_Emulator(object):
             p_nc = op.join(p_store, '{0}{1:02}.nc'.format(code, c+1))
             xds.to_netcdf(p_nc, 'w')
 
+    def LoadSim(self, TCs=False):
+        'Load waves and TCs simulations'
+
+        def lsncs(p):
+            return sorted(
+                [op.join(p,f) for f in os.listdir(p) if f.endswith('.nc')])
+
+        if TCs:
+            return [xr.open_dataset(f) for f in lsncs(self.p_sim_wvs_tcs)], \
+                   [xr.open_dataset(f) for f in lsncs(self.p_sim_tcs)]
+
+        else:
+            return [xr.open_dataset(f) for f in lsncs(self.p_sim_wvs_notcs)]
+
+
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'
 
