@@ -24,23 +24,11 @@ p_tests = pc.p_test_data
 p_test = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
 
 # input
-p_KMA = op.join(p_test, 'xds_KMA.nc')
-p_WVS_fam = op.join(p_test, 'xds_WVS_fam.nc')
-p_WVS_pts = op.join(p_test, 'xds_WVS_pts.nc')
-
-# output
 p_ce = op.join(p_test, 'ce')  # climate emulator (fit)
 
 
 # --------------------------------------
 # Load data 
-
-xds_KMA = xr.open_dataset(p_KMA)
-xds_WVS_fam = xr.open_dataset(p_WVS_fam)
-xds_WVS_pts = xr.open_dataset(p_WVS_pts)
-
-
-
 
 
 # --------------------------------------
@@ -93,7 +81,7 @@ for i in range(6):
 
 
 # TODO: for testing
-xds_DWT = xds_DWT.isel(time=slice(0,1000), n_sim=slice(0,2))
+#xds_DWT = xds_DWT.isel(time=slice(0,1000), n_sim=slice(0,2))
 
 
 # --------------------------------------
