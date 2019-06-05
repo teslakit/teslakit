@@ -9,6 +9,8 @@ from time import mktime
 import numpy as np
 
 
+# TODO: refactor, nombre archivo, nombre funciones, localizar usos
+
 def datematlab2datetime(datenum_matlab):
     'Return python datetime for matlab datenum. Transform and adjust from matlab.'
 
@@ -155,3 +157,20 @@ def date2datenum(d):
     # return datetime 
     return datetime.fromtimestamp(mktime(ttup))
 
+
+def gyears(date_list):
+    '''
+    Returns years for each date in date_list.
+    (Used to avoid problems with dates type)
+    '''
+
+    if isinstance(date_list[0], datetime):
+        ls = [x.year for x in date_list]
+
+    elif isinstance(date_list[0], np.datetime64):
+        ls = [int(str(x).split('-')[0]) for x in date_list]
+
+    else:
+        pass
+
+    return np.array(ls)
