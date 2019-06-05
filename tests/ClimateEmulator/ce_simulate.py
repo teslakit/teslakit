@@ -36,7 +36,6 @@ p_ce = op.join(p_test, 'ce')  # climate emulator (fit)
 # TODO: delete code, guardarlo en la carpeta test para python directamente
 
 from teslakit.io.matlab import ReadMatfile
-from teslakit.custom_dateutils import datevec2datetime as d2d
 from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
 
 # load test KMA (bmus, time, number of clusters, cenEOFs)
@@ -81,7 +80,7 @@ for i in range(6):
 
 
 # TODO: for testing
-#xds_DWT = xds_DWT.isel(time=slice(0,1000), n_sim=slice(0,2))
+xds_DWT = xds_DWT.isel(time=slice(0,5000), n_sim=slice(0,2))
 
 
 # --------------------------------------
