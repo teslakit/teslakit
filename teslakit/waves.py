@@ -4,6 +4,11 @@
 import numpy as np
 import xarray as xr
 
+# tk
+from teslakit.custom_dateutils import gyears
+from datetime import datetime, timedelta
+
+# hide numpy warnings
 np.warnings.filterwarnings('ignore')
 
 
@@ -127,8 +132,227 @@ def GetDistribution(xds_wps, swell_sectors):
 
     return xds_parts
 
-def Calculate_TWL(hs, tp):
+def TWL(hs, tp):
     'Returns Total Water Level'
 
-    return 0.043*(hs*1.56*(tp/1.25)**2)**(0.5)
+    # TODO: tp/1.25 ?
+    #return 0.043*(hs*1.56*(tp/1.25)**2)**(0.5)
+    return 0.043*(hs*1.56*(tp/1.00)**2)**(0.5)
 
+def TWL_WavesFamilies(wvs_fams):
+    '''
+    Calculates TWL for waves families data
+
+    wvs_fams (waves families):
+        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
+        {any number of families}
+
+    returns
+        xarray.Dataset (time,), Hs, Tp, TWL
+    '''
+
+    # Aggregate waves families Hs, Tp, Dir
+    wvs_aggr = Aggregate_WavesFamilies(wvs_fams)
+
+    # Calculate TWL
+    Hs = wvs_aggr.Hs.values[:]
+    Tp = wvs_aggr.Tp.values[:]
+    twl = TWL(Hs, Tp)
+
+    # return xarray.Dataset
+    xds_TWL = wvs_aggr.assign({'TWL' : (('time',), twl)})
+
+    return xds_TWL
+
+def TWL_AnnualMaxima(xds_TWL):
+    '''
+    Calculate annual maxima TWL (time index not monotonic)
+    requires xarray.Dataset with TWL (time) variable
+
+    returns xarray.Dataset with selection of annual maxima
+    '''
+
+    # TODO: cambiar por comando xarray directo?
+
+    # get TWL and times
+    ts = xds_TWL.time.values[:]
+    TWL = xds_TWL.TWL.values[:]
+
+    # years array
+    ys = gyears(ts)  # aux. avoid time type problems 
+    us = np.unique(ys)
+
+    # iterate over years
+    p_amax = []
+    for y in us:
+
+        # find year max TWL position
+        y_twl = TWL[np.where(y==ys)]
+        y_time = ts[np.where(y==ys)]
+        p_mt = np.where(y_twl == np.max(y_twl))[0][0]
+
+        yt_mt = y_time[p_mt]
+        p_mt = np.where(ts == yt_mt)[0][0]
+
+        p_amax.append(p_mt)
+
+    # Select annual maxima
+    xds_TWL_AMAX = xds_TWL.isel(time=p_amax)
+
+    return xds_TWL_AMAX
+
+def Aggregate_WavesFamilies(wvs_fams):
+    '''
+    Aggregate Hs, Tp and Dir from waves families data
+
+    wvs_fams (waves families):
+        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
+        {any number of families}
+
+    returns Hs, Tp, Dir (numpy.array)
+    '''
+
+    # get variable names
+    vs = [str(x) for x in wvs_fams.keys()]
+    vs_Hs = [x for x in vs if x.endswith('_Hs')]
+    vs_Tp = [x for x in vs if x.endswith('_Tp')]
+    vs_Dir = [x for x in vs if x.endswith('_Dir')]
+
+    # join variable values
+    vv_Hs = np.column_stack([wvs_fams[v].values[:] for v in vs_Hs])
+    vv_Tp = np.column_stack([wvs_fams[v].values[:] for v in vs_Tp])
+    vv_Dir = np.column_stack([wvs_fams[v].values[:] for v in vs_Dir])
+
+    # Hs from families
+    HS = np.sqrt(np.sum(np.power(vv_Hs,2), axis=1))
+
+    # Tp from families
+    tmp1 = np.power(vv_Hs,2)
+    tmp2 = np.divide(np.power(vv_Hs,2), np.power(vv_Tp,2))
+
+    tmp1[np.isnan(tmp2)] = 0  # remove data with Tp=0
+    tmp2[np.isnan(tmp2)] = 0
+
+    TP = np.sqrt(np.sum(tmp1, axis=1) / np.sum(tmp2, axis=1))
+
+    # Dir from families
+    tmp3 = np.arctan2(
+        np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
+        np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
+    )
+    tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
+
+    DIR = tmp3 * 180/np.pi
+
+    # return xarray.Dataset
+    xds_AGGR = xr.Dataset(
+        {
+            'Hs': (('time',), HS),
+            'Tp': (('time',), TP),
+            'Dir': (('time',), DIR),
+        },
+        coords = {
+            'time': wvs_fams.time.values[:]  # get time from input
+        }
+    )
+
+    return xds_AGGR
+
+def Intradaily_Hydrograph(xds_wvs, xds_tcs):
+    '''
+    Calculates intradaily hydrograph (hourly) from a time series of storms.
+    storms waves data (hs, tp, dir) and TCs data (mu, tau, ss) is needed.
+
+    xds_wvs (waves aggregated):
+        xarray.Dataset (time,), Hs, Tp, Dir
+
+    xds_tcs (TCs):
+        xarray.Dataset (time,), mu, tau, ss
+
+    returns xarray.Dataset (time,), Hs, Tp, Dir, SS  (hourly)
+    '''
+
+    # input data (storms aggregated waves)
+    Hs = xds_wvs.Hs.values[:]
+    Tp = xds_wvs.Tp.values[:]
+    Dir = xds_wvs.Dir.values[:]
+    ts = xds_wvs.time.values[:]
+
+    # input data (storms TCs)
+    tau = xds_tcs.tau.values[:]  # storm max. instant (0-1)
+    mu = xds_tcs.mu.values[:]
+    ss = xds_tcs.ss.values[:]
+
+    # TODO: MAKE COMPATIBLE WITH np.datetime64
+    # storm durations
+    s_dur_d = np.array([x.days for x in np.diff(ts)])  # days
+    s_dur_h = s_dur_d * 24  # hours
+    s_cs_h = np.cumsum(s_dur_h)  # hours since time start
+    s_cs_h = np.insert(s_cs_h,0,0)
+
+    # storm tau max (hourly)
+    tau_h = np.floor(s_cs_h[:-1] + s_dur_h * tau[:-1])
+
+    # aux function
+    def CalcHydro(vv, vt, tt, mt):
+        '''
+        Calculate variable hourly hydrograph.
+        vv - var value at max.
+        vt - var time (hours since start, at hydrograph extremes)
+        tt - tau max time (hours since start).
+        mt - mu value
+        '''
+
+        # var value at hydrographs extremes
+        vv_extr = vv * np.power(2*mt-1, 2)
+
+        # make it continuous
+        vv_extr_cont = (np.roll(vv_extr,1) + vv_extr) / 2
+        vv_extr_cont[0] = vv_extr_cont[1]
+        vv_extr_cont[-1] = vv_extr_cont[-2]
+
+        # join hydrograph max. and extremes variable data
+        vt_full = np.concatenate([vt, tt])  # concatenate times (used for sorting)
+        vv_full = np.concatenate([vv_extr_cont, vv])
+
+        # sort data
+        ix = np.argsort(vt_full)
+        vt_sf = vt_full[ix]
+        vv_sf = vv_full[ix]
+
+        # interpolate to fill all hours
+        h_times = np.arange(vt_sf[0], vt_sf[-1], 1)
+        h_values = np.interp(h_times, vt_sf, vv_sf)
+
+        # fix times
+        h_times = h_times.astype(int)
+
+        return h_values, h_times
+
+    # hydrograph variables: hs and ss
+    hourly_Hs, hourly_times = CalcHydro(Hs, s_cs_h, tau_h, mu)
+    hourly_ss, _ = CalcHydro(ss, s_cs_h, tau_h, mu)
+
+
+    # horizontal variables: Tp, Dir 
+    # TODO: problemas memoria con numpy repeat?
+    #hourly_Tp = np.repeat(Tp, s_cs_h, axis=0)
+    #hourly_Dir = np.repeat(Dir, s_cs_h, axis=0)
+    hourly_Tp = np.zeros(len(hourly_times))
+    hourly_Dir = np.zeros(len(hourly_times))
+
+    # output
+    hourly_npdt = np.arange(ts[0], ts[-1], timedelta(hours=1))
+
+    xds_hydrographs = xr.Dataset(
+        {
+        'Hs'  : (('time',), hourly_Hs),
+        'Tp'  : (('time',), hourly_Tp),
+        'Dir' : (('time',), hourly_Dir),
+
+        'SS'  : (('time',), hourly_ss),
+        },
+        coords = {'time' : hourly_npdt}
+    )
+
+    return xds_hydrographs
