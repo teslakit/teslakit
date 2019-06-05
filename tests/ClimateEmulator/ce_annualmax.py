@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -15,6 +14,7 @@ import xarray as xr
 # custom libs
 from teslakit.project_site import PathControl
 from teslakit.climate_emulator import Climate_Emulator
+from teslakit.waves import TWL_WavesFamilies, TWL_AnnualMaxima
 
 
 # --------------------------------------
@@ -25,7 +25,7 @@ p_tests = pc.p_test_data
 p_test = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
 
 # input
-p_ce = op.join(p_test, 'ce') 
+p_ce = op.join(p_test, 'ce')
 
 
 # --------------------------------------
@@ -35,13 +35,14 @@ CE = Climate_Emulator(p_ce)
 # load previously simulated storms (without TCs)
 ls_wvs_sim = CE.LoadSim(TCs=False)
 
-print(ls_wvs_sim)
-print()
+for wvs_sim in ls_wvs_sim:
 
-# TODO: calculate simulated waves annual maxima (teslakit/waves.py)
+    # calculate TWL (waves families)
+    wvs_TWL = TWL_WavesFamilies(wvs_sim)
 
-
-
+    # calculate Annual Maxima
+    wvs_TWL_AMax = TWL_AnnualMaxima(wvs_TWL)
+    print(wvs_TWL_AMax)
 
 
 
@@ -54,4 +55,5 @@ print(ls_tcs_sim)
 print()
 
 # TODO: calculate simulated waves annual maxima (teslakit/waves.py)
+# TODO: COMENTAR CON ANA/LAURA por "gow_ConciclonesRBF_pmean.mat"
 
