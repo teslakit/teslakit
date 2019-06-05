@@ -15,6 +15,20 @@ import numpy as np
 import netCDF4 as nc4
 import xarray as xr
 
+
+# TODO: FIND BUG AND FIX
+wrn = '''
+CSIRO data will be extracted and stored month by month.
+
+--> if download is unstable or stops:
+    -> inside folders "gridded.tmp" or "spec.tmp" find the monthly netCDF4 files
+    -> kill python CSIRO data downloader process
+    -> Check if last downloaded month is corrupted: manually remove it
+    -> restart download (will resume from first missing month)
+
+'''
+print(wrn)
+
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
 
