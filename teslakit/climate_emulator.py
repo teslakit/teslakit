@@ -17,8 +17,9 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
 
 # tk
+from teslakit.util.terminal import printProgressBar as pb
 from teslakit.statistical import Empirical_ICDF
-from teslakit.waves import Calculate_TWL
+from teslakit.waves import TWL
 from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
@@ -197,6 +198,7 @@ class Climate_Emulator(object):
 
     def LoadSim(self, TCs=False):
         'Load waves and TCs simulations'
+        # TODO: quitar / mejorar
 
         def lsncs(p):
             return sorted(
@@ -229,7 +231,7 @@ class Climate_Emulator(object):
         'Returns xarray.Dataset with max. TWL value and time'
 
         # Get TWL from waves partitions data 
-        xda_TWL = Calculate_TWL(xds_WVS_pts.hs, xds_WVS_pts.tp)
+        xda_TWL = TWL(xds_WVS_pts.hs, xds_WVS_pts.tp)
 
         # find max TWL inside each storm 
         TWL_WT_max = []
@@ -608,6 +610,7 @@ class Climate_Emulator(object):
 
         # store simulations
         self.StoreSim(self.p_sim_wvs_notcs, ls_wvs_sim, 'wvs_sim_noTCs_')
+        self.StoreSim(self.p_sim_wvs_notcs, ls_TWL_AMax, 'wvs_sim_noTCs_')
 
         return ls_wvs_sim
 
@@ -690,7 +693,8 @@ class Climate_Emulator(object):
         return ppf_VV
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
-                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time):
+                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time,
+                      progress_bar=True):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -801,6 +805,12 @@ class Climate_Emulator(object):
                 sims_out[c] = sim_row
                 c+=1
 
+                # progress bar
+                if progress_bar:
+                    pb(c, len(DWT_sim),
+                       prefix = 'C.E: Sim. Waves',
+                       suffix = 'Complete', length = 50)
+
         # dataset for storing output
         xds_wvs_sim = xr.Dataset(
             {
@@ -815,7 +825,7 @@ class Climate_Emulator(object):
 
     def GenerateTCs(self, n_clusters, DWT, DWT_time,
                     TCs_params, TCs_simulation, prob_TCs, MU_WT, TAU_WT,
-                    xds_wvs_sim):
+                    xds_wvs_sim, progress_bar=True):
         '''
         Climate Emulator DWTs TCs simulation
 
@@ -937,6 +947,12 @@ class Climate_Emulator(object):
                 sims_out[c] = sim_row
                 c+=1
 
+                # progress bar
+                if progress_bar:
+                    pb(c, len(DWT_sim),
+                       prefix = 'C.E: Sim. TCs',
+                       suffix = 'Complete', length = 50)
+
         # update waves simulation
         xds_WVS_sim_updated = xr.Dataset(
             {
@@ -960,6 +976,7 @@ class Climate_Emulator(object):
         )
 
         return xds_TCs_sim, xds_WVS_sim_updated
+
 
     def Report_Fit(self, export=False):
         'Report for extremes model fitting'
