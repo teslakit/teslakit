@@ -198,19 +198,20 @@ class Climate_Emulator(object):
 
     def LoadSim(self, TCs=False):
         'Load waves and TCs simulations'
-        # TODO: quitar / mejorar
 
         def lsncs(p):
-            return sorted(
-                [op.join(p,f) for f in os.listdir(p) if f.endswith('.nc')])
+            fs = sorted(
+                [op.join(p,f) for f in os.listdir(p) if f.endswith('.nc')]
+                )
+            xrs = [xr.open_dataset(f) for f in fs]
+
+            return xrs
 
         if TCs:
-            return [xr.open_dataset(f) for f in lsncs(self.p_sim_wvs_tcs)], \
-                   [xr.open_dataset(f) for f in lsncs(self.p_sim_tcs)]
+            return lsncs(self.p_sim_wvs_tcs), lsncs(self.p_sim_tcs)
 
         else:
-            return [xr.open_dataset(f) for f in lsncs(self.p_sim_wvs_notcs)]
-
+            return lsncs(self.p_sim_wvs_notcs)
 
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'
@@ -571,7 +572,7 @@ class Climate_Emulator(object):
         '''
         Climate Emulator DWTs waves simulation
 
-        xds_DWT          - xarray.Dataset, vars: evbmus_sims (time,n_sim,)
+        xds_DWT          - xarray.Dataset, vars: evbmus_sims (time, n_sim,)
         dict_WT_TCs_wvs  - dict of xarray.Dataset (waves data) for TCs WTs
         '''
 
