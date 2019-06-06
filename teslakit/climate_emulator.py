@@ -24,6 +24,8 @@ from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
 
+# TODO: CREAR LOG
+# TODO: introducir switch log on / log off para ejecuciones silenciosas
 
 class Climate_Emulator(object):
     'KMA - DWTs Climate Emulator'
@@ -611,7 +613,6 @@ class Climate_Emulator(object):
 
         # store simulations
         self.StoreSim(self.p_sim_wvs_notcs, ls_wvs_sim, 'wvs_sim_noTCs_')
-        self.StoreSim(self.p_sim_wvs_notcs, ls_TWL_AMax, 'wvs_sim_noTCs_')
 
         return ls_wvs_sim
 
@@ -951,10 +952,10 @@ class Climate_Emulator(object):
                 c+=1
 
                 # progress bar
-                if progress_bar:
-                    pb(c, len(DWT_sim),
-                       prefix = 'C.E: Sim. TCs',
-                       suffix = 'Complete', length = 50)
+                #if progress_bar:
+                #    pbar(c, len(DWT_sim),
+                #       prefix = 'C.E: Sim. TCs',
+                #       suffix = 'Complete', length = 50)
 
         # update waves simulation
         xds_WVS_sim_updated = xr.Dataset(
