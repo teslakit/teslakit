@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# TODO: BUSCAR UNA QUE FUNCIONE EN CUALQUIER TERMINAL
-
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1,
                       length = 80, fill = '█'):
     """
