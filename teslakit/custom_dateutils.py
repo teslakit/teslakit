@@ -11,11 +11,14 @@ import numpy as np
 
 # TODO: refactor, nombre archivo, nombre funciones, localizar usos
 
+
+# MATLAB TIMES
+
 def datematlab2datetime(datenum_matlab):
     'Return python datetime for matlab datenum. Transform and adjust from matlab.'
 
     d = datetime.fromordinal(int(datenum_matlab)) + \
-    timedelta(days=datenum_matlab % 1) - \
+    timedelta(days=float(datenum_matlab % 1)) - \
         timedelta(days=366) + timedelta(microseconds=0)
 
     return d
@@ -31,7 +34,10 @@ def datevec2datetime(d_vec):
 def DateConverter_Mat2Py(datearray_matlab):
     'Parses matlab datenum array to python datetime list'
 
-    return [datematlab2datetime(int(x)) for x in datearray_matlab]
+    return [datematlab2datetime(x) for x in datearray_matlab]
+
+
+# PYTHON TIMES
 
 def xds2datetime(d64):
     'converts xr.Dataset np.datetime64[ns] into datetime'
@@ -156,7 +162,6 @@ def date2datenum(d):
 
     # return datetime 
     return datetime.fromtimestamp(mktime(ttup))
-
 
 def gyears(date_list):
     '''
