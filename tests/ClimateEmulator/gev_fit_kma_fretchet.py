@@ -21,7 +21,7 @@ from teslakit.extremes import FitGEV_KMA_Frechet
 
 pc = PathControl()
 p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ClimateEmulator', 'fit_gev_kma_fretchet')
+p_test = op.join(p_tests, 'ClimateEmulator', 'gev_fit_kma_fretchet')
 
 # input
 p_npz = op.join(p_test, 'swell_1_Hs.npz')

@@ -21,7 +21,7 @@ from teslakit.extremes import Smooth_GEV_Shape
 
 pc = PathControl()
 p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ClimateEmulator', 'opt_smooth_shape')
+p_test = op.join(p_tests, 'ClimateEmulator', 'gev_opt_smooth_shape')
 
 # input
 p_npz = op.join(p_test, 'swell_1_Hs.npz')

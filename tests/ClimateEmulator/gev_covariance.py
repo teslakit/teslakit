@@ -14,7 +14,7 @@ from scipy.stats import  gumbel_l, genextreme
 # custom libs
 from teslakit.io.matlab import ReadMatfile as rmf
 from teslakit.project_site import PathControl
-from teslakit.extremes import GEV_ACOV
+from teslakit.extremes import ACOV
 
 
 # --------------------------------------
@@ -22,10 +22,10 @@ from teslakit.extremes import GEV_ACOV
 
 pc = PathControl()
 p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ClimateEmulator', 'GEV_ACOV')
+p_test = op.join(p_tests, 'ClimateEmulator', 'gev_acov')
 
 # input files
-p_mat = op.join(p_test,'gevacov.mat')
+p_mat = op.join(p_test, 'gevacov.mat')
 
 
 # --------------------------------------
@@ -44,7 +44,7 @@ print(nLogL)
 print()
 
 # asynptotic variances
-acov = GEV_ACOV((shape, loc, scale), data)
-
+theta = (shape, loc, scale)
+acov = ACOV(genextreme.nnlf, theta, data)
 print(acov)
 

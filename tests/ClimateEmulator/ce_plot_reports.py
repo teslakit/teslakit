@@ -11,17 +11,19 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 import matplotlib.pyplot as plt
 
 # custom libs
-from teslakit.project_site import Site
+from teslakit.project_site import PathControl
 from teslakit.climate_emulator import Climate_Emulator
 
 
 # --------------------------------------
 # Test data storage
-site = Site('KWAJALEIN')
-ST = site.pc.site                      # site database
+
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
 
 # input files
-p_ce = ST.EXTREMES.climate_emulator    # climate emulator folder
+p_ce = op.join(p_test, 'ce')  # climate emulator
 
 
 # --------------------------------------
