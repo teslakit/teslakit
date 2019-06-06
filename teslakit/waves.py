@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 
 # tk
-from teslakit.custom_dateutils import gyears
+from teslakit.custom_dateutils import gyears, npdt64todatetime
 from datetime import datetime, timedelta
 
 # hide numpy warnings
@@ -278,12 +278,16 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
     Dir = xds_wvs.Dir.values[:]
     ts = xds_wvs.time.values[:]
 
+    # fix times
+    # TODO: this should not be needed
+    if isinstance(ts[0], np.datetime64):
+        ts = [npdt64todatetime(x) for x in ts]
+
     # input data (storms TCs)
     tau = xds_tcs.tau.values[:]  # storm max. instant (0-1)
     mu = xds_tcs.mu.values[:]
     ss = xds_tcs.ss.values[:]
 
-    # TODO: MAKE COMPATIBLE WITH np.datetime64
     # storm durations
     s_dur_d = np.array([x.days for x in np.diff(ts)])  # days
     s_dur_h = s_dur_d * 24  # hours
@@ -342,8 +346,7 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
     hourly_Dir = np.zeros(len(hourly_times))
 
     # output
-    hourly_npdt = np.arange(ts[0], ts[-1], timedelta(hours=1))
-
+    hourly_npdt = np.arange(ts[0], ts[-1], timedelta(hours=1)).astype(datetime)
     xds_hydrographs = xr.Dataset(
         {
         'Hs'  : (('time',), hourly_Hs),
