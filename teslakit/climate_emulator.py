@@ -17,7 +17,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
 
 # tk
-from teslakit.util.terminal import printProgressBar as pb
+from teslakit.util.terminal import printProgressBar as pbar
 from teslakit.statistical import Empirical_ICDF
 from teslakit.waves import TWL
 from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
@@ -728,6 +728,8 @@ class Climate_Emulator(object):
         DWT_time_sim = DWT_time[ix_ch]
 
         # Simulate
+        print("\nLaunching simulations...\n")
+
         sims_out = np.zeros((len(DWT_sim), 9))
         c = 0
         while c < len(DWT_sim):
@@ -808,7 +810,7 @@ class Climate_Emulator(object):
 
                 # progress bar
                 if progress_bar:
-                    pb(c, len(DWT_sim),
+                    pbar(c, len(DWT_sim),
                        prefix = 'C.E: Sim. Waves',
                        suffix = 'Complete', length = 50)
 
