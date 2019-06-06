@@ -121,7 +121,7 @@ def ACOV(f, theta, x):
 
     # TODO: evaluar f falla en algunos casos?? 
     if np.isinf(f(theta, x)):
-        print ('ACOV error: nLogL = Inf. {0}'.format(theta))
+        #print ('ACOV error: nLogL = Inf. {0}'.format(theta))
         return np.ones((ss,ss))*0.0001
 
     # variance and covariance
