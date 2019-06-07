@@ -12,8 +12,11 @@ import numpy as np
 import xarray as xr
 
 # custom libs
-from teslakit.project_site import PathControl
+from teslakit.project_site import PathControl, Site
 from teslakit.climate_emulator import Climate_Emulator
+from teslakit.custom_dateutils import datevec2datetime as d2d
+from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
+from teslakit.io.matlab import ReadMatfile
 
 
 # --------------------------------------
@@ -21,39 +24,46 @@ from teslakit.climate_emulator import Climate_Emulator
 
 pc = PathControl()
 p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
+p_test_ce = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
 
 # input
-p_ce = op.join(p_test, 'ce')  # climate emulator (fit)
+p_ce = op.join(p_test_ce, 'ce')  # climate emulator
 
-
-# --------------------------------------
-# Load data 
 
 
 # --------------------------------------
 #  MATLAB TEST DATA    
-# TODO: delete code, guardarlo en la carpeta test para python directamente
 
-from teslakit.io.matlab import ReadMatfile
-from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
+
+# Test data storage
+pc = PathControl()
+p_tests = pc.p_test_data
+p_test = op.join(p_tests, 'ClimateEmulator', 'ml_jupyter')
+
 
 # load test KMA (bmus, time, number of clusters, cenEOFs)
-p_test_mat = '/Users/nico/Projects/TESLA-kit/source/data/tests/ClimateEmulator/Nico_Montecarlo/'
-
-# DWTs (Daily Weather Types simulated using ALR)
-p_DWTs = op.join(p_test_mat, 'DWT_1000years_mjo_awt_v2.mat')
-dm_DWTs = ReadMatfile(p_DWTs)
-
-xds_DWT = xr.Dataset(
+p_bmus = op.join(p_test, 'bmus_testearpython.mat')
+dmatf = ReadMatfile(p_bmus)
+xds_KMA = xr.Dataset(
     {
-        'evbmus_sims':(('time','n_sim'), dm_DWTs['bmusim'].T),
+        'bmus'       : ('time', dmatf['KMA']['bmus']),
+        'cenEOFs'    : (('n_clusters', 'n_features',), dmatf['KMA']['cenEOFs']),
     },
-    coords = {'time':dmp(dm_DWTs['datesim'])}
+    coords = {'time' : np.array(d2d(dmatf['KMA']['Dates']))}
 )
 
-# get WTs37,42 from matlab file
-p_WTTCs = op.join(p_test_mat, 'KWA_waves_2PART_TCs_nan.mat')
+# DWTs (Daily Weather Types simulated using ALR)
+p_DWTs = op.join(p_test, 'DWT_1000years_mjo_awt_v2.mat')
+dm_DWTs = ReadMatfile(p_DWTs)
+xds_DWT = xr.Dataset(
+    {
+        'evbmus_sims' : (('time', 'n_sim'), dm_DWTs['bmusim'].T),
+    },
+    coords = {'time' : dmp(dm_DWTs['datesim'])}
+)
+
+# get WTs37, 42 from matlab file
+p_WTTCs = op.join(p_test, 'KWA_waves_2PART_TCs_nan.mat')
 dm_WTTCs = ReadMatfile(p_WTTCs)
 
 # Load TCs-window waves-families data by category
@@ -65,22 +75,22 @@ for i in range(6):
 
     d_WTTCs['{0}'.format(i+1+36)] = xr.Dataset(
         {
-            'sea_Hs':(('time',), sd['seaHs']),
-            'sea_Dir':(('time',), sd['seaDir']),
-            'sea_Tp':(('time',), sd['seaTp']),
-            'swell_1_Hs':(('time',), sd['swl1Hs']),
-            'swell_1_Dir':(('time',), sd['swl1Dir']),
-            'swell_1_Tp':(('time',), sd['swl1Tp']),
-            'swell_2_Hs':(('time',), sd['swl2Hs']),
-            'swell_2_Dir':(('time',), sd['swl2Dir']),
-            'swell_2_Tp':(('time',), sd['swl2Tp']),
+            'sea_Hs'      : (('time',), sd['seaHs']),
+            'sea_Dir'     : (('time',), sd['seaDir']),
+            'sea_Tp'      : (('time',), sd['seaTp']),
+            'swell_1_Hs'  : (('time',), sd['swl1Hs']),
+            'swell_1_Dir' : (('time',), sd['swl1Dir']),
+            'swell_1_Tp'  : (('time',), sd['swl1Tp']),
+            'swell_2_Hs'  : (('time',), sd['swl2Hs']),
+            'swell_2_Dir' : (('time',), sd['swl2Dir']),
+            'swell_2_Tp'  : (('time',), sd['swl2Tp']),
         }
     )
 
 
 
 # TODO: for testing
-xds_DWT = xds_DWT.isel(time=slice(0,5000), n_sim=slice(0,2))
+xds_DWT = xds_DWT.isel(time=slice(0,500), n_sim=slice(0,1))
 
 
 # --------------------------------------
