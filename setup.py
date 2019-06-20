@@ -1,12 +1,9 @@
 import os
-import setuptools
-from numpy.distutils.core import setup
+from distutils.core import setup
+#import setuptools
+#from numpy.distutils.core import setup
 
-
-# project libraries
 import teslakit
-
-NAME = 'teslakit'
 
 def _strip_comments(l):
     return l.split('#', 1)[0].strip()
@@ -36,31 +33,32 @@ def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
 def install_requires():
-    return reqs('requirements.txt')
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    return reqs('default.txt')
 
 
 setup(
-    name=NAME,
-    version=teslakit.__version__,
-    description=teslakit.__description__,
-    long_description=read('README.md'),
-    keywords=teslakit.__keywords__,
-    author=teslakit.__author__,
-    author_email=teslakit.__contact__,
-    url=teslakit.__url__,
-    license='MIT',
-    packages=setuptools.find_packages(exclude=['test*']),
+    name             = 'teslakit',
+    version          = teslakit.__version__,
+    description      = teslakit.__description__,
+    long_description = open('README.md').read(),
+    keywords         = teslakit.__keywords__,
+    author           = teslakit.__author__,
+    author_email     = teslakit.__contact__,
+    url              = teslakit.__url__,
+    license          = 'LICENSE.txt',
+    install_requires = install_requires(),
+    python_requires  = ">=3.7",
+    packages         = ['teslakit', 'teslakit.test', 'teslakit.plotting',
+                        'teslakit.io', 'teslakit.util'],
+    package_data     = {'teslakit' : ['resources/*']},
+    include_package_data = True,
+    #packages=setuptools.find_packages(exclude=['test*']),
     #include_package_data=True,
     #package_data={'attributes': ['teslakit/core/attributes.yml']},
-    platforms=['any'],
-    install_requires=install_requires(),
+    #platforms=['any'],
     #extras_require=extras_require(),
     #setup_requires=['pytest-runner'],
     #tests_require=reqs('test.txt'),
-    python_requires=">=3.7",
     #classifiers=CLASSIFIERS,
     #project_urls=PROJECT_URLS,
     #**kwargs
