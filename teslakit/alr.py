@@ -25,9 +25,10 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 # tk
 from teslakit.custom_dateutils import npdt64todatetime as npdt2dt
 from teslakit.util.terminal import printProgressBar as pb
-from teslakit.plotting.ALR import Plot_PValues, Plot_Params, Plot_Terms
-from teslakit.plotting.ALR import Plot_Compare_Covariate, Plot_Compare_PerpYear
+from teslakit.plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
+from teslakit.plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear
 
+# TODO: introducir switch log on / log off para ejecuciones silenciosas
 
 class ALR_WRP(object):
     'AutoRegressive Logistic methodology Wrapper'
