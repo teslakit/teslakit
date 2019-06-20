@@ -12,12 +12,12 @@ import matplotlib.pyplot as plt
 from matplotlib import path
 
 # tk 
-from teslakit.PCA import CalcPCA_EstelaPred
-from teslakit.KMA import KMA_regression_guided
-from teslakit.KMA import SimpleMultivariateRegressionModel as SMRM
+from teslakit.pca import CalcPCA_EstelaPred
+from teslakit.kma import KMA_regression_guided
+from teslakit.kma import SimpleMultivariateRegressionModel as SMRM
 from teslakit.intradaily import Calculate_Hydrographs
-from teslakit.plotting.EOFs import Plot_EOFs_EstelaPred
-from teslakit.plotting.KMA import Plot_KMArg_clusters_datamean
+from teslakit.plotting.eofs import Plot_EOFs_EstelaPred
+from teslakit.plotting.kma import Plot_KMArg_clusters_datamean
 
 
 def spatial_gradient(xdset, var_name):
@@ -242,6 +242,8 @@ class Predictor(object):
 
         returns list of xarray.Dataset with TWL hydrographs MU,TAU arrays for each WT
         '''
+
+        # TODO: SACAR DE AQUI, replantear hydrographs
 
         # get sorted bmus from kma
         xds_BMUS = xr.Dataset(
