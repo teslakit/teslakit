@@ -48,7 +48,6 @@ def Normalize(data, ix_scalar, ix_directional, minis=[], maxis=[]):
 
     return data_norm, minis, maxis
 
-
 def DeNormalize(data_norm, ix_scalar, ix_directional, minis, maxis):
     '''
     DeNormalize data subset for MaxDiss algorithm
@@ -109,7 +108,7 @@ def MaxDiss_Simplified_NoThreshold(data, num_centers, ix_scalar, ix_directional)
     ix_directional - directional columns indexes
     '''
 
-    # TODO: PARSED FROM MATLAB ORIGINAL. CAN REFACTOR
+    # TODO: REFACTOR / OPTIMIZE 
 
     print('\nMaxDiss waves parameters: {0} --> {1}\n'.format(
         data.shape[0], num_centers))
