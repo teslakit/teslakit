@@ -6,7 +6,7 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.custom_dateutils import date2datenum as d2d
+from teslakit.custom_dateutils import date2datenum as d2d
 
 # fig aspect and size
 _faspect = (1+5**0.5)/2.0
