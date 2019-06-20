@@ -19,11 +19,11 @@ class atdict(dict):
 class Site(object):
     'Project site: collection of parameters and file paths'
 
-    def __init__(self, site_name):
+    def __init__(self, data_folder, site_name):
         self.name = site_name
 
         # path control
-        self.pc = PathControl()
+        self.pc = PathControl(data_folder)
         self.pc.SetSite(site_name)
 
         # site parameters
@@ -67,9 +67,8 @@ class Site(object):
         if not op.isdir(self.pc.p_site): os.makedirs(self.pc.p_site)
 
         # copy site.ini template
-        p_ini_base = op.join(self.pc.p_docs, 'ini_files')
         for fn in ['files.ini', 'parameters.ini']:
-            copyfile(op.join(p_ini_base, fn), op.join(self.pc.p_site, fn))
+            copyfile(op.join(self.pc.p_resources, fn), op.join(self.pc.p_site, fn))
 
         # create site subfolders
         self.pc.SetSite(self.name)
@@ -86,13 +85,13 @@ class Site(object):
 class PathControl(object):
     'auxiliar object for handling database and site paths'
 
-    def __init__(self):
+    def __init__(self, p_data):
+
+        # ini templates
+        p_resources = op.join(op.dirname(op.realpath(__file__)), 'resources')
 
         # teslakit data
-        p_source = os.sep.join(op.realpath(__file__).split(op.sep)[0:-2])
-        p_data = op.join(p_source, 'data')
         p_test_data = op.join(p_data, 'tests')
-        p_docs = op.join(p_source, 'docs')
 
         # teslakit database and sites
         p_DB = op.join(p_data, 'database')
@@ -100,9 +99,9 @@ class PathControl(object):
         p_sites = op.join(p_data, 'sites')
 
         # string paths
+        self.p_resources = p_resources
         self.p_data = p_data
         self.p_test_data = p_test_data
-        self.p_docs = p_docs
         self.p_DB = p_DB
         self.p_DB_ini = p_DB_ini
         self.p_sites = p_sites
