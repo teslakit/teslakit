@@ -12,7 +12,7 @@ from sklearn.metrics import mean_squared_error
 import xarray as xr
 
 # tk
-from teslakit.MDA import Normalize
+from teslakit.mda import Normalize
 
 # RBF Phi functions
 def rbfphi_linear(r, const):
