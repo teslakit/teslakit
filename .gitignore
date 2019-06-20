@@ -13,3 +13,4 @@ teslakit.egg-info/
 .ipynb_checkpoints
 ReadJoaoMat.py
 test_Laura.py
+build/
