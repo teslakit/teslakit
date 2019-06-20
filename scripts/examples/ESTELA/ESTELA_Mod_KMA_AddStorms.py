@@ -5,13 +5,16 @@
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # pip
 import numpy as np
 import xarray as xr
 
-# tk 
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import Site
 from teslakit.estela import Predictor
 from teslakit.io.matlab import ReadGowMat, ReadCoastMat, ReadEstelaMat

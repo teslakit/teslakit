@@ -4,16 +4,18 @@
 # common 
 import os
 import os.path as op
-import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # pip
 import xarray as xr
 
-# tk 
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadMatfile
-from teslakit.PCA import CalcRunningMean
+from teslakit.pca import CalcRunningMean
 from teslakit.custom_dateutils import DateConverter_Mat2Py
 
 # --------------------------------------
@@ -24,7 +26,7 @@ pc = PathControl()
 
 # data storage
 p_pred_mat = op.join(pc.p_DB, 'SST', 'SST_1854_2017.mat')
-p_pred_nc = op.join(pc.p_DB, 'SST','SST_1854_2017_Pacific.nc')
+p_pred_nc = op.join(pc.p_DB, 'SST', 'SST_1854_2017_Pacific.nc')
 
 
 # --------------------------------------

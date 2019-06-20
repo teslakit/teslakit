@@ -9,8 +9,12 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 # pip
 import xarray as xr
 
-# tk 
-from lib.custom_stats import sort_cluster_gen_corr_end
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
+from teslakit.kma import sort_cluster_gen_corr_end
 
 # TODO: revisar datos test
 

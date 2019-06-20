@@ -5,14 +5,17 @@
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # pip
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 
-# tk libs
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadMatfile
 from teslakit.estela import dynamic_estela_predictor

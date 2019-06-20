@@ -11,7 +11,11 @@ sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 import numpy as np
 import xarray as xr
 
-# custom libs
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl, Site
 from teslakit.climate_emulator import Climate_Emulator
 from teslakit.custom_dateutils import datevec2datetime as d2d

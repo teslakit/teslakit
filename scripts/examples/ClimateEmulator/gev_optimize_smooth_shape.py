@@ -4,15 +4,17 @@
 # basic import
 import os
 import os.path as op
-import sys
 import time
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # python libs
 import numpy as np
 import xarray as xr
 
-# custom libs
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.extremes import Smooth_GEV_Shape
 

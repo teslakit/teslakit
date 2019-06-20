@@ -4,8 +4,6 @@
 # common 
 import os
 import os.path as op
-import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # pip
 import numpy as np
@@ -13,7 +11,11 @@ import xarray as xr
 from datetime import datetime
 import pickle
 
-# tk
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadGowMat, ReadMatfile
 from teslakit.intradaily import Calculate_Hydrographs

@@ -3,19 +3,21 @@
 
 # common
 import os.path as op
-import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # python libs
 import numpy as np
 import xarray as xr
 
-# tk libs
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadGowMat
-from teslakit.KMA import KMA_simple
-from teslakit.KMA import KMA_regression_guided
-from teslakit.KMA import SimpleMultivariateRegressionModel as SMRM
+from teslakit.kma import KMA_simple
+from teslakit.kma import KMA_regression_guided
+from teslakit.kma import SimpleMultivariateRegressionModel as SMRM
 
 # TODO: REVISAR TEST
 

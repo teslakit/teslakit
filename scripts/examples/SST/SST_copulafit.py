@@ -4,8 +4,6 @@
 # common
 import os
 import os.path as op
-import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..'))
 
 # pip
 import xarray as xr
@@ -13,10 +11,14 @@ from datetime import datetime, timedelta
 import numpy as np
 from datetime import date, timedelta, datetime
 
-# tk
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import Site
 from teslakit.statistical import ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
-from teslakit.ALR import ALR_WRP
+from teslakit.alr import ALR_WRP
 from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
 from teslakit.io.aux_nc import StoreBugXdset as sbxds
 

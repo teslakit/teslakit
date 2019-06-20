@@ -4,8 +4,6 @@
 # common 
 import os
 import os.path as op
-import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
 
 # pip
 import xarray as xr
@@ -13,7 +11,11 @@ import numpy as np
 from datetime import datetime, timedelta
 import h5py
 
-# tk 
+# DEV: override installed teslakit
+import sys
+sys.path.insert(0,'../../../')
+
+# teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadMatfile as rmat
 from teslakit.custom_dateutils import datevec2datetime
