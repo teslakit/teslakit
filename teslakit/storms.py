@@ -1,24 +1,44 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from math import radians, degrees, sin, cos, asin, acos, sqrt, atan2, pi
 import numpy as np
 import xarray as xr
-from scipy.spatial import distance
-from geographiclib.geodesic import Geodesic
+
 
 def GeoDistance(lat1, lon1, lat2, lon2):
-    'Returns geodesic distance between points in degrees'
+    'Returns great circle distance between points in degrees'
 
-    return Geodesic.WGS84.Inverse(
-        lat1, lon1, lat2, lon2
-    )['a12']
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    a = sin((lat2-lat1)/2)**2 + cos(lat1) * cos(lat2) * sin((lon2-lon1)/2)**2;
+    if a < 0: a = 0
+    if a > 1: a = 1
+
+    r = 1
+    rng = r * 2 * atan2(sqrt(a), sqrt(1-a))
+    rng = degrees(rng)
+
+    return rng
 
 def GeoAzimuth(lat1, lon1, lat2, lon2):
     'Returns geodesic azimuth between point1 and point2'
 
-    return Geodesic.WGS84.Inverse(
-        lat1, lon1, lat2, lon2
-    )['azi1']
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    az = atan2(
+        cos(lat2) * sin(lon2-lon1),
+        cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon2-lon1)
+    )
+    if lat1 <= -pi/2: az = 0
+    if lat2 >=  pi/2: az = 0
+    if lat2 <= -pi/2: az = pi
+    if lat1 >=  pi/2: az = pi
+
+    az = az % (2*pi)
+    az = degrees(az)
+
+    return az
 
 
 def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
