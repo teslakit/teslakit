@@ -23,8 +23,11 @@ Install requirements. Navigate to the base root of [teslakit](./) and execute:
 
 
 ```
+# requests module
+pip install requests
+
 # default python libraries 
-pip install -r requirements/requirements.txt
+pip install -r requirements/default.txt
 
 # custom python libraries 
 pip install -r requirements/extra.txt
@@ -32,7 +35,6 @@ pip install -r requirements/extra.txt
 # optional libraries (used for map plots)
 pip install --user git+https://github.com/matplotlib/basemap.git
 
-# TODO: BlueMath/libraries (bluedata...)
 ```
 
 Then install teslakit
