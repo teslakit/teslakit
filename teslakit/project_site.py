@@ -15,7 +15,6 @@ class atdict(dict):
     __delattr__= dict.__delitem__
 
 
-# TODO: method for downloading site data from internet data servers?
 class Site(object):
     'Project site: collection of parameters and file paths'
 
@@ -94,40 +93,40 @@ class PathControl(object):
         p_test_data = op.join(p_data, 'tests')
 
         # teslakit database and sites
-        p_DB = op.join(p_data, 'database')
-        p_DB_ini = op.join(p_data, 'database.ini')
+        #p_DB = op.join(p_data, 'database')
+        #p_DB_ini = op.join(p_data, 'database.ini')
         p_sites = op.join(p_data, 'sites')
 
         # string paths
         self.p_resources = p_resources
         self.p_data = p_data
         self.p_test_data = p_test_data
-        self.p_DB = p_DB
-        self.p_DB_ini = p_DB_ini
+        #self.p_DB = p_DB
+        #self.p_DB_ini = p_DB_ini
         self.p_sites = p_sites
         self.p_site = None  # current site
 
         # atdicts
-        self.DB = None
+        #self.DB = None
         self.site = None
 
         # initialize 
-        self.SetDatabase()
+        #self.SetDatabase()
 
     def __str__(self):
         'Print paths'
 
         txt = ''
-        txt+= '\nDatabase Files:'
-        for k1 in sorted(self.DB.keys()):
-            for k2 in sorted(self.DB[k1].keys()):
-                aux1 ='\n.DB.{0}.{1}'.format(k1, k2)
-                aux2 = self.DB[k1][k2]
-                if 'teslakit' in aux2:
-                    aux2 = aux2.split('teslakit')[1]
-                txt+='{0:.<45} {1}'.format(aux1, aux2)
+        #txt+= '\nDatabase Files:'
+        #for k1 in sorted(self.DB.keys()):
+        #    for k2 in sorted(self.DB[k1].keys()):
+        #        aux1 ='\n.DB.{0}.{1}'.format(k1, k2)
+        #        aux2 = self.DB[k1][k2]
+        #        if 'teslakit' in aux2:
+        #            aux2 = aux2.split('teslakit')[1]
+        #        txt+='{0:.<45} {1}'.format(aux1, aux2)
 
-        if isinstance(self.site,dict):
+        if isinstance(self.site, dict):
             txt+= '\n\nSite Files:'
             for k1 in sorted(self.site.keys()):
                 for k2 in sorted(self.site[k1].keys()):
@@ -142,10 +141,10 @@ class PathControl(object):
         'return detailed database and site files summary'
 
         txt = ''
-        txt+= '\nDatabase Files:'
-        for k1 in sorted(self.DB.keys()):
-            for k2 in sorted(self.DB[k1].keys()):
-                txt += description(self.DB[k1][k2])
+        #txt+= '\nDatabase Files:'
+        #for k1 in sorted(self.DB.keys()):
+        #    for k2 in sorted(self.DB[k1].keys()):
+        #        txt += description(self.DB[k1][k2])
 
         if isinstance(self.site,dict):
             txt+= '\n\nSite Files:'
@@ -155,26 +154,26 @@ class PathControl(object):
 
         return txt
 
-    def SetDatabase(self):
-        'Set database paths from database.ini file'
+    #def SetDatabase(self):
+    #    'Set database paths from database.ini file'
 
 
-        p_DB = self.p_DB
-        p_ini = self.p_DB_ini
+    #    p_DB = self.p_DB
+    #    p_ini = self.p_DB_ini
 
-        # use configparser lib
-        cfg = configparser.ConfigParser()
-        cfg.read(p_ini)
+    #    # use configparser lib
+    #    cfg = configparser.ConfigParser()
+    #    cfg.read(p_ini)
 
-        dd = {}
-        for k in cfg.sections():
-            ss = atdict(cfg[k])
-            for kk in ss.keys():
-                if not ss[kk].startswith(os.sep) and not ':\\' in ss[kk]:
-                    ss[kk] = op.join(p_DB, k, ss[kk])
-            dd[k] = atdict(ss)
+    #    dd = {}
+    #    for k in cfg.sections():
+    #        ss = atdict(cfg[k])
+    #        for kk in ss.keys():
+    #            if not ss[kk].startswith(os.sep) and not ':\\' in ss[kk]:
+    #                ss[kk] = op.join(p_DB, k, ss[kk])
+    #        dd[k] = atdict(ss)
 
-        self.DB = atdict(dd)
+    #    self.DB = atdict(dd)
 
     def SetSite(self, site_name):
         'Sets dictionary with site files'
