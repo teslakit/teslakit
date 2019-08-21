@@ -16,8 +16,8 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit 
 from teslakit.project_site import Site
@@ -32,12 +32,11 @@ from teslakit.io.aux_nc import StoreBugXdset as sbxds
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                        # common database
 ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
-# input files
-p_mjo_hist = DB.MJO.hist               # historical MJO
+# input files: historical MJO
+p_mjo_hist = op.join(data_folder, 'database', 'MJO', 'MJO_hist.nc')
 
 # output files
 p_mjo_alrw = ST.MJO.alrw               # MJO Autoregressive Logistic Regression

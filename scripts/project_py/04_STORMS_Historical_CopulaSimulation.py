@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [18, 8]
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit
 from teslakit.project_site import Site
@@ -26,7 +26,6 @@ from teslakit.mda import MaxDiss_Simplified_NoThreshold
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                            # common database
 ST = site.pc.site                          # site database
 PR = site.params                           # site parameters
 

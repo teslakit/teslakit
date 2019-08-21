@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [18, 8]
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit
 from teslakit.project_site import Site
@@ -27,12 +27,11 @@ from teslakit.statistical import CopulaSimulation
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                            # common database
 ST = site.pc.site                          # site database
 PR = site.params                           # site parameters
 
-# input files
-p_hist_tcs = DB.TCs.noaa                   # NOAA WMO TCs 
+# input files: NOAA WMO TCs
+p_hist_tcs = op.join(data_folder, 'database', 'TCs', 'Allstorms.ibtracs_wmo.v03r10.nc')
 
 # output files
 p_hist_r1 = ST.TCs.hist_r1                 # historical TCs inside radius 1

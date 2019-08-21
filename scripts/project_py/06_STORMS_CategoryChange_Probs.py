@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [18, 8]
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit 
 from teslakit.project_site import Site
@@ -27,12 +27,11 @@ from teslakit.storms import Extract_Circle_Nakajo, SortCategoryCount
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                        # common database
 ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
-# input files
-p_nakajo_mats = DB.TCs.nakajo_mats     # Nakajo synthetic TCs
+# input files: Nakajo synthethic TCs
+p_nakajo_mats = op.join(data_folder, 'database', 'TCs', 'Nakajo_tracks')
 
 # output files
 p_probs_synth = ST.TCs.probs_synth     # TCs category change probabilities

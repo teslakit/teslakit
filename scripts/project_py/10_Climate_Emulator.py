@@ -14,8 +14,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit
 from teslakit.project_site import Site

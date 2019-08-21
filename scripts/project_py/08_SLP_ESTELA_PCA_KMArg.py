@@ -16,8 +16,8 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit 
 from teslakit.project_site import Site
@@ -31,7 +31,6 @@ from teslakit.plotting.estela import Plot_ESTELA_Globe
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                               # common database
 ST = site.pc.site                             # site database
 PR = site.params                              # site parameters
 

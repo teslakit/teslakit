@@ -15,8 +15,8 @@ from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 # DEV: override installed teslakit
-#import sys
-#sys.path.insert(0,'../../')
+import sys
+sys.path.insert(0,'../../')
 
 # teslakit 
 from teslakit.project_site import Site
@@ -40,12 +40,11 @@ from teslakit.custom_dateutils import xds_reindex_monthly as xr_monthly
 data_folder = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 site = Site(data_folder, 'KWAJALEIN_TEST')
 
-DB = site.pc.DB                        # common database
 ST = site.pc.site                      # site database
 PR = site.params                       # site parameters
 
-# input files
-p_SST = DB.SST.hist_pacific            # SST Pacific area 'SST_1854_2017_Pacific.nc'
+# input files: SST Pacific area
+p_SST = op.join(data_folder, 'database', 'SST', 'SST_1854_2017_Pacific.nc')
 
 # output files
 p_sst_PCA = ST.SST.pca                 # SST Principal Component Analisis
