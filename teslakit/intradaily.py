@@ -6,7 +6,9 @@ import numpy as np
 import xarray as xr
 
 # tk
-from teslakit.custom_dateutils import npdt64todatetime
+from .custom_dateutils import npdt64todatetime
+
+# TODO: refactor con waves.py/hydrographs
 
 class Hydrograph(object):
     'Stores hydrograph data'
@@ -28,6 +30,7 @@ class Hydrograph(object):
         self.TAU = []
 
 
+# TODO: voy a crear uno nuevo en waves que sea general y de todo para todo time
 def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
     '''
     Calculates intradaily hydrographs
