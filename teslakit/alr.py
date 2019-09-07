@@ -23,12 +23,10 @@ from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 # tk
-from teslakit.custom_dateutils import npdt64todatetime as npdt2dt
-from teslakit.util.terminal import printProgressBar as pb
-from teslakit.plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
-from teslakit.plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear
-
-# TODO: introducir switch log on / log off para ejecuciones silenciosas
+from .custom_dateutils import npdt64todatetime as npdt2dt
+from .util.terminal import printProgressBar as pb
+from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
+from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear
 
 class ALR_WRP(object):
     'AutoRegressive Logistic methodology Wrapper'
@@ -57,14 +55,18 @@ class ALR_WRP(object):
 
         # paths
         self.p_base = p_base
+
         self.p_save_model = op.join(p_base, 'model.sav')
+        self.p_save_fit_xds = op.join(p_base, 'xds_input.nc')
         self.p_save_sim_xds = op.join(p_base, 'xds_output.nc')
+
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
 
     def SetFitData(self, cluster_size, xds_bmus_fit, d_terms_settings):
         '''
         Sets data needed for ALR fitting
+
         cluster_size - number of clusters in classification
         xds_bmus_fit - xarray.Dataset vars: bmus, dims: time
         d_terms_settings - terms settings. See "SetFittingTerms"
@@ -73,6 +75,11 @@ class ALR_WRP(object):
         self.cluster_size = cluster_size
         self.xds_bmus_fit = xds_bmus_fit
         self.SetFittingTerms(d_terms_settings)
+
+        # save bmus series used for fitting
+        self.SaveBmus_Fit()
+
+        # TODO: GUARDAR FITTING TERMS Y CLUSTER SIZE
 
     def SetFittingTerms(self, d_terms_settings):
         'Set terms settings that will be used for fitting'
@@ -344,9 +351,44 @@ class ALR_WRP(object):
         self.model = pickle.load(open(self.p_save_model, 'rb'))
         print('ALR model loaded from {0}'.format(self.p_save_model))
 
+    def SaveBmus_Fit(self):
+        'Saves bmus - fit for future use'
+
+        if not op.isdir(self.p_base):
+            os.makedirs(self.p_base)
+
+        self.xds_bmus_fit.attrs['cluster_size'] = self.cluster_size
+        self.xds_bmus_fit.to_netcdf(self.p_save_fit_xds, 'w')
+        print('ALR bmus (fit) saved at {0}'.format(self.p_save_fit_xds))
+
+    def LoadBmus_Fit(self):
+        'Load bmus - fit'
+
+        self.xds_bmus_sim =  xr.open_dataset(self.p_save_fit_xds)
+        self.cluster_size = self.xds_bmus_sim.attrs['cluster_size']
+
+        return self.xds_bmus_sim
+
+    def SaveBmus_Sim(self):
+        'Saves bmus - sim for future use'
+
+        if not op.isdir(self.p_base):
+            os.makedirs(self.p_base)
+
+        self.xds_bmus_sim.to_netcdf(self.p_save_sim_xds, 'w')
+        print('ALR bmus (sim) saved at {0}'.format(self.p_save_sim_xds))
+
+    def LoadBmus_Sim(self):
+        'Load bmus - sim'
+
+        return xr.open_dataset(self.p_save_sim_xds)
+
     def Report_Fit(self, export=False):
         'Report containing model fitting info'
         # TODO: estudiar si da error al coger pval y params
+
+        # load model
+        self.LoadModel()
 
         if export:
 
@@ -402,7 +444,8 @@ class ALR_WRP(object):
         p_terms_png = op.join(self.p_report_fit, 'terms_fit.png')
         Plot_Terms(term_mx, term_ds, term_ns, p_terms_png)
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None, progress_bar=True):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
+                 progress_bar=False):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -514,14 +557,16 @@ class ALR_WRP(object):
 
         return xds_out
 
-    def Load_SimOutput(self):
-        return xr.open_dataset(self.p_save_sim_xds)
+    def Report_Sim(self, export=False): #xds_cov_sim=None
+        '''
+        Report that Compare fitting to simulated bmus
+        '''
 
-    def Report_Sim(self, xds_ALR_sim, xds_cov_sim=None):
-        '''
-        Report containing model fitting report.
-        Compares fitting data to simulated output (xds_ALR_sim)
-        '''
+        # load fit and sim bmus
+        xds_ALR_fit = self.LoadBmus_Fit()
+        xds_ALR_sim = self.LoadBmus_Sim()
+
+        # TODO: load covariates if needed for ploting
 
         # report folder and files
         p_save = self.p_report_sim
@@ -532,19 +577,26 @@ class ALR_WRP(object):
         cluster_size = self.cluster_size
         bmus_values_sim = xds_ALR_sim.evbmus_sims.values
         bmus_dates_sim = [npdt2dt(t) for t in xds_ALR_sim.time.values]
-        bmus_values_hist = np.reshape(self.xds_bmus_fit.bmus.values,[-1,1])
-        bmus_dates_hist = [npdt2dt(t) for t in self.xds_bmus_fit.time.values]
+        bmus_values_hist = np.reshape(xds_ALR_fit.bmus.values,[-1,1])
+        bmus_dates_hist = [npdt2dt(t) for t in xds_ALR_fit.time.values]
         num_sims = bmus_values_sim.shape[1]
 
-        # Plot Perpetual Year - bmus wt
-        p_rep_PP = op.join(p_save, 'perp_year.png')
+        # Plot Perpetual Year (daily) - bmus wt
+        p_rep_PP = None
+        if export:
+            p_rep_PP = op.join(p_save, 'perp_year.png')
+
         Plot_Compare_PerpYear(
             cluster_size,
             bmus_values_sim, bmus_dates_sim,
             bmus_values_hist, bmus_dates_hist,
-            n_sim = num_sims, p_export=p_rep_PP
+            n_sim = num_sims, p_export = p_rep_PP
         )
 
+        # TODO: Plot Perpetual Year (monthly)
+        return
+
+        # TODO: activate this  
         if self.d_terms_settings['covariates'][0]:
 
             # TODO eliminar tiempos duplicados
