@@ -9,7 +9,6 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from scipy.interpolate import interp1d
 from scipy.stats import norm, genpareto, t
 from scipy.special import ndtri  # norm inv
-import matplotlib.pyplot as plt
 
 
 def ksdensity_CDF(x):
