@@ -2,7 +2,7 @@
 Module attrs
 """
 
-__version__     = '0.9.0'
+__version__     = '0.9.1'
 __author__      = 'Surf And Surge Research Group (UC)'
 __contact__     = 'ripolln@unican.es'
 __url__         = 'https://bitbucket.org/ripolln/teslakit'
@@ -19,7 +19,7 @@ from . import kma
 from . import mda
 from . import mjo
 from . import pca
-from . import project_site
+from . import database
 from . import rbf
 from . import statistical
 from . import storms
