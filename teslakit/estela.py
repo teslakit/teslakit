@@ -12,12 +12,12 @@ import matplotlib.pyplot as plt
 from matplotlib import path
 
 # tk 
-from teslakit.pca import CalcPCA_EstelaPred
-from teslakit.kma import KMA_regression_guided
-from teslakit.kma import SimpleMultivariateRegressionModel as SMRM
-from teslakit.intradaily import Calculate_Hydrographs
-from teslakit.plotting.eofs import Plot_EOFs_EstelaPred
-from teslakit.plotting.kma import Plot_KMArg_clusters_datamean
+from .pca import CalcPCA_EstelaPred
+from .kma import KMA_regression_guided
+from .kma import SimpleMultivariateRegressionModel as SMRM
+from .intradaily import Calculate_Hydrographs
+from .plotting.eofs import Plot_EOFs_EstelaPred
+from .plotting.kma import Plot_KMArg_clusters_datamean
 
 
 def spatial_gradient(xdset, var_name):
@@ -217,6 +217,9 @@ class Predictor(object):
         self.PCA = CalcPCA_EstelaPred(
             xds_estela_pred, var_name)
 
+        # save data
+        self.Save()
+
     def Calc_KMA_regressionguided(
         self, num_clusters, xds_waves, waves_vars, alpha):
         'KMA regression guided with waves data'
@@ -235,6 +238,9 @@ class Predictor(object):
 
         # store time array with KMA
         self.KMA['time'] = (('n_components',), self.PCA.pred_time.values[:])
+
+        # save data
+        self.Save()
 
     def Calc_MU_TAU_Hydrographs(self, xds_WAVES):
         '''
