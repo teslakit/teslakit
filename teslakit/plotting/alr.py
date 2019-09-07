@@ -10,90 +10,33 @@ from datetime import datetime, timedelta
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.colors as mcolors
+from matplotlib.colorbar import ColorbarBase
 from scipy.interpolate import interp1d
 
 # tk
-from teslakit.plotting.util import MidpointNormalize
-from teslakit.custom_dateutils import xds2datetime as xds2dt
+from .util import MidpointNormalize
+from .custom_colors import colors_mjo, colors_dwt, colors_interp
+from ..custom_dateutils import xds2datetime as xds2dt
 
 def GetClusterColors(num_clusters):
-    'Interpolate custom colormap to number of clusters'
-    # TODO: mejorarlo con los cmaps de laura u otros metodos
+    'Choose colors or Interpolate custom colormap to number of clusters'
 
-    l_colors_dwt = [
-        (1.0000, 0.1344, 0.0021),
-        (1.0000, 0.2669, 0.0022),
-        (1.0000, 0.5317, 0.0024),
-        (1.0000, 0.6641, 0.0025),
-        (1.0000, 0.9287, 0.0028),
-        (0.9430, 1.0000, 0.0029),
-        (0.6785, 1.0000, 0.0031),
-        (0.5463, 1.0000, 0.0032),
-        (0.2821, 1.0000, 0.0035),
-        (0.1500, 1.0000, 0.0036),
-        (0.0038, 1.0000, 0.1217),
-        (0.0039, 1.0000, 0.2539),
-        (0.0039, 1.0000, 0.4901),
-        (0.0039, 1.0000, 0.6082),
-        (0.0039, 1.0000, 0.8444),
-        (0.0039, 1.0000, 0.9625),
-        (0.0039, 0.8052, 1.0000),
-        (0.0039, 0.6872, 1.0000),
-        (0.0040, 0.4510, 1.0000),
-        (0.0040, 0.3329, 1.0000),
-        (0.0040, 0.0967, 1.0000),
-        (0.1474, 0.0040, 1.0000),
-        (0.2655, 0.0040, 1.0000),
-        (0.5017, 0.0040, 1.0000),
-        (0.6198, 0.0040, 1.0000),
-        (0.7965, 0.0040, 1.0000),
-        (0.8848, 0.0040, 1.0000),
-        (1.0000, 0.0040, 0.9424),
-        (1.0000, 0.0040, 0.8541),
-        (1.0000, 0.0040, 0.6774),
-        (1.0000, 0.0040, 0.5890),
-        (1.0000, 0.0040, 0.4124),
-        (1.0000, 0.0040, 0.3240),
-        (1.0000, 0.0040, 0.1473),
-        (0.9190, 0.1564, 0.2476),
-        (0.7529, 0.3782, 0.4051),
-        (0.6699, 0.4477, 0.4584),
-        (0.5200, 0.5200, 0.5200),
-        (0.4595, 0.4595, 0.4595),
-        (0.4100, 0.4100, 0.4100),
-        (0.3706, 0.3706, 0.3706),
-        (0.2000, 0.2000, 0.2000),
-        (     0, 0, 0),
-    ]
+    if num_clusters == 25:
 
-    l_colors_dwt = [
-        (1, 0.134442687034607, 0.00207612453959882),
-        (1, 0.531705200672150, 0.00242214533500373),
-        (1, 0.928692817687988, 0.00276816613040864),
-        (0.678515970706940, 1, 0.00311418692581356),
-        (0.282077997922897, 1, 0.00346020772121847),
-        (0.00380622851662338, 1, 0.121697589755058),
-        (0.00392733560875058, 1, 0.490114688873291),
-        (0.00393598619848490, 1, 0.844399273395538),
-        (0.00394463678821921, 0.805243849754334, 1),
-        (0.00395328737795353, 0.450971543788910, 1),
-        (0.00396193796768785, 0.0967053845524788, 1),
-        (0.265495806932449, 0.00397058809176087, 1),
-        (0.619767010211945, 0.00397923868149519, 1),
-        (0.884806394577026, 0.00398351671174169, 1),
-        (1, 0.00398779427632690, 0.854077994823456),
-        (1, 0.00399207184091210, 0.589043080806732)
-    ]
+        # mjo categ colors 
+        np_colors_rgb = colors_mjo()
 
+    elif num_clusters in [36, 42]:
 
-    # interpolate colors to num cluster
-    np_colors_base = np.array(l_colors_dwt)
-    x = np.arange(np_colors_base.shape[0])
-    itp = interp1d(x, np_colors_base, axis=0, kind='linear')
+        # dwt colors 
+        np_colors_rgb = colors_dwt(num_clusters)
 
-    xi = np.arange(num_clusters)
-    np_colors_int = itp(xi)
-    return np_colors_int
+    else:
+        # interpolate colors
+        np_colors_rgb = colors_interp(num_clusters)
+
+    return np_colors_rgb
 
 def GenOneYearDaily(yy=1981):
     'returns one generic year in a list of datetimes. Daily resolution'
@@ -200,7 +143,7 @@ def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1):
     list_pyear = GenOneYearDaily()
 
     # generate aux arrays
-    # TODO: TESTEAR TIEMPO COMPUTACION DE ESTO
+    # TODO: TESTEAR TIEMPO COMPUTACION
     m_plot = np.zeros((num_clusters, len(list_pyear))) * np.nan
     bmus_dates_months = np.array([d.month for d in bmus_dates])
     bmus_dates_days = np.array([d.day for d in bmus_dates])
@@ -241,8 +184,9 @@ def Generate_Covariate_Matrix(
         b = bmus_values[s,:]
         b = b.flatten()
 
-        # TODO: no me gusta esto de usar los years en vez de misma fecha y
-        # posicion directa. Se usa en el test de laura por como son los datos
+        # TODO: mejorar, no usar los years y posicion. 
+        # usar la fecha
+
         #ys = [covar_dates[x].year for x in s]
         # find data inside years found
         #sb = np.where(np.in1d(bmus_years, ys))[0]
@@ -451,6 +395,19 @@ def Plot_Compare_PerpYear(num_clusters,
     ax_hist.set_title('Historical')
     ax_hist.set_ylabel('')
 
+    # add custom colorbar
+    ccmap = mcolors.ListedColormap(
+        [tuple(r) for r in np_colors_int]
+    )
+    cax = fig.add_axes([0.92, 0.125, 0.025, 0.755])
+    cbar = ColorbarBase(
+        cax, cmap=ccmap,
+        norm = mcolors.Normalize(vmin=0, vmax=num_clusters),
+        ticks = range(1, num_clusters+1)
+    )
+    cbar.ax.tick_params(labelsize=8)
+
+    # text
     fig.suptitle('Perpetual Year', fontweight='bold', fontsize=12)
 
     # show / export
