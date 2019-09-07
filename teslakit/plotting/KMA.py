@@ -18,8 +18,8 @@ import matplotlib.patches as patches
 from scipy.interpolate import interp1d
 
 # tk
-from teslakit.custom_dateutils import xds2datetime
-from teslakit.util.operations import GetDivisors
+from ..custom_dateutils import xds2datetime
+from ..util.operations import GetDivisors
 
 # fig aspecti, size, export png dpi
 _faspect = (1+5**0.5)/2.0
