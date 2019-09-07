@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 from datetime import datetime, timedelta
 
 # tk
-from teslakit.custom_dateutils import xds2datetime
+from ..custom_dateutils import xds2datetime
 
 # register matplotlib converters
 from pandas.plotting import register_matplotlib_converters
