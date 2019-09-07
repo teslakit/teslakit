@@ -204,7 +204,7 @@ class Database(object):
     def Save_TCs_sim_r2_rbf_output(self, xds):
         xds.to_netcdf(self.paths.site.TCs.sim_r2_rbf_output, 'w')
 
-    def Load_TCs_sim_r2_rbf_output(self, xds):
+    def Load_TCs_sim_r2_rbf_output(self):
         return xr.open_dataset(self.paths.site.TCs.sim_r2_rbf_output)
 
     def Load_TCs_Nakajo(self):
@@ -213,7 +213,7 @@ class Database(object):
     def Save_TCs_probs_synth(self, xds):
         xds.to_netcdf(self.paths.site.TCs.probs_synth, 'w')
 
-    def Load_TCs_probs_synth(self, xds):
+    def Load_TCs_probs_synth(self):
         return xr.open_dataset(self.paths.site.TCs.probs_synth)
 
     def Load_WAVES_partitions(self):
@@ -264,6 +264,9 @@ class Database(object):
     def Save_ESTELA_DWT_sim(self, xds):
         StoreBugXdset(xds, self.paths.site.ESTELA.sim_dwt)
 
+    def Load_ESTELA_DWT_sim(self):
+        return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
+
     def Save_MU_TAU_hydrograms(self, l_xds):
 
         p_mutau = self.paths.site.ESTELA.hydrog_mutau
@@ -279,7 +282,7 @@ class Database(object):
 
         # MU - TAU intradaily hidrographs for each WWT
         l_mutau_ncs = sorted(
-            [op.join(p_mutau_wt, pf) for pf in os.listdir(p_mutau_wt) if pf.endswith('.nc')]
+            [op.join(p_mutau, pf) for pf in os.listdir(p_mutau) if pf.endswith('.nc')]
         )
         l_xds = [xr.open_dataset(x) for x in l_mutau_ncs]
         return l_xds
