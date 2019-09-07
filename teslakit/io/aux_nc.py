@@ -3,13 +3,15 @@
 
 # common
 from datetime import datetime, date
+import os
+import os.path as op
 
 # pip
 import netCDF4
 import numpy as np
 
 # tk
-from teslakit.custom_dateutils import npdt64todatetime as n2d
+from ..custom_dateutils import npdt64todatetime as n2d
 
 
 def StoreBugXdset(xds_data, p_ncfile):
@@ -25,6 +27,10 @@ def StoreBugXdset(xds_data, p_ncfile):
     # Handle time data  (calendar format)
     calendar = 'standard'
     units = 'days since 1970-01-01 00:00:00'
+
+    # remove previous file
+    if op.isfile(p_ncfile):
+        os.remove(p_ncfile)
 
     # Use netCDF4 lib 
     root = netCDF4.Dataset(p_ncfile, 'w', format='NETCDF4')

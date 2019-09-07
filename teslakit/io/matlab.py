@@ -13,7 +13,7 @@ import xarray as xr
 import numpy as np
 
 # tk
-from teslakit.custom_dateutils import DateConverter_Mat2Py
+from ..custom_dateutils import DateConverter_Mat2Py
 
 def ReadMatfile(p_mfile):
     'Parse .mat file to nested python dictionaries'

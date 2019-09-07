@@ -9,7 +9,7 @@ import os.path as op
 import netCDF4 as nc
 
 # tk
-from teslakit.io.matlab import ReadMatfile
+from ..io.matlab import ReadMatfile
 
 
 def description(p):
