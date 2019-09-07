@@ -10,3 +10,5 @@ from . import storms
 from . import tides
 from . import util
 
+from . import custom_colors
+
