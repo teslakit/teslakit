@@ -17,11 +17,11 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
 
 # tk
-from teslakit.util.terminal import printProgressBar as pbar
-from teslakit.statistical import Empirical_ICDF
-from teslakit.waves import TWL
-from teslakit.extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
-from teslakit.plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
+from .util.terminal import printProgressBar as pbar
+from .statistical import Empirical_ICDF
+from .waves import TWL
+from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
+from .plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
 
 # TODO: CREAR LOG
