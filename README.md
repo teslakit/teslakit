@@ -51,7 +51,6 @@ python setup.py test
 ## Handling a Teslakit Project 
 - - -
 
-TODO: user tutorial 
 
 ## Contributors
 
