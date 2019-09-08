@@ -51,6 +51,10 @@ python setup.py test
 ## Handling a Teslakit Project 
 - - -
 
+Jupyter notebook files can be found at [notebooks](scripts/notebooks)
+
+start with [00_Set_Database.ipynb](scripts/notebooks/00_Set_Database.ipynb)
+
 
 ## Contributors
 
