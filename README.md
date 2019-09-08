@@ -15,7 +15,7 @@ Python library for statistical calculations and methodologies for handling globa
 ## Install 
 - - -
 
-Source code is currently hosted on Bitbucket at: https://bitbucket.org/ripolln/teslakit/src/master/
+Source code is currently hosted on Bitbucket at: https://gitlab.com/ripollcab/teslakit/tree/master 
 
 ### Installing from sources
 
