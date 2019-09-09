@@ -305,20 +305,30 @@ def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
     # number of terms
     n_sps = terms_matrix.shape[1]
 
+    # custom fig size
+    fsy = n_sps * 2
+
     # plot figure
-    fig, ax_list = plt.subplots(n_sps,1, figsize=(16,14))
+    fig, ax_list = plt.subplots(n_sps, 1, sharex=True, figsize=(18,fsy))
 
     x = terms_dates
     for i in range(n_sps):
         y = terms_matrix[:,i]
         n = terms_names[i]
         ax = ax_list[i]
-        ax.plot(x, y, 'b')
-        ax.set_title(n, fontweight='bold')
+        ax.plot(x, y, '.b')
+        ax.set_title(n, loc='left', fontweight='bold', fontsize=10)
         ax.set_xlim(x[0], x[-1])
+        ax.set_ylim(-1, 1)
+        ax.grid(True, which='both')
 
-    # adjust layout
-    plt.tight_layout()
+        if n=='intercept':
+            ax.set_ylim(0, 2)
+
+    # date label
+    fig.text(0.5, 0.04, 'date (y)', ha='center', fontweight='bold')
+    fig.text(0.04, 0.5, 'value (-)', va='center', rotation='vertical',
+             fontweight='bold')
 
     # show / export
     if not p_export:
