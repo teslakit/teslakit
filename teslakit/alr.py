@@ -18,13 +18,20 @@ import statsmodels.discrete.discrete_model as sm
 import scipy.stats as stat
 import xarray as xr
 
+# fix tqdm for notebook 
+from tqdm import tqdm as tqdm_base
+def tqdm(*args, **kwargs):
+    if hasattr(tqdm_base, '_instances'):
+        for instance in list(tqdm_base._instances):
+            tqdm_base._decr_instances(instance)
+    return tqdm_base(*args, **kwargs)
+
 # fix library
 from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 # tk
 from .custom_dateutils import npdt64todatetime as npdt2dt
-from .util.terminal import printProgressBar as pb
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear, \
 Plot_Compare_Validation
@@ -83,8 +90,6 @@ class ALR_WRP(object):
 
         # save bmus series used for fitting
         self.SaveBmus_Fit()
-
-        # TODO: GUARDAR FITTING TERMS Y CLUSTER SIZE
 
     def SetFittingTerms(self, d_terms_settings):
         'Set terms settings that will be used for fitting'
@@ -342,7 +347,7 @@ class ALR_WRP(object):
         self.SaveModel()
 
     def SaveModel(self):
-        'Saves fitted model for future use'
+        'Saves fitted model (and fitting terms) for future use'
 
         if not op.isdir(self.p_base):
             os.makedirs(self.p_base)
@@ -352,18 +357,18 @@ class ALR_WRP(object):
 
         # save terms fit
         pickle.dump(
-            [self.terms_fit, self.terms_fit_names],
+            [self.d_terms_settings, self.terms_fit, self.terms_fit_names],
             open(self.p_save_terms_fit, 'wb')
         )
 
     def LoadModel(self):
-        'Load fitted model'
+        'Load fitted model (and fitting terms)'
 
         # load model
         self.model = pickle.load(open(self.p_save_model, 'rb'))
 
         # load terms fit
-        self.terms_fit, self.terms_fit_names = pickle.load(
+        self.d_terms_settings, self.terms_fit, self.terms_fit_names = pickle.load(
             open(self.p_save_terms_fit, 'rb')
         )
 
@@ -460,8 +465,7 @@ class ALR_WRP(object):
         # Plot terms
         Plot_Terms(term_mx, term_ds, term_ns, p_export)
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
-                 progress_bar=False):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -496,6 +500,13 @@ class ALR_WRP(object):
         print("\nLaunching {0} simulations...\n".format(num_sims))
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
+
+            # new progress bar 
+            pbar = tqdm(
+                total=len(time_yfrac)-mk_order,
+                file=sys.stdout,
+                desc = 'Sim. Num. {0:03d}'.format(n+1)
+            )
 
             evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
@@ -538,14 +549,12 @@ class ALR_WRP(object):
                 probTrans = np.cumsum(prob[-1,:])
                 evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
 
-                # progress bar
-                if progress_bar:
-                    pb(i + 1, len(time_yfrac)-mk_order,
-                        prefix = 'Sim. Num. {0:03d}'.format(n+1),
-                        suffix = 'Complete', length = 50)
+                # update progress bar 
+                pbar.update(1)
 
             evbmus_sims[:,n] = evbmus
 
+            pbar.close()
 
             # Probabilities in the nsims simulations
             evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
