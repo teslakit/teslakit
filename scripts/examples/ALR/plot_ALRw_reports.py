@@ -29,16 +29,16 @@ db = Database(p_data)
 db.SetSite('TESTNEW')
 
 # alr test
+p_alrw = db.paths.site.SST.alrw
 #p_alrw = db.paths.site.MJO.alrw
-#p_alrw = db.paths.site.SST.alrw
-p_alrw = db.paths.site.ESTELA.alrw
+#p_alrw = db.paths.site.ESTELA.alrw
 
 # ALR wrap
 ALRW = ALR_WRP(p_alrw)
 
 # show model report 
-#ALRW.Report_Fit()
+ALRW.Report_Fit(terms_fit=True, summary=True, export=True)
 
 # show simulation report
-ALRW.Report_Sim()
+#ALRW.Report_Sim()
 
