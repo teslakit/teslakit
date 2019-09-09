@@ -134,7 +134,11 @@ def Plot_Params(params, term_names, p_export=None):
         plt.close()
 
 def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1):
-    'Calculates and returns matrix for stacked bar plotting'
+    '''
+    Calculates and returns matrix for stacked bar plotting
+
+    only works for daily bmus_dates
+    '''
     # TODO: doc: bmus_values has to be 2D (time, nsim)
 
     # TODO BMUS_DATES HAS TO BE DATETIME 
@@ -328,7 +332,19 @@ def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
                           bmus_values_hist, bmus_dates_hist,
                           n_sim = 1, p_export=None):
-    'Plot simulated - historical bmus comparison in a perpetual year'
+    '''
+    Plot simulated - historical bmus comparison in a perpetual year
+    bmus_dates requires 1 day resolution time
+    '''
+
+    # check dates have 1 day time resolution 
+    td_h = bmus_dates_hist[1] - bmus_dates_hist[0]
+    td_s = bmus_dates_sim[1] - bmus_dates_sim[0]
+    if td_h.days != 1 or td_s.days != 1:
+        print('PerpetualYear bmus comparison skipped.')
+        print('timedelta (days): Hist - {0}, Sim - {1})'.format(
+            td_h.days, td_s.days))
+        return
 
     # get cluster colors for stacked bar plot
     np_colors_int = GetClusterColors(num_clusters)
@@ -530,4 +546,7 @@ def Plot_Compare_Covariate(num_clusters,
     else:
         fig.savefig(p_export, dpi=128)
         plt.close()
+
+def Plot_Compare_Validation():
+    return
 
