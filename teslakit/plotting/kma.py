@@ -282,16 +282,27 @@ def Plot_Compare_WTs_hist(d_wts_fit, d_wts_rnd, p_export=None):
         fig, axs = plt.subplots(
             ncols=2, nrows=3,
             figsize=(_faspect*_fsize, _fsize),
+            sharex='row', sharey='row',
         )
         fig.suptitle(k, fontsize=10, fontweight='bold')
 
         # compare histograms
         axs[0,0].hist(PC1_fit, nb, density=True, label='PC1_fit')
         axs[0,1].hist(PC1_rnd, nb, density=True, label='PC1_rnd')
+        axs[0,0].set_ylabel('PC1', rotation=90)
         axs[1,0].hist(PC2_fit, nb, density=True, label='PC2_fit')
         axs[1,1].hist(PC2_rnd, nb, density=True, label='PC2_rnd')
+        axs[1,0].set_ylabel('PC2', rotation=90)
         axs[2,0].hist(PC3_fit, nb, density=True, label='PC3_fit')
         axs[2,1].hist(PC3_rnd, nb, density=True, label='PC3_rnd')
+        axs[2,0].set_ylabel('PC3', rotation=90)
+        axs[2,0].set_xlabel('Historical')
+        axs[2,1].set_xlabel('Simulation')
+
+        # gridlines
+        for ax in [axs[0,0], axs[0,1], axs[1,0], axs[1,1], axs[2,0], axs[2,1]]:
+            ax.grid(True, which='both', axis='both',
+                    linestyle='--', color='grey')
 
         # show / export
         if not p_export:
