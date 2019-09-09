@@ -315,8 +315,9 @@ class ALR_WRP(object):
                 method='lbfgs',
                 maxiter=max_iter,
                 retall=True,
-                full_output=1,
-                disp=2,
+                full_output=True,
+                disp=True,
+                warn_convergence=True,
             )
 
         elif self.model_library == 'sklearn':
