@@ -26,7 +26,8 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 from .custom_dateutils import npdt64todatetime as npdt2dt
 from .util.terminal import printProgressBar as pb
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
-from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear
+from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear, \
+Plot_Compare_Validation
 
 class ALR_WRP(object):
     'AutoRegressive Logistic methodology Wrapper'
@@ -46,7 +47,6 @@ class ALR_WRP(object):
         self.mk_order = 0
         self.cov_names = []
 
-
         # ALR model core
         self.model = None
 
@@ -56,10 +56,15 @@ class ALR_WRP(object):
         # paths
         self.p_base = p_base
 
+        # alr model and terms_fit
         self.p_save_model = op.join(p_base, 'model.sav')
+        self.p_save_terms_fit = op.join(p_base, 'terms.sav')
+
+        # store fit and simulated bmus
         self.p_save_fit_xds = op.join(p_base, 'xds_input.nc')
         self.p_save_sim_xds = op.join(p_base, 'xds_output.nc')
 
+        # export folders for figures
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
 
@@ -314,7 +319,6 @@ class ALR_WRP(object):
                 disp=2,
             )
 
-
         elif self.model_library == 'sklearn':
 
             # use sklearn logistig regression
@@ -342,14 +346,25 @@ class ALR_WRP(object):
         if not op.isdir(self.p_base):
             os.makedirs(self.p_base)
 
+        # save model
         pickle.dump(self.model, open(self.p_save_model, 'wb'))
-        print('ALR model saved at {0}'.format(self.p_save_model))
+
+        # save terms fit
+        pickle.dump(
+            [self.terms_fit, self.terms_fit_names],
+            open(self.p_save_terms_fit, 'wb')
+        )
 
     def LoadModel(self):
         'Load fitted model'
 
+        # load model
         self.model = pickle.load(open(self.p_save_model, 'rb'))
-        print('ALR model loaded from {0}'.format(self.p_save_model))
+
+        # load terms fit
+        self.terms_fit, self.terms_fit_names = pickle.load(
+            open(self.p_save_terms_fit, 'rb')
+        )
 
     def SaveBmus_Fit(self):
         'Saves bmus - fit for future use'
@@ -359,15 +374,14 @@ class ALR_WRP(object):
 
         self.xds_bmus_fit.attrs['cluster_size'] = self.cluster_size
         self.xds_bmus_fit.to_netcdf(self.p_save_fit_xds, 'w')
-        print('ALR bmus (fit) saved at {0}'.format(self.p_save_fit_xds))
 
     def LoadBmus_Fit(self):
         'Load bmus - fit'
 
-        self.xds_bmus_sim =  xr.open_dataset(self.p_save_fit_xds)
-        self.cluster_size = self.xds_bmus_sim.attrs['cluster_size']
+        self.xds_bmus_fit =  xr.open_dataset(self.p_save_fit_xds)
+        self.cluster_size = self.xds_bmus_fit.attrs['cluster_size']
 
-        return self.xds_bmus_sim
+        return self.xds_bmus_fit
 
     def SaveBmus_Sim(self):
         'Saves bmus - sim for future use'
@@ -376,64 +390,62 @@ class ALR_WRP(object):
             os.makedirs(self.p_base)
 
         self.xds_bmus_sim.to_netcdf(self.p_save_sim_xds, 'w')
-        print('ALR bmus (sim) saved at {0}'.format(self.p_save_sim_xds))
 
     def LoadBmus_Sim(self):
         'Load bmus - sim'
 
         return xr.open_dataset(self.p_save_sim_xds)
 
-    def Report_Fit(self, export=False):
+    def Report_Fit(self, terms_fit=False, summary=False, export=False):
         'Report containing model fitting info'
         # TODO: estudiar si da error al coger pval y params
 
         # load model
         self.LoadModel()
 
+        # get data 
+        pval_df = self.model.pvalues.transpose()
+        params_df = self.model.params.transpose()
+        name_terms = pval_df.columns.tolist()
+
+        # handle export paths 
+        p_save = self.p_report_fit
+        p_rep_pval = None
+        p_rep_pars = None
+        p_rep_trms = None
+        p_summ = None
         if export:
-
-            # report folder
-            p_save = self.p_report_fit
-            if not op.isdir(p_save):
-                os.mkdir(p_save)
-
-            # get data 
-            pval_df = self.model.pvalues.transpose()
-            params_df = self.model.params.transpose()
-            name_terms = pval_df.columns.tolist()
-            summ = self.model.summary()
-
-            # plot p-values
-            p_plot = op.join(p_save, 'pval.png')
-            Plot_PValues(pval_df.values, name_terms, p_plot)
-
-            # plot parameters
-            p_plot = op.join(p_save, 'params.png')
-            Plot_Params(params_df.values, name_terms, p_plot)
-
-            # write summary
+            if not op.isdir(p_save): os.mkdir(p_save)
+            p_rep_pval = op.join(p_save, 'pval.png')
+            p_rep_pars = op.join(p_save, 'params.png')
+            p_rep_trms = op.join(p_save, 'terms_fit.png')
             p_summ = op.join(p_save, 'summary.txt')
-            with open(p_summ, 'w') as fW:
-                fW.write(summ.as_text())
 
-            # plot terms used for fitting
-            self.Report_Terms_Fit()
 
-        else:
+        # plot p-values
+        Plot_PValues(pval_df.values, name_terms, p_rep_pval)
 
-            # get data 
-            pval_df = self.model.pvalues.transpose()
-            params_df = self.model.params.transpose()
-            name_terms = pval_df.columns.tolist()
+        # plot parameters
+        Plot_Params(params_df.values, name_terms, p_rep_pars)
 
-            # plot p-values
-            Plot_PValues(pval_df.values, name_terms)
+        # plot terms used for fitting
+        if terms_fit:
+            self.Report_Terms_Fit(p_rep_trms)
 
-            # plot parameters
-            Plot_Params(params_df.values, name_terms)
+        # write summary
+        if summary:
+            summ = self.model.summary()
+            if p_summ == None:
+                print(summ.as_text())
+            else:
+                with open(p_summ, 'w') as fW:
+                    fW.write(summ.as_text())
 
-    def Report_Terms_Fit(self):
+    def Report_Terms_Fit(self, p_export=None):
         'Plot terms used for model fitting'
+
+        # load bmus fit
+        self.LoadBmus_Fit()
 
         # get data for plotting
         term_mx = np.concatenate(list(self.terms_fit.values()), axis=1)
@@ -441,8 +453,7 @@ class ALR_WRP(object):
         term_ns = self.terms_fit_names
 
         # Plot terms
-        p_terms_png = op.join(self.p_report_fit, 'terms_fit.png')
-        Plot_Terms(term_mx, term_ds, term_ns, p_terms_png)
+        Plot_Terms(term_mx, term_ds, term_ns, p_export)
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
                  progress_bar=False):
@@ -477,11 +488,10 @@ class ALR_WRP(object):
         d_terms_settings_sim = self.d_terms_settings.copy()
 
         # start simulations
-        print("\nLaunching simulations...\n")
+        print("\nLaunching {0} simulations...\n".format(num_sims))
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
 
-            #print('Sim. Num. {0}'.format(n+1))
             evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
 
@@ -566,12 +576,8 @@ class ALR_WRP(object):
         xds_ALR_fit = self.LoadBmus_Fit()
         xds_ALR_sim = self.LoadBmus_Sim()
 
-        # TODO: load covariates if needed for ploting
-
         # report folder and files
         p_save = self.p_report_sim
-        if not op.isdir(p_save):
-            os.mkdir(p_save)
 
         # get data 
         cluster_size = self.cluster_size
@@ -581,21 +587,32 @@ class ALR_WRP(object):
         bmus_dates_hist = [npdt2dt(t) for t in xds_ALR_fit.time.values]
         num_sims = bmus_values_sim.shape[1]
 
-        # Plot Perpetual Year (daily) - bmus wt
-        p_rep_PP = None
+        # handle export paths 
+        p_save = self.p_report_sim
+        p_rep_PY = None
+        p_rep_VL = None
         if export:
-            p_rep_PP = op.join(p_save, 'perp_year.png')
+            if not op.isdir(p_save): os.mkdir(p_save)
+            p_rep_PY = op.join(p_save, 'PerpetualYear.png')
+            p_rep_VL = op.join(p_save, 'Validation.png')
 
+
+        # Plot Perpetual Year (daily) - bmus wt
         Plot_Compare_PerpYear(
             cluster_size,
             bmus_values_sim, bmus_dates_sim,
             bmus_values_hist, bmus_dates_hist,
-            n_sim = num_sims, p_export = p_rep_PP
+            n_sim = num_sims, p_export = p_rep_PY
         )
 
-        # TODO: Plot Perpetual Year (monthly)
+        # TODO
+        Plot_Compare_Validation(
+        )
+
         return
 
+        # TODO: Plot Perpetual Year (monthly)
+        # TODO: load covariates if needed for ploting
         # TODO: activate this  
         if self.d_terms_settings['covariates'][0]:
 
