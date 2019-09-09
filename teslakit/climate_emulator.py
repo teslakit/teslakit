@@ -16,8 +16,15 @@ from scipy.stats import  genextreme, gumbel_l, spearmanr, norm
 from statsmodels.distributions.empirical_distribution import ECDF
 from numpy.random import choice, multivariate_normal, randint, rand
 
+# fix tqdm for notebook 
+from tqdm import tqdm as tqdm_base
+def tqdm(*args, **kwargs):
+    if hasattr(tqdm_base, '_instances'):
+        for instance in list(tqdm_base._instances):
+            tqdm_base._decr_instances(instance)
+    return tqdm_base(*args, **kwargs)
+
 # tk
-from .util.terminal import printProgressBar as pbar
 from .statistical import Empirical_ICDF
 from .waves import TWL
 from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
@@ -695,8 +702,7 @@ class Climate_Emulator(object):
         return ppf_VV
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
-                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time,
-                      progress_bar=True):
+                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -730,6 +736,12 @@ class Climate_Emulator(object):
 
         # Simulate
         print("\nLaunching simulations...\n")
+
+        # new progress bar 
+        pbar = tqdm(
+            total=len(DWT_sim),
+            desc = 'C.E: Sim. Waves'
+        )
 
         sims_out = np.zeros((len(DWT_sim), 9))
         c = 0
@@ -810,10 +822,9 @@ class Climate_Emulator(object):
                 c+=1
 
                 # progress bar
-                if progress_bar:
-                    pbar(c, len(DWT_sim),
-                       prefix = 'C.E: Sim. Waves',
-                       suffix = 'Complete', length = 50)
+                pbar.update(1)
+
+        pbar.close()
 
         # dataset for storing output
         xds_wvs_sim = xr.Dataset(
@@ -829,7 +840,7 @@ class Climate_Emulator(object):
 
     def GenerateTCs(self, n_clusters, DWT, DWT_time,
                     TCs_params, TCs_simulation, prob_TCs, MU_WT, TAU_WT,
-                    xds_wvs_sim, progress_bar=True):
+                    xds_wvs_sim):
         '''
         Climate Emulator DWTs TCs simulation
 
@@ -870,6 +881,12 @@ class Climate_Emulator(object):
         sim_wvs = np.column_stack([
             xds_wvs_sim[vn].values[:] for vn in wvs_fams_vars
         ])
+
+        # new progress bar 
+        pbar = tqdm(
+            total=len(DWT_sim),
+            desc = 'C.E: Sim. TCs'
+        )
 
         # Simulate TCs (mu, ss, tau)
         sims_out = np.zeros((len(DWT_sim), 3))
@@ -952,10 +969,9 @@ class Climate_Emulator(object):
                 c+=1
 
                 # progress bar
-                #if progress_bar:
-                #    pbar(c, len(DWT_sim),
-                #       prefix = 'C.E: Sim. TCs',
-                #       suffix = 'Complete', length = 50)
+                pbar.update(1)
+
+        pbar.close()
 
         # update waves simulation
         xds_WVS_sim_updated = xr.Dataset(
