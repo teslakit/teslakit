@@ -398,15 +398,19 @@ class ALR_WRP(object):
 
     def Report_Fit(self, terms_fit=False, summary=False, export=False):
         'Report containing model fitting info'
-        # TODO: estudiar si da error al coger pval y params
 
         # load model
         self.LoadModel()
 
         # get data 
-        pval_df = self.model.pvalues.transpose()
-        params_df = self.model.params.transpose()
-        name_terms = pval_df.columns.tolist()
+        try:
+            pval_df = self.model.pvalues.transpose()
+            params_df = self.model.params.transpose()
+            name_terms = pval_df.columns.tolist()
+        except:
+            # TODO: no converge?
+            print('warning - statsmodels MNLogit could not provide p-values')
+            return
 
         # handle export paths 
         p_save = self.p_report_fit
