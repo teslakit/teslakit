@@ -562,6 +562,7 @@ class ALR_WRP(object):
                 for j in range(self.cluster_size):
                     evbmus_prob[i, j] = len(np.argwhere(evbmus_sims[i,:]==j+1))/float(num_sims)
 
+        print()  # white line after all progress bars
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
         # return ALR simulation data in a xr.Dataset
