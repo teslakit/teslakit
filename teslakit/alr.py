@@ -57,7 +57,7 @@ class ALR_WRP(object):
         # ALR model core
         self.model = None
 
-        # config
+        # config (only tested with statsmodels library)
         self.model_library = 'statsmodels'  # sklearn / statsmodels
 
         # paths
@@ -501,7 +501,7 @@ class ALR_WRP(object):
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
 
-            # new progress bar 
+            # progress bar 
             pbar = tqdm(
                 total=len(time_yfrac)-mk_order,
                 file=sys.stdout,
