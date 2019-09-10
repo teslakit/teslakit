@@ -38,12 +38,13 @@ def GetClusterColors(num_clusters):
 
     return np_colors_rgb
 
-def GenOneYearDaily(yy=1981):
+def GenOneYearDaily(yy=1981, month_ini=1):
     'returns one generic year in a list of datetimes. Daily resolution'
 
-    dp1 = datetime(yy,1,1)
-    dp2 = datetime(yy,12,31)
-    return [dp1 + timedelta(days=i) for i in range((dp2-dp1).days+1)]
+    dp1 = datetime(yy, month_ini, 1)
+    dp2 = dp1+timedelta(days=365)
+
+    return [dp1 + timedelta(days=i) for i in range((dp2-dp1).days)]
 
 def Plot_PValues(p_values, term_names, p_export=None):
     'Plot ARL/BMUS p-values'
@@ -133,21 +134,19 @@ def Plot_Params(params, term_names, p_export=None):
         fig.savefig(p_export, dpi=128)
         plt.close()
 
-def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1):
+def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1,
+                            month_ini=1):
     '''
     Calculates and returns matrix for stacked bar plotting
 
-    only works for daily bmus_dates
+    bmus_dates - datetime.datetime (only works if daily resolution)
     '''
-    # TODO: doc: bmus_values has to be 2D (time, nsim)
-
-    # TODO BMUS_DATES HAS TO BE DATETIME 
+    # TODO: bmus_values has to be 2D (time, nsim)?
 
     # generate perpetual year list
-    list_pyear = GenOneYearDaily()
+    list_pyear = GenOneYearDaily(month_ini=month_ini)
 
     # generate aux arrays
-    # TODO: TESTEAR TIEMPO COMPUTACION
     m_plot = np.zeros((num_clusters, len(list_pyear))) * np.nan
     bmus_dates_months = np.array([d.month for d in bmus_dates])
     bmus_dates_days = np.array([d.day for d in bmus_dates])
@@ -161,7 +160,7 @@ def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1):
         b = b.flatten()
 
         for j in range(num_clusters):
-            _, bb = np.where([(j+1 == b)])
+            _, bb = np.where([(j+1 == b)])  # j+1 starts at 1 bmus value!
 
             m_plot[j,i] = float(len(bb)/float(num_sim))/len(s)
 
@@ -212,6 +211,8 @@ def Generate_Covariate_Matrix(
 def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
                   p_export=None):
     'Plots ARL bmus simulated in a perpetual_year stacked bar chart'
+
+    # TODO: UPDATE
 
 
     # get cluster colors for stacked bar plot
@@ -341,11 +342,16 @@ def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
 def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
                           bmus_values_hist, bmus_dates_hist,
-                          n_sim = 1, p_export=None):
+                          n_sim = 1, month_ini=1, p_export=None):
     '''
     Plot simulated - historical bmus comparison in a perpetual year
+
     bmus_dates requires 1 day resolution time
+    bmus_values set min value has to be 1 (not 0)
     '''
+
+    # TODO: REFACTOR
+    # TODO: months missing from x_axis?
 
     # check dates have 1 day time resolution 
     td_h = bmus_dates_hist[1] - bmus_dates_hist[0]
@@ -361,15 +367,17 @@ def Plot_Compare_PerpYear(num_clusters,
 
     # generate plot matrix
     m_plot_hist = Generate_PerpYear_Matrix(
-        num_clusters, bmus_values_hist, bmus_dates_hist, num_sim=1)
+        num_clusters, bmus_values_hist, bmus_dates_hist,
+        num_sim=1, month_ini=month_ini)
     m_plot_sim = Generate_PerpYear_Matrix(
-        num_clusters, bmus_values_sim, bmus_dates_sim, num_sim=n_sim)
+        num_clusters, bmus_values_sim, bmus_dates_sim,
+        num_sim=n_sim, month_ini=month_ini)
 
     # plot figure
     fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(16,9))
 
     # use dateticks
-    x_val = GenOneYearDaily()
+    x_val = GenOneYearDaily(month_ini=month_ini)
 
     # plot sim
     bottom_val = np.zeros(m_plot_sim[1,:].shape)
