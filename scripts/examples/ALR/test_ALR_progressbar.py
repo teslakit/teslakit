@@ -49,5 +49,5 @@ d2_sim = np.datetime64('2050-01-01').astype(datetime)
 dates_sim = [d1_sim + timedelta(days=i) for i in range((d2_sim-d1_sim).days+1)]
 
 # launch simulation and check progress_bar behaviour
-xds_alr = ALRW.Simulate(num_sims, dates_sim, progress_bar = True)
+xds_alr = ALRW.Simulate(num_sims, dates_sim)
 
