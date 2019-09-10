@@ -485,10 +485,17 @@ class ALR_WRP(object):
         mk_order = self.mk_order
 
         # print some info
-        print('ALR model fit   : {0} --- {1}'.format(
-            str(time_fit[0])[:10], str(time_fit[-1])[:10]))
-        print('ALR model sim   : {0} --- {1}'.format(
-            time_sim[0], time_sim[-1]))
+        tf0 = time_fit[0]
+        tf1 = time_fit[-1]
+        ts0 = time_sim[0]
+        ts1 = time_sim[-1]
+
+        if isinstance(tf0, np.datetime64): tf0 = str(tf0)[:10]
+        if isinstance(tf1, np.datetime64): tf1 = str(tf0)[:10]
+        if isinstance(ts0, np.datetime64): ts0 = str(tf0)[:10]
+        if isinstance(ts1, np.datetime64): ts1 = str(tf0)[:10]
+        print('ALR model fit   : {0} --- {1}'.format(tf0, tf1))
+        print('ALR model sim   : {0} --- {1}'.format(ts0, ts1))
 
         # generate time yearly fractional array
         time_yfrac = self.GetFracYears(time_sim)
@@ -582,9 +589,11 @@ class ALR_WRP(object):
 
         return xds_out
 
-    def Report_Sim(self, export=False): #xds_cov_sim=None
+    def Report_Sim(self, py_month_ini=1, export=False): #xds_cov_sim=None
         '''
         Report that Compare fitting to simulated bmus
+
+        py_month_ini  - start month for PerpetualYear bmus comparison
         '''
 
         # load fit and sim bmus
@@ -611,13 +620,13 @@ class ALR_WRP(object):
             p_rep_PY = op.join(p_save, 'PerpetualYear.png')
             p_rep_VL = op.join(p_save, 'Validation.png')
 
-
         # Plot Perpetual Year (daily) - bmus wt
         Plot_Compare_PerpYear(
             cluster_size,
             bmus_values_sim, bmus_dates_sim,
             bmus_values_hist, bmus_dates_hist,
-            n_sim = num_sims, p_export = p_rep_PY
+            n_sim = num_sims, month_ini=py_month_ini,
+            p_export = p_rep_PY
         )
 
         # TODO
