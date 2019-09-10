@@ -274,7 +274,7 @@ class Predictor(object):
         for sd, sc in zip(storm_dates, storm_categories):
             pos_date = np.where(kma_dates==sd)[0]
             if pos_date:
-                bmus_storms[pos_date[0]] = n_clusters + sc + 1
+                bmus_storms[pos_date[0]] = n_clusters + sc
 
         # copy kma and add bmus_storms
         self.KMA['sorted_bmus_storms'] = (('n_components',), bmus_storms)
