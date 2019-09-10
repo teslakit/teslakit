@@ -734,15 +734,13 @@ class Climate_Emulator(object):
         DWT_sim = DWT[ix_ch]
         DWT_time_sim = DWT_time[ix_ch]
 
-        # Simulate
-        print("\nLaunching simulations...\n")
-
         # new progress bar 
         pbar = tqdm(
             total=len(DWT_sim),
             desc = 'C.E: Sim. Waves'
         )
 
+        # Simulate
         sims_out = np.zeros((len(DWT_sim), 9))
         c = 0
         while c < len(DWT_sim):
@@ -825,7 +823,6 @@ class Climate_Emulator(object):
                 pbar.update(1)
 
         pbar.close()
-        print()
 
         # dataset for storing output
         xds_wvs_sim = xr.Dataset(
@@ -973,7 +970,6 @@ class Climate_Emulator(object):
                 pbar.update(1)
 
         pbar.close()
-        print()
 
         # update waves simulation
         xds_WVS_sim_updated = xr.Dataset(
