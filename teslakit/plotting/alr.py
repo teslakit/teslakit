@@ -64,8 +64,8 @@ def Plot_PValues(p_values, term_names, p_export=None):
         for j in range(p_values.shape[0]):
             v = p_values[j,i]
             if v<=0.1:
-                ax.text(i+0.5, j+0.5, '{0:.4f}'.format(v),
-                        va='center', ha='center', size=6, fontweight='bold')
+                ax.text(i+0.5, j+0.5, '{0:.2f}'.format(v),
+                        va='center', ha='center', size=6)
 
     # axis
     ax.set_title('p-value', fontweight='bold')
