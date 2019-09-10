@@ -486,7 +486,7 @@ class ALR_WRP(object):
 
         # print some info
         print('ALR model fit   : {0} --- {1}'.format(
-            time_fit[0], time_fit[-1]))
+            str(time_fit[0])[:10], str(time_fit[-1])[:10]))
         print('ALR model sim   : {0} --- {1}'.format(
             time_sim[0], time_sim[-1]))
 
