@@ -275,7 +275,8 @@ def KMA_regression_guided(
     keep_iter = True
     count_iter = 0
     while keep_iter:
-        kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(data_a)
+        # n_init: number of times KMeans runs with different centroids seeds
+        kma = KMeans(n_clusters=num_clusters, n_init=100).fit(data_a)
 
         # check minimun group_size
         group_keys, group_size = np.unique(kma.labels_, return_counts=True)
