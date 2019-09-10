@@ -12,34 +12,36 @@ import xarray as xr
 
 # DEV: override installed teslakit
 import sys
-sys.path.insert(0,'../../../')
+sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 
 # teslakit
-from teslakit.project_site import PathControl
-from teslakit.io.matlab import ReadMatfile, ReadGowMat
-from teslakit.kma import KMA_regression_guided
-from teslakit.kma import SimpleMultivariateRegressionModel as SMRM
+from teslakit.database import Database
+from teslakit.estela import Predictor
+
+# --------------------------------------
+# Teslakit database
+
+p_data = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
+db = Database(p_data)
+
+# set site
+db.SetSite('TESTNEW')
 
 
 # --------------------------------------
-# Test data storage
+# load SLP ESTELA predictor and waves data 
 
-pc = PathControl()
-p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ESTELA', 'test_estela_PCA')
+pred = Predictor(db.paths.site.ESTELA.pred_slp)
+pred.Load()
 
-# input
-p_PCA = op.join(p_test, 'xds_SLP_PCA.nc')
-p_WAVES = op.join(p_test, 'gow2_062_ 9.50_167.25.mat')
+xds_WAVES = db.Load_ESTELA_waves()
 
-# output
-p_KMA_save = op.join(p_test, 'xds_test_KMArg.nc')  # to save test results
+# KMA REGRESSION GUIDED parameters
+kma_date_ini = '1979-01-22'
+kma_date_end = '2011-01-22'
+num_clusters = 36
+kmarg_alpha = 0.36
 
-
-# --------------------------------------
-# load PCA and GOW WAVES data
-xds_PCA = xr.open_dataset(p_PCA)
-xds_WAVES = ReadGowMat(p_WAVES)
 
 # calculate Fe
 hs = xds_WAVES.hs
@@ -49,24 +51,14 @@ xds_WAVES.update({
     'Fe':(('time',), Fe)
 })
 
-# select time window and do data daily mean
+# select time window and calculate daily mean
 xds_WAVES = xds_WAVES.sel(
-    time=slice('1979-01-22','1980-12-31')
+    time = slice(kma_date_ini, kma_date_end)
 ).resample(time='1D').mean()
 
-
-# calculate regresion model between predictand and predictor
-name_vars = ['hs', 't02', 'Fe']
-xds_Yregres = SMRM(xds_PCA, xds_WAVES, name_vars)
-
-
-# classification: KMA regresion guided
-num_clusters = 36
-repres = 0.95
-alpha = 0.3
-xds_KMA = KMA_regression_guided(
-    xds_PCA, xds_Yregres, num_clusters, repres, alpha)
-xds_KMA.to_netcdf(p_KMA_save)
-
-print(xds_KMA)
+# calculate KMA RG
+pred.Calc_KMA_regressionguided(
+    num_clusters,
+    xds_WAVES, ['hs','t02','Fe'],
+    kmarg_alpha)
 
