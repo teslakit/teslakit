@@ -60,7 +60,7 @@ launch jupyter notebook
 jupyter notebook
 ```
 
-start with [00_Set_Database.ipynb](notebooks/nb_test/00_Set_Database.ipynb)
+start with [00_Set_Database.ipynb](notebooks/nb_KWAJALEIN/00_Set_Database.ipynb)
 
 
 ## Contributors
