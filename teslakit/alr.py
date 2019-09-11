@@ -31,10 +31,14 @@ from scipy import stats
 stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 # tk
+from .io.aux_nc import StoreBugXdset
 from .custom_dateutils import npdt64todatetime as npdt2dt
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear, \
 Plot_Compare_Validation
+
+# TODO: organize and refactor time types conversions
+# TODO: optimice operations (double save after sim, plot_compare_perpyear..)
 
 class ALR_WRP(object):
     'AutoRegressive Logistic methodology Wrapper'
@@ -484,16 +488,15 @@ class ALR_WRP(object):
         time_fit = self.xds_bmus_fit.time.values
         mk_order = self.mk_order
 
+        # times at datetime
+        if isinstance(time_sim[0], np.datetime64):
+            time_sim = [npdt2dt(t) for t in time_sim]
+
         # print some info
         tf0 = time_fit[0]
         tf1 = time_fit[-1]
         ts0 = time_sim[0]
         ts1 = time_sim[-1]
-
-        if isinstance(tf0, np.datetime64): tf0 = str(tf0)[:10]
-        if isinstance(tf1, np.datetime64): tf1 = str(tf0)[:10]
-        if isinstance(ts0, np.datetime64): ts0 = str(tf0)[:10]
-        if isinstance(ts1, np.datetime64): ts1 = str(tf0)[:10]
         print('ALR model fit   : {0} --- {1}'.format(tf0, tf1))
         print('ALR model sim   : {0} --- {1}'.format(ts0, ts1))
 
@@ -580,12 +583,12 @@ class ALR_WRP(object):
             },
 
             coords = {
-                'time' : [np.datetime64(d) for d in time_sim],
+                'time' : time_sim,
             },
         )
 
         # save output
-        xds_out.to_netcdf(self.p_save_sim_xds, 'w')
+        StoreBugXdset(xds_out, self.p_save_sim_xds)
 
         return xds_out
 
@@ -606,7 +609,8 @@ class ALR_WRP(object):
         # get data 
         cluster_size = self.cluster_size
         bmus_values_sim = xds_ALR_sim.evbmus_sims.values
-        bmus_dates_sim = [npdt2dt(t) for t in xds_ALR_sim.time.values]
+        #bmus_dates_sim = [npdt2dt(t) for t in xds_ALR_sim.time.values]
+        bmus_dates_sim = xds_ALR_sim.time.values[:]
         bmus_values_hist = np.reshape(xds_ALR_fit.bmus.values,[-1,1])
         bmus_dates_hist = [npdt2dt(t) for t in xds_ALR_fit.time.values]
         num_sims = bmus_values_sim.shape[1]
