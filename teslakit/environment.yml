@@ -1,0 +1,16 @@
+name: teslakit
+dependencies:
+  - jupyter
+  - numpy=1.17.2
+  - pandas=0.24.2
+  - sklearn
+  - statsmodels=0.10.1
+  - xarray=0.12.3
+  - tqdm=4.35.0
+  - cftime=1.0.3.4
+  - matplotlib=3.1.1
+  - prettytable=0.7.2
+  - netCDF4=1.5.2
+  - h5py=2.10.0
+  - git+https://github.com/moflaher/ttide_py
+
