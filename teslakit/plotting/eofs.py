@@ -17,8 +17,8 @@ from datetime import datetime, timedelta
 from ..custom_dateutils import xds2datetime
 
 # register matplotlib converters
-from pandas.plotting import register_matplotlib_converters
-register_matplotlib_converters()
+#from pandas.plotting import register_matplotlib_converters
+#register_matplotlib_converters()
 
 # fig aspect and size
 _faspect = (1+5**0.5)/2.0
