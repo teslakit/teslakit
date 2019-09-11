@@ -1,6 +1,6 @@
 # TESLA-KIT 
 
-Python library for statistical calculations and methodologies for handling global climate data.
+Teslakit is a Python3 library for statistical calculations and methodologies for handling global climate data.
 
 ## Main contents
 
@@ -8,6 +8,7 @@ Python library for statistical calculations and methodologies for handling globa
 ## Project Map
 
 ![picture](docs/img/map.svg)
+
 
 ## Documentation
 
@@ -19,41 +20,47 @@ Source code is currently hosted on Bitbucket at: https://gitlab.com/ripollcab/te
 
 ### Installing from sources
 
-Install requirements. Navigate to the base root of [teslakit](./) and execute:
+Navigate to the base root of [teslakit](./)
 
+Using a Python virtual environment is recommended
 
 ```
-# requests module
-pip install requests
+# install virtualenv package 
+python3 -m pip install virtualenv
 
-# default python libraries 
-pip install -r requirements/default.txt
+# create a new virtual environment for teslakit installation
+python3 -m virtualenv venv
 
-# custom python libraries 
-pip install -r requirements/extra.txt
+# now activate the virtual environment
+source venv/bin/activate
+```
 
-# optional libraries (used for map plots)
-pip install --user git+https://github.com/matplotlib/basemap.git
+Now install teslakit requirements
 
+```
+# install requirements 
+pip install -r requirements.txt
 ```
 
 Then install teslakit
 
 ```
 python setup.py install
-
-# run pytest integration
-python setup.py test
 ```
-
 
 
 ## Handling a Teslakit Project 
 - - -
 
-Jupyter notebook files can be found at [notebooks](scripts/notebooks)
+Jupyter notebook files can be found at [notebooks](notebooks/)
 
-start with [00_Set_Database.ipynb](scripts/notebooks/00_Set_Database.ipynb)
+launch jupyter notebook
+
+```
+jupyter notebook
+```
+
+start with [00_Set_Database.ipynb](notebooks/nb_test/00_Set_Database.ipynb)
 
 
 ## Contributors
