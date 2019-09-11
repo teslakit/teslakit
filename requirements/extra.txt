@@ -1,4 +1,0 @@
-Cython==0.29.10
-git+https://github.com/SciTools/cartopy
-git+https://github.com/moflaher/ttide_py
-
