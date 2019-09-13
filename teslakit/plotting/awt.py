@@ -5,6 +5,8 @@
 import os
 import os.path as op
 import itertools
+import calendar
+from datetime import datetime
 
 # pip
 import numpy as np
@@ -141,8 +143,6 @@ def axplot_PCs_3D_allWTs(ax, d_PCs, wt_colors, ttl='PCs'):
 def axplot_PC_hist(ax, pc_wt, color_wt, nb=30, ylab=None):
     'axes plot AWT singular PC histogram'
 
-    # TODO: remove color_wt?
-    #color_wt='dimgray'
     ax.hist(pc_wt, nb, density=True, color=color_wt)
 
     # gridlines and axis properties
@@ -153,9 +153,54 @@ def axplot_PC_hist(ax, pc_wt, color_wt, nb=30, ylab=None):
     if ylab:
         ax.set_ylabel(ylab, {'fontweight':'bold'}, labelpad=-3)
 
+def axplot_EOF_evolution(ax, years, EOF_evol):
+    'axes plot EOFs evolution'
+
+    # date axis locator
+    yloc5 = mdates.YearLocator(5)
+    yloc1 = mdates.YearLocator(1)
+    yfmt = mdates.DateFormatter('%Y')
+
+    # get years datetime
+    ys_dt = np.array([datetime(d,1,1) for d in years])
+
+    # plot EOF evolution 
+    ax.plot(
+        ys_dt, EOF_evol,
+        linestyle='-', color='black',
+    )
+
+    # configure axis
+    ax.set_xlim(ys_dt[0], ys_dt[-1])
+    ax.xaxis.set_major_locator(yloc5)
+    ax.xaxis.set_minor_locator(yloc1)
+    ax.xaxis.set_major_formatter(yfmt)
+    ax.grid(True, which='both', axis='x', linestyle='--', color='grey')
+    ax.tick_params(axis='both', which='major', labelsize=8)
+
+def axplot_EOF(ax, EOF_value, lon, ylbl, ttl):
+    'axes plot EOFs evolution'
+
+    # EOF pcolormesh 
+    ax.pcolormesh(
+        lon, range(12), np.transpose(EOF_value),
+        cmap='RdBu_r', shading='gouraud',
+        clim=2,
+    )
+
+    # axis and title
+    ax.set_yticklabels(ylbl)
+    ax.set_title(
+        ttl,
+        {'fontsize': 14, 'fontweight':'bold'}
+    )
+    ax.tick_params(axis='x', which='major', labelsize=8)
+    ax.tick_params(axis='y', which='major', labelsize=10)
+
 
 def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
-                                AWT_bmus, AWT_PCs_fit, AWT_PCs_rnd, AWT_color, p_export=None):
+                                AWT_bmus, AWT_PCs_fit, AWT_PCs_rnd, AWT_color,
+                                p_export=None):
 
     # figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
@@ -348,7 +393,7 @@ def Plot_AWTs_Dates(xds_AWT, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_AWT_PCs_3D(d_PCs_fit, d_PCs_rnd, p_export=None):
@@ -371,5 +416,80 @@ def Plot_AWT_PCs_3D(d_PCs_fit, d_PCs_rnd, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
+
+def Plot_EOFs_SST(xds_PCA, n_plot, p_export=None):
+    '''
+    Plot annual EOFs for 3D predictors
+
+    xds_PCA:
+        (n_components, n_components) PCs
+        (n_components, n_features) EOFs
+        (n_components, ) variance
+
+        (n_lon, ) pred_lon: predictor longitude values
+
+        attrs: y1, y2, m1, m2: PCA time parameters
+        method: latitude averaged
+
+    n_plot: number of EOFs plotted
+    '''
+
+    # PCA data
+    variance = xds_PCA['variance'].values
+    EOFs = np.transpose(xds_PCA['EOFs'].values)
+    PCs = np.transpose(xds_PCA['PCs'].values)
+
+    # PCA latavg metadata
+    y1 = xds_PCA.attrs['y1']
+    y2 = xds_PCA.attrs['y2']
+    m1 = xds_PCA.attrs['m1']
+    m2 = xds_PCA.attrs['m2']
+    lon = xds_PCA['pred_lon'].values
+
+    # mesh data
+    len_x = len(lon)
+
+    # time data
+    years = range(y1, y2+1)
+    l_months = [calendar.month_name[x] for x in range(1,13)]
+    ylbl = l_months[m1-1:] + l_months[:m2]
+
+    # percentage of variance each field explains
+    n_percent = variance / np.sum(variance)
+
+    for it in range(n_plot):
+
+        # plot figure
+        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+        # layout
+        gs = gridspec.GridSpec(4, 4, wspace=0.10, hspace=0.2)
+        ax_EOF = plt.subplot(gs[:3, :])
+        ax_evol = plt.subplot(gs[3, :])
+
+        # map of the spatial field
+        spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
+
+        # reshape from vector to matrix with separated months
+        C = np.reshape(spatial_fields[:len_x*12], (12, len_x)).transpose()
+
+        # EOF pcolormesh
+        ttl = 'EOF #{0}  ---  {1:.2f}%'.format(it+1, n_percent[it]*100)
+        axplot_EOF(ax_EOF, C, lon, ylbl, ttl)
+
+        # time series EOF evolution
+        evol =  PCs[it,:]/np.sqrt(variance[it])
+        axplot_EOF_evolution(ax_evol, years, evol)
+
+        # show / export
+        if not p_export:
+            plt.show()
+
+        else:
+            if not op.isdir(p_export):
+                os.makedirs(p_export)
+            p_expi = op.join(p_export, 'EOFs_{0}.png'.format(it+1))
+            fig.savefig(p_expi, dpi=_fdpi)
+            plt.close()
+
