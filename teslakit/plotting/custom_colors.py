@@ -5,6 +5,20 @@ import numpy as np
 import matplotlib.colors as mcolors
 from matplotlib import cm
 
+def colors_awt():
+
+    # 6 AWT colors
+    l_colors_dwt = [
+        (155/255.0, 0, 0),
+        (1, 0, 0),
+        (255/255.0, 216/255.0, 181/255.0),
+        (164/255.0, 226/255.0, 231/255.0),
+        (0/255.0, 190/255.0, 255/255.0),
+        (51/255.0, 0/255.0, 207/255.0),
+    ]
+
+    return np.array(l_colors_dwt)
+
 def colors_mjo():
     'custom colors for MJO 25 categories'
 
