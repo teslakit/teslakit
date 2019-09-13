@@ -7,8 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colors as mcolors
 
-# tk
+# teslakit
 from .custom_colors import colors_mjo
+
+# import constants
+from .config import _faspect, _fsize, _fdpi
 
 
 def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
@@ -34,7 +37,7 @@ def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
 
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(9,9))
+    fig, ax = plt.subplots(1,1, figsize=(_fsize, _fsize))
     ax.scatter(rmm1, rmm2, c='b', s=size_points)
 
     # plot data by phases
@@ -63,7 +66,7 @@ def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=96)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
@@ -77,7 +80,7 @@ def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
     np_colors_rgb_categ = colors_mjo()
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(9,9))
+    fig, ax = plt.subplots(1,1, figsize=(_fsize,_fsize))
 
     # plot sectors
     ax.plot([-4,4],[-4,4], color='k', linewidth=size_lines, zorder=9)
@@ -169,6 +172,6 @@ def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=96)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 

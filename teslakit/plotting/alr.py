@@ -14,10 +14,13 @@ import matplotlib.colors as mcolors
 from matplotlib.colorbar import ColorbarBase
 from scipy.interpolate import interp1d
 
-# tk
+# teslakit
 from .util import MidpointNormalize
 from .custom_colors import colors_mjo, colors_dwt, colors_interp
 from ..custom_dateutils import xds2datetime as xds2dt
+
+# import constants
+from .config import _faspect, _fsize, _fdpi
 
 def GetClusterColors(num_clusters):
     'Choose colors or Interpolate custom colormap to number of clusters'
@@ -53,7 +56,7 @@ def Plot_PValues(p_values, term_names, p_export=None):
     n_terms = p_values.shape[1]
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(16,9))
+    fig, ax = plt.subplots(1,1, figsize=(_faspect*_fsize, _fsize))
 
     c = ax.pcolor(p_values, cmap='coolwarm_r', clim=(0,1),
                   norm=MidpointNormalize(midpoint=0.1, vmin=0, vmax=1))
@@ -89,7 +92,7 @@ def Plot_PValues(p_values, term_names, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Params(params, term_names, p_export=None):
@@ -99,7 +102,7 @@ def Plot_Params(params, term_names, p_export=None):
     n_terms = params.shape[1]
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(16,9))
+    fig, ax = plt.subplots(1,1, figsize=(_faspect*_fsize, _fsize))
 
     # text table and color
     c = ax.pcolor(params, cmap=plt.cm.bwr)
@@ -131,7 +134,7 @@ def Plot_Params(params, term_names, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1,
@@ -140,8 +143,8 @@ def Generate_PerpYear_Matrix(num_clusters, bmus_values, bmus_dates, num_sim=1,
     Calculates and returns matrix for stacked bar plotting
 
     bmus_dates - datetime.datetime (only works if daily resolution)
+    bmus_values has to be 2D (time, nsim)
     '''
-    # TODO: bmus_values has to be 2D (time, nsim)?
 
     # generate perpetual year list
     list_pyear = GenOneYearDaily(month_ini=month_ini)
@@ -223,7 +226,7 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
         num_clusters, bmus_values, bmus_dates, num_sim)
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(16,9))
+    fig, ax = plt.subplots(1,1, figsize=(_faspect*_fsize, _fsize))
 
     bottom_val = np.zeros(m_plot[1,:].shape)
     for r in range(num_clusters):
@@ -248,7 +251,7 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Covariate(bmus_values, covar_values,
@@ -272,7 +275,7 @@ def Plot_Covariate(bmus_values, covar_values,
         num_clusters, covar_rng, num_sims)
 
     # plot figure
-    fig, ax = plt.subplots(1,1, figsize=(16,12))
+    fig, ax = plt.subplots(1,1, figsize=(_faspect*_fsize, _fsize))
     x_val = covar_rng[:-1]
 
     bottom_val = np.zeros(m_plot[1,:].shape)
@@ -297,7 +300,7 @@ def Plot_Covariate(bmus_values, covar_values,
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
@@ -310,7 +313,9 @@ def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
     fsy = n_sps * 2
 
     # plot figure
-    fig, ax_list = plt.subplots(n_sps, 1, sharex=True, figsize=(18,fsy))
+    fig, ax_list = plt.subplots(
+        n_sps, 1, sharex=True, figsize=(_faspect*_fsize, fsy)
+    )
 
     x = terms_dates
     for i in range(n_sps):
@@ -336,7 +341,7 @@ def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Compare_PerpYear(num_clusters,
@@ -374,7 +379,7 @@ def Plot_Compare_PerpYear(num_clusters,
         num_sim=n_sim, month_ini=month_ini)
 
     # plot figure
-    fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(16,9))
+    fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(_faspect*_fsize, _fsize))
 
     # use dateticks
     x_val = GenOneYearDaily(month_ini=month_ini)
@@ -449,7 +454,7 @@ def Plot_Compare_PerpYear(num_clusters,
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Generate_Covariate_rng(covar_name, cov_values):
@@ -514,7 +519,7 @@ def Plot_Compare_Covariate(num_clusters,
         num_clusters, covar_rng, 1)
 
     # plot figure
-    fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(16,12))
+    fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(_faspect*_fsize, _fsize))
     x_val = covar_rng[:-1]
 
     # sim
@@ -562,7 +567,7 @@ def Plot_Compare_Covariate(num_clusters,
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Compare_Validation():
