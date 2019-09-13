@@ -25,7 +25,7 @@ def axplot_AWT_2D(ax, var_2D, num_wts, id_wt, color_wt):
     # plot 2D AWT
     ax.pcolormesh(
         var_2D,
-        cmap='RdBu', shading='gouraud',
+        cmap='RdBu_r', shading='gouraud',
         vmin=-1.5, vmax=+1.5,
     )
 
