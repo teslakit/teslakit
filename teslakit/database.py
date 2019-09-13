@@ -6,6 +6,7 @@ import os
 import os.path as op
 import configparser
 from shutil import copyfile
+import pickle
 
 from prettytable import PrettyTable
 import xarray as xr
@@ -126,6 +127,14 @@ class Database(object):
     def Save_SST_KMA(self, xds):
         xds.to_netcdf(self.paths.site.SST.kma, 'w')
 
+    def Save_SST_PCs_fit_rnd(self, d_PCs_fit, d_PCs_rnd):
+
+        with open(self.paths.site.SST.d_pcs_fit, 'wb') as f:
+            pickle.dump(d_PCs_fit, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+        with open(self.paths.site.SST.d_pcs_rnd, 'wb') as f:
+            pickle.dump(d_PCs_rnd, f, protocol=pickle.HIGHEST_PROTOCOL)
+
     def Save_SST_PCs_sim(self, xds):
 
         # store yearly data
@@ -144,6 +153,16 @@ class Database(object):
 
     def Load_SST_KMA(self):
         return xr.open_dataset(self.paths.site.SST.kma)
+
+    def Load_SST_PCs_fit_rnd(self):
+
+        with open(self.paths.site.SST.d_pcs_fit, 'rb') as f:
+            d_PCs_fit = pickle.load(f)
+
+        with open(self.paths.site.SST.d_pcs_rnd, 'rb') as f:
+            d_PCs_rnd = pickle.load(f)
+
+        return d_PCs_fit, d_PCs_rnd
 
     def Load_SST_PCs_sim_d(self):
         return xr.open_dataset(self.paths.site.SST.pcs_sim_d)
