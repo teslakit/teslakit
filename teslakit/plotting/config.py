@@ -1,6 +1,6 @@
 # common fig parameters
 _faspect = 1.618
-_fsize = 10.5
+_fsize = 9.8
 _fdpi = 128
 
 # TODO: figure parameters
