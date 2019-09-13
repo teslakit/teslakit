@@ -371,7 +371,6 @@ def Plot_AWTs_Dates(xds_AWT, p_export=None):
 
     # each cluster has a figure
     for ic in range(n_clusters):
-        num = order[ic]
 
         id_AWT = ic + 1           # cluster ID
         index = np.where(bmus==ic)[0][:]
