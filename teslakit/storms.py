@@ -89,6 +89,9 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
     l_gamma = []        # azimuth 
     l_delta = []        # delta 
 
+    l_ix_in = []        # historical enters the circle index
+    l_ix_out = []       # historical leaves the circle index 
+
     for i_storm in range(n_storms):
 
         # stack storm longitude, latitude
@@ -172,6 +175,10 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             l_gamma.append(gamma)
             l_delta.append(delta)
 
+            # store historical indexes inside circle 
+            l_ix_in.append(ix_in[0])
+            l_ix_out.append(ix_in[-1])
+
             # store last cyclone date too
             l_date_last.append(time[i_storm][ix_nonan][-1])
 
@@ -189,6 +196,8 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             'category':(('storm'), np.array(l_categ_in)),
             'dmin_date':(('storm'), np.array(l_date_in)),
             'last_date':(('storm'), np.array(l_date_last)),
+            'index_in':(('storm'), np.array(l_ix_in)),
+            'index_out':(('storm'), np.array(l_ix_out)),
         },
         coords = {
             'storm':(('storm'), xds_TCs_sel.storm.values[:])
