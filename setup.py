@@ -18,7 +18,7 @@ def _reqs(*f):
     return [
         _pip_requirement(r) for r in (
             _strip_comments(l) for l in open(
-                os.path.join(os.getcwd(), 'requirements', *f)).readlines()
+                os.path.join(os.getcwd(), *f)).readlines()
         ) if r]
 
 def reqs(*f):
@@ -33,7 +33,7 @@ def reqs(*f):
     return [req for subreq in _reqs(*f) for req in subreq]
 
 def install_requires():
-    return reqs('default.txt')
+    return reqs('requirements.txt')
 
 
 setup(
