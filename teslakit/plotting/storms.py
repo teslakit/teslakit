@@ -298,7 +298,6 @@ def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
     )
 
     # plot r1 circle
-    # TODO m(pnt_lon, pnt_lat) ??
     circle = Circle(
         m(pnt_lon, pnt_lat), r1,
         facecolor = 'grey', edgecolor = 'grey',
@@ -309,7 +308,7 @@ def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
 
     # plot r2 circle
     circle2 = Circle(
-        (pnt_lon, pnt_lat), r2,
+        m(pnt_lon, pnt_lat), r2,
         facecolor = 'indianred', edgecolor = 'indianred',
         linewidth = 3, alpha = 0.8,
         label='{0}° Radius'.format(r2))
@@ -362,18 +361,18 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
         if s==0:
             ax.plot(
                 lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
-                '-', color = get_storm_color(int(cat[s].values[:])),
+                '-', color = get_storm_color(int(cat[s].values)),
                 alpha = 0.5, label = 'Enter {0}° radius'.format(r1)
             )
         else:
             ax.plot(
                 lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
-                '-', color = get_storm_color(int(cat[s].values[:])),
+                '-', color = get_storm_color(int(cat[s].values)),
                 alpha = 0.5,
             )
             ax.plot(
                 lon[0], xds_TCs_r1.isel(storm = s).lat_wmo.values[0],
-                '.', color = get_storm_color(int(cat[s].values[:])),
+                '.', color = get_storm_color(int(cat[s].values)),
                 markersize = 10,
             )
 
@@ -386,7 +385,7 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
 
     # plot circle
     circle = Circle(
-        m(pnt_lon, pnt_lat), r1, 
+        m(pnt_lon, pnt_lat), r1,
         facecolor = 'grey', edgecolor = 'grey',
         linewidth = 3, alpha = 0.5,
         label='Radius {0}º'.format(r1)
