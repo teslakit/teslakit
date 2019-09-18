@@ -403,13 +403,15 @@ def Plot_AWT_PCs_3D(d_PCs_fit, d_PCs_rnd, p_export=None):
     # get cluster colors
     cs_awt = colors_awt()
 
-    # plot figure
-    fig, axs = plt.subplots(
-        ncols=2, figsize=(_faspect*_fsize, _fsize),
-        subplot_kw={'projection':'3d'})
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize/1.66))
+    gs = gridspec.GridSpec(1, 2, wspace=0.10, hspace=0.35)
+    ax_fit = plt.subplot(gs[0, 0], projection='3d')
+    ax_sim = plt.subplot(gs[0, 1], projection='3d')
 
-    axplot_PCs_3D_allWTs(axs[0], d_PCs_fit,  cs_awt, ttl='PCs fit')
-    axplot_PCs_3D_allWTs(axs[1], d_PCs_rnd,  cs_awt, ttl='PCs sim')
+    # Plot PCs (3D)
+    axplot_PCs_3D_allWTs(ax_fit, d_PCs_fit,  cs_awt, ttl='PCs fit')
+    axplot_PCs_3D_allWTs(ax_sim, d_PCs_rnd,  cs_awt, ttl='PCs sim')
 
     # show / export
     if not p_export:
