@@ -74,9 +74,7 @@ Basemap module is used in some Teslakit figures.
 
 It is not needed to run any calculation and installing it is optional
 
-```
 Follow Basemap installation instructions at https://github.com/matplotlib/basemap
-```
 
 
 ## Handling a Teslakit Project 
