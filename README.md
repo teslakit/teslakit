@@ -68,14 +68,14 @@ cond activate teslakit
 conda env list
 ```
 
-### Install optional module
+### Installing optional modules
 
 Basemap module is used in some Teslakit figures.
 
 It is not needed to run any calculation and installing it is optional
 
 ```
-Follow [basemap](https://github.com/matplotlib/basemap) installation instructions
+Follow Basemap installation instructions a thttps://github.com/matplotlib/basemap
 ```
 
 
