@@ -35,7 +35,7 @@ from .io.aux_nc import StoreBugXdset
 from .custom_dateutils import npdt64todatetime as npdt2dt
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear, \
-Plot_Compare_Validation
+Plot_Validation
 
 # TODO: organize and refactor time types conversions
 # TODO: optimice operations (double save after sim, plot_compare_perpyear..)
@@ -633,8 +633,11 @@ class ALR_WRP(object):
             p_export = p_rep_PY
         )
 
-        # TODO
-        Plot_Compare_Validation(
+        # TODO: n_sim > 1 ?
+        # Plot Validation (probability change / scatter Fit vs. Sim) 
+        Plot_Validation(
+            cluster_size, bmus_values_hist, bmus_values_sim,
+            p_export = p_rep_VL
         )
 
         return
