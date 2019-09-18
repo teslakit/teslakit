@@ -133,8 +133,8 @@ def axplot_Parametrized_Circle(ax, lon_point, lat_point, r_point,
         {'fontsize': 14, 'fontweight':'bold'}
     )
 
-def axlegend_categ_vel(ax):
-    'add custom legends (storm category) to axes'
+def axlegend_categ(ax):
+    'add custom legend (storm category) to axes'
 
     # category legend
     lls_cat = [
@@ -150,6 +150,9 @@ def axlegend_categ_vel(ax):
         title = 'Category', bbox_to_anchor = (1.01, 1), loc='upper left',
     )
     ax.add_artist(leg_cat)
+
+def axlegend_vel(ax):
+    'add custom legend (storm velocity) to axes'
 
     # velocity legend
     lls_vel = [
@@ -164,24 +167,6 @@ def axlegend_categ_vel(ax):
     )
     ax.add_artist(leg_vel)
 
-def axlegend_categ(ax):
-    'add custom legends (storm category) to axes'
-
-    # category legend
-    lls_cat = [
-        Line2D([0], [0], color = 'black'),
-        Line2D([0], [0], color = 'purple'),
-        Line2D([0], [0], color = 'red'),
-        Line2D([0], [0], color = 'orange'),
-        Line2D([0], [0], color = 'yellow'),
-        Line2D([0], [0], color = 'green'),
-    ]
-    leg_cat = Legend(
-        ax, lls_cat, ['5','4','3','2','1','0'],
-        title = 'Category', bbox_to_anchor = (1.01, 1), loc='upper left',
-    )
-    ax.add_artist(leg_cat)
-    
 def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
     'Plots storms tracks and storms parametrized'
 
@@ -227,7 +212,8 @@ def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
     axs[0].set_ylim(axs[1].get_ylim())
 
     # add custom legends
-    axlegend_categ_vel(axs[1])
+    axlegend_categ(axs[1])
+    axlegend_vel(axs[1])
 
     # show / export
     if not p_export:
@@ -236,82 +222,188 @@ def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_Historical_TCs_Tracks(xds_TCs_r1,xds_TCs_r2,lon1,lon2,lat1,lat2,pnt_lon,pnt_lat,r1,r2):
-    
-    from mpl_toolkits.basemap import Basemap
-    
-    fig, ax= plt.subplots(1, figsize=[18,12])
+# TODO: small refactor 
+def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
+                               lon1, lon2, lat1, lat2,
+                               pnt_lon, pnt_lat, r1, r2,
+                               p_export=None):
+    'Plot Historical TCs tracks map, requires basemap module'
+
+    try:
+        from mpl_toolkits.basemap import Basemap
+    except:
+        print('basemap module required.')
+        return
+
+    fig, ax = plt.subplots(1, figsize=(_faspect*_fsize, _fsize))
+
     # setup mercator map projection.
-    m = Basemap(llcrnrlon=lon1,llcrnrlat=lat1,urcrnrlon=lon2,urcrnrlat=lat2, resolution='l',projection='cyl',lat_0=lat1,lon_0=lon1, area_thresh=0.01)
+    m = Basemap(
+        llcrnrlon = lon1, llcrnrlat = lat1,
+        urcrnrlon = lon2, urcrnrlat = lat2,
+        resolution = 'l', projection = 'cyl',
+        lat_0 = lat1, lon_0 = lon1, area_thresh = 0.01,
+    )
     m.drawcoastlines()
-    m.fillcontinents(color='silver')
-    m.drawmapboundary(fill_color='lightcyan')
-    m.drawparallels(np.arange(lat1,lat2,20),labels=[1,1,0,0])
-    m.drawmeridians(np.arange(lon1,lon2,20),labels=[0,0,0,1])
+    m.fillcontinents(color = 'silver')
+    m.drawmapboundary(fill_color = 'lightcyan')
+    m.drawparallels(np.arange(lat1, lat2, 20), labels = [1,1,0,0])
+    m.drawmeridians(np.arange(lon1, lon2, 20), labels = [0,0,0,1])
 
     for s in range(len(xds_TCs_r1.storm)):
-        lon=xds_TCs_r1.isel(storm=s).lon_wmo.values
-        lon=xds_TCs_r1.isel(storm=s).lon_wmo.values
-        lon[np.where(lon<0)]=lon[np.where(lon<0)]+360
-        if s==0:
-            ax.plot(lon,xds_TCs_r1.isel(storm=s).lat_wmo.values,'-',color='grey',alpha=0.5,label='Enter 14° radius')
-        else:
-            ax.plot(lon,xds_TCs_r1.isel(storm=s).lat_wmo.values,'-',color='grey',alpha=0.5)
-            ax.plot(lon[0],xds_TCs_r1.isel(storm=s).lat_wmo.values[0],'.',color='grey',markersize=10)
+        lon = xds_TCs_r1.isel(storm = s).lon_wmo.values[:]
+        lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
 
+        if s==0:
+            ax.plot(
+                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                '-', color = 'grey', alpha = 0.5,
+                label = 'Enter {0}° radius'.format(r1)
+            )
+        else:
+            ax.plot(
+                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                '-', color = 'grey',alpha = 0.5
+            )
+            ax.plot(
+                lon[0], xds_TCs_r1.isel(storm = s).lat_wmo.values[0],
+                '.', color = 'grey', markersize = 10
+            )
 
     for s in range(len(xds_TCs_r2.storm)):
-        lon=xds_TCs_r2.isel(storm=s).lon_wmo.values
-        lon[np.where(lon<0)]=lon[np.where(lon<0)]+360
+        lon = xds_TCs_r2.isel(storm = s).lon_wmo.values[:]
+        lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
+
         if s==0:
-            ax.plot(lon,xds_TCs_r2.isel(storm=s).lat_wmo.values,color='indianred',alpha=0.8,label='Enter 4° radius')
+            ax.plot(
+                lon, xds_TCs_r2.isel(storm = s).lat_wmo.values[:],
+                color = 'indianred', alpha = 0.8,
+                label = 'Enter {0}° radius'.format(r2)
+            )
         else:
-            ax.plot(lon,xds_TCs_r2.isel(storm=s).lat_wmo.values,color='indianred',alpha=0.8)
-            ax.plot(lon[0],xds_TCs_r2.isel(storm=s).lat_wmo.values[0],'.',color='indianred',markersize=10)
+            ax.plot(
+                lon, xds_TCs_r2.isel(storm = s).lat_wmo.values[:],
+                color = 'indianred', alpha = 0.8
+            )
+            ax.plot(
+                lon[0], xds_TCs_r2.isel(storm = s).lat_wmo.values[0],
+                '.', color = 'indianred', markersize = 10
+            )
 
+    # plot point
+    ax.plot(
+        pnt_lon, pnt_lat, '.',
+        markersize = 15, color = 'brown',
+        label = 'STUDY SITE'
+    )
 
-    ax.plot(pnt_lon,pnt_lat,'.',markersize=15,color='brown',label='STUDY SITE')
-    circle = Circle(m(pnt_lon, pnt_lat), r1, facecolor='grey',edgecolor='grey', linewidth=3, alpha=0.5,label='14° Radius')
+    # plot r1 circle
+    # TODO m(pnt_lon, pnt_lat) ??
+    circle = Circle(
+        m(pnt_lon, pnt_lat), r1,
+        facecolor = 'grey', edgecolor = 'grey',
+        linewidth = 3, alpha = 0.5,
+        label='{0}° Radius'.format(r1)
+    )
     ax.add_patch(circle)
-    circle2 = Circle((pnt_lon, pnt_lat), r2, facecolor='indianred',edgecolor='indianred', linewidth=3, alpha=0.8,label='4° Radius')
+
+    # plot r2 circle
+    circle2 = Circle(
+        (pnt_lon, pnt_lat), r2,
+        facecolor = 'indianred', edgecolor = 'indianred',
+        linewidth = 3, alpha = 0.8,
+        label='{0}° Radius'.format(r2))
     ax.add_patch(circle2)
+
+    # customize axes
     ax.set_aspect(1.0)
     ax.set_ylim(lat1, lat2)
     ax.set_title('Historical TCs', fontsize=15)
     ax.legend(loc=0, fontsize=14)
 
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
 
-def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1,cat,lon1,lon2,lat1,lat2,pnt_lon,pnt_lat,r1):
-    
-    from mpl_toolkits.basemap import Basemap
-    
-    fig, ax= plt.subplots(1, figsize=[18,12])
+def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
+                                        lon1, lon2, lat1, lat2,
+                                        pnt_lon, pnt_lat, r1,
+                                        p_export=None):
+    'Plot Historical TCs category map, requires basemap module'
+
+    try:
+        from mpl_toolkits.basemap import Basemap
+    except:
+        print('basemap module required.')
+        return
+
+    fig, ax = plt.subplots(1, figsize=(_faspect*_fsize, _fsize))
+
     # setup mercator map projection.
-    m = Basemap(llcrnrlon=lon1,llcrnrlat=lat1,urcrnrlon=lon2,urcrnrlat=lat2, resolution='l',projection='cyl',lat_0=lat1,lon_0=lon1, area_thresh=0.01)
+    m = Basemap(
+        llcrnrlon = lon1, llcrnrlat = lat1,
+        urcrnrlon = lon2, urcrnrlat = lat2,
+        resolution = 'l', projection = 'cyl',
+        lat_0 = lat1, lon_0 = lon1, area_thresh=0.01
+    )
     m.drawcoastlines()
-    m.fillcontinents(color='silver')
-    m.drawmapboundary(fill_color='lightcyan')
-    m.drawparallels(np.arange(lat1,lat2,20),labels=[1,1,0,0])
-    m.drawmeridians(np.arange(lon1,lon2,20),labels=[0,0,0,1])
+    m.fillcontinents(color = 'silver')
+    m.drawmapboundary(fill_color = 'lightcyan')
+    m.drawparallels(np.arange(lat1, lat2, 20), labels = [1,1,0,0])
+    m.drawmeridians(np.arange(lon1, lon2, 20), labels = [0,0,0,1])
 
     for s in range(len(xds_TCs_r1.storm)):
-        lon=xds_TCs_r1.isel(storm=s).lon_wmo.values
-        lon=xds_TCs_r1.isel(storm=s).lon_wmo.values
-        lon[np.where(lon<0)]=lon[np.where(lon<0)]+360
-        if s==0:
-            ax.plot(lon,xds_TCs_r1.isel(storm=s).lat_wmo.values,'-',color=get_storm_color(int(cat[s].values)),alpha=0.5,label='Enter '+ str(r1) +'° radius')
-        else:
-            ax.plot(lon,xds_TCs_r1.isel(storm=s).lat_wmo.values,'-',color=get_storm_color(int(cat[s].values)),alpha=0.5)
-            ax.plot(lon[0],xds_TCs_r1.isel(storm=s).lat_wmo.values[0],'.',color=get_storm_color(int(cat[s].values)),markersize=10)			
+        lon = xds_TCs_r1.isel(storm = s).lon_wmo.values[:]
+        lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
 
-    ax.plot(pnt_lon,pnt_lat,'.',markersize=15,color='brown',label='STUDY SITE')
-    circle = Circle(m(pnt_lon, pnt_lat), r1, facecolor='grey',edgecolor='grey', linewidth=3, alpha=0.5,label='Radius '+str(r1))
+        if s==0:
+            ax.plot(
+                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                '-', color = get_storm_color(int(cat[s].values[:])),
+                alpha = 0.5, label = 'Enter {0}° radius'.format(r1)
+            )
+        else:
+            ax.plot(
+                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                '-', color = get_storm_color(int(cat[s].values[:])),
+                alpha = 0.5,
+            )
+            ax.plot(
+                lon[0], xds_TCs_r1.isel(storm = s).lat_wmo.values[0],
+                '.', color = get_storm_color(int(cat[s].values[:])),
+                markersize = 10,
+            )
+
+    # plot point
+    ax.plot(
+        pnt_lon, pnt_lat, '.',
+        markersize = 15, color = 'brown',
+        label = 'STUDY SITE'
+    )
+
+    # plot circle
+    circle = Circle(
+        m(pnt_lon, pnt_lat), r1, 
+        facecolor = 'grey', edgecolor = 'grey',
+        linewidth = 3, alpha = 0.5,
+        label='Radius {0}º'.format(r1)
+    )
     ax.add_patch(circle)
-    # circle2 = Circle((pnt_lon, pnt_lat), r2, facecolor='indianred',edgecolor='indianred', linewidth=3, alpha=0.8,label='4° Radius')
-    # ax.add_patch(circle2)
+
+    # customize axes
     ax.set_aspect(1.0)
     ax.set_ylim(lat1,lat2)
     ax.set_title('Historical TCs - MAJURO', fontsize=15)
     ax.legend(loc=0, fontsize=14)
     axlegend_categ(ax)
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
 
