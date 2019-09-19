@@ -167,6 +167,7 @@ def axlegend_vel(ax):
     )
     ax.add_artist(leg_vel)
 
+
 def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
     'Plots storms tracks and storms parametrized'
 
@@ -250,6 +251,7 @@ def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
     m.drawparallels(np.arange(lat1, lat2, 20), labels = [1,1,0,0])
     m.drawmeridians(np.arange(lon1, lon2, 20), labels = [0,0,0,1])
 
+    # plot r1 storms
     for s in range(len(xds_TCs_r1.storm)):
         lon = xds_TCs_r1.isel(storm = s).lon_wmo.values[:]
         lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
@@ -270,6 +272,7 @@ def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
                 '.', color = 'grey', markersize = 10
             )
 
+    # plot r2 storms
     for s in range(len(xds_TCs_r2.storm)):
         lon = xds_TCs_r2.isel(storm = s).lon_wmo.values[:]
         lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
@@ -351,7 +354,7 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
     m.drawcoastlines()
     m.fillcontinents(color = 'silver')
     m.drawmapboundary(fill_color = 'lightcyan')
-    m.drawparallels(np.arange(lat1, lat2, 20), labels = [1,1,0,0])
+    m.drawparallels(np.arange(lat1, lat2, 20), labels = [1,0,0,0])
     m.drawmeridians(np.arange(lon1, lon2, 20), labels = [0,0,0,1])
 
     for s in range(len(xds_TCs_r1.storm)):
@@ -395,7 +398,7 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
     # customize axes
     ax.set_aspect(1.0)
     ax.set_ylim(lat1,lat2)
-    ax.set_title('Historical TCs - MAJURO', fontsize=15)
+    ax.set_title('Historical TCs', fontsize=15)
     ax.legend(loc=0, fontsize=14)
     axlegend_categ(ax)
 
