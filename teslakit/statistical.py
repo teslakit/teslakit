@@ -219,13 +219,13 @@ def runmean(X, m, modestr):
         xfirst = np.zeros(m)
         xlast = np.zeros(m)
     elif modestr == 'mean':
-        xfirst = np.repeat(np.mean(X), m)
+        xfirst = np.repeat(np.nanmean(X), m)
         xlast = xfirst
 
     Y = np.concatenate(
         (np.zeros(1), xfirst, X, xlast)
     )
-    Y = np.cumsum(Y)
+    Y = np.nancumsum(Y)
     Y = np.divide(Y[mm:,]-Y[:-mm], mm)
 
     return Y
