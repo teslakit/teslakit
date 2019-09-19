@@ -493,10 +493,10 @@ class ALR_WRP(object):
             time_sim = [npdt2dt(t) for t in time_sim]
 
         # print some info
-        tf0 = time_fit[0]
-        tf1 = time_fit[-1]
-        ts0 = time_sim[0]
-        ts1 = time_sim[-1]
+        tf0 = str(time_fit[0])[:10]
+        tf1 = str(time_fit[-1])[:10]
+        ts0 = str(time_sim[0])[:10]
+        ts1 = str(time_sim[-1])[:10]
         print('ALR model fit   : {0} --- {1}'.format(tf0, tf1))
         print('ALR model sim   : {0} --- {1}'.format(ts0, ts1))
 
