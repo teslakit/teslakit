@@ -292,7 +292,7 @@ class Predictor(object):
 
         Plot_EOFs_EstelaPred(self.PCA, n_plot, p_export)
 
-    def Plot_DWTs(self, var_name, show=False, mask=None):
+    def Plot_DWTs(self, var_name, show=True, mask=None):
         '''
         Plot KMA clusters generated in PCA_EstelaPred (DWTs)
 
