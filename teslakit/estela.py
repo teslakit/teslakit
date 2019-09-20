@@ -16,8 +16,7 @@ from .pca import CalcPCA_EstelaPred
 from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
-from .plotting.eofs import Plot_EOFs_EstelaPred
-from .plotting.kma import Plot_KMArg_clusters_datamean
+from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean
 
 
 def spatial_gradient(xdset, var_name):
@@ -283,7 +282,7 @@ class Predictor(object):
         if op.isfile(self.p_kma): os.remove(self.p_kma)
         self.KMA.to_netcdf(self.p_kma,'w')
 
-    def Plot_EOFs_EstelaPred(self, n_plot, show=False):
+    def Plot_EOFs_EstelaPred(self, n_plot=3, show=True):
         'Plot EOFs generated in PCA_EstelaPred'
 
         if show:
@@ -293,24 +292,28 @@ class Predictor(object):
 
         Plot_EOFs_EstelaPred(self.PCA, n_plot, p_export)
 
-    def Plot_KMArg_clusters_datamean(self, var_name, show=False, mask_name=None):
+    def Plot_DWTs(self, var_name, show=False, mask=None):
         '''
-        Plot KMA clusters generated in PCA_EstelaPred
+        Plot KMA clusters generated in PCA_EstelaPred (DWTs)
+
         uses database means at cluster location (bmus corrected)
         '''
+
+        # data to plot
+        xds_DWTs = self.KMA
+        var_data = self.data[var_name]
+
+        # data mask
+        if mask:
+            var_data = var_data.where(self.data[mask]==1)
 
         if show:
             p_export = None
         else:
             p_export = op.join(
                 self.p_store,
-                'KMA_RG_clusters_datamean_{0}.png'.format(var_name))
+                'KMA_RG_DWTs_mean_{0}.png'.format(var_name))
 
-        bmus = self.KMA['sorted_bmus'].values
-        var_data = self.data[var_name]
-
-        if mask_name:
-            var_data = var_data.where(self.data[mask_name]==1)
-
-        Plot_KMArg_clusters_datamean(var_data, bmus, p_export)
+        # Plot DWTs mean using var_data
+        Plot_DWTs_Mean(xds_DWTs, var_data, p_export)
 
