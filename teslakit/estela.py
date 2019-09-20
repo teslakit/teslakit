@@ -220,7 +220,7 @@ class Predictor(object):
         self.Save()
 
     def Calc_KMA_regressionguided(
-        self, num_clusters, xds_waves, waves_vars, alpha):
+        self, num_clusters, xds_waves, waves_vars, alpha, min_group_size=None):
         'KMA regression guided with waves data'
 
         # we have to miss some days of data due to ESTELA
@@ -233,7 +233,9 @@ class Predictor(object):
         # classification: KMA regresion guided
         repres = 0.95
         self.KMA = KMA_regression_guided(
-            self.PCA, xds_Yregres, num_clusters, repres, alpha)
+            self.PCA, xds_Yregres,
+            num_clusters, repres, alpha, min_group_size
+        )
 
         # store time array with KMA
         self.KMA['time'] = (('n_components',), self.PCA.pred_time.values[:])
