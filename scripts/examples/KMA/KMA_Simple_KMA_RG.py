@@ -10,11 +10,10 @@ import xarray as xr
 
 # DEV: override installed teslakit
 import sys
-sys.path.insert(0,'../../../')
+sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 
 # teslakit
-from teslakit.project_site import PathControl
-from teslakit.io.matlab import ReadGowMat
+from teslakit.database import Database
 from teslakit.kma import KMA_simple
 from teslakit.kma import KMA_regression_guided
 from teslakit.kma import SimpleMultivariateRegressionModel as SMRM
