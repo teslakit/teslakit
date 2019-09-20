@@ -16,7 +16,8 @@ from .pca import CalcPCA_EstelaPred
 from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
-from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean
+from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean, \
+Plot_DWTs_Probs
 
 
 def spatial_gradient(xdset, var_name):
@@ -318,4 +319,25 @@ class Predictor(object):
 
         # Plot DWTs mean using var_data
         Plot_DWTs_Mean(xds_DWTs, var_data, p_export)
+
+    def Plot_DWTs_Probs(self, show=True):
+        '''
+        Plot DWTs bmus probabilities
+            - histogram for ocurrences
+            - probs. all series
+            - probs by month
+            - probs by 3month
+        '''
+
+        # handle export path
+        if show:
+            p_export = None
+        else:
+            p_export = op.join(
+                self.p_store,
+                'KMA_RG_DWTs_Probs.png'
+            )
+
+        # Plot DWTs mean using var_data
+        Plot_DWTs_Probs(self.KMA, p_export)
 
