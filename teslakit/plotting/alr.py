@@ -18,7 +18,6 @@ from scipy.interpolate import interp1d
 # teslakit
 from .util import MidpointNormalize
 from .custom_colors import colors_awt, colors_mjo, colors_dwt, colors_interp
-from ..custom_dateutils import xds2datetime as xds2dt
 from ..kma import ClusterProbabilities, ChangeProbabilities
 
 # import constants
