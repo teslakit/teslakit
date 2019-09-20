@@ -17,6 +17,7 @@ sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 # teslakit
 from teslakit.database import Database
 from teslakit.estela import Predictor
+from teslakit.plotting.estela import Plot_ESTELA
 
 
 # --------------------------------------
@@ -29,12 +30,20 @@ db = Database(p_data)
 db.SetSite('KWAJALEIN')
 
 # estela predictor
+xds_est = db.Load_ESTELA_data()
+
 pred = Predictor(db.paths.site.ESTELA.pred_slp)
 pred.Load()
+
+
+# plot ESTELA (basemap)
+#Plot_ESTELA(167.5, 9.75, xds_est.D_y1993to2012)
 
 # test ESTELA PCA EOFs plot
 #pred.Plot_EOFs_EstelaPred()
 
 # test DWTs mean plot
-pred.Plot_DWTs('SLP', mask='mask_estela')
+#pred.Plot_DWTs('SLP', mask='mask_estela')
 
+# test DWTs probs plot
+pred.Plot_DWTs_Probs()
