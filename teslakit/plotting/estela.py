@@ -6,17 +6,20 @@ import os
 import os.path as op
 import numpy as np
 import copy
+from functools import reduce
 
 # pip
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
 from matplotlib import cm
+import pandas as pd
 
 # teslakit
 from .custom_colors import colors_dwt
 from ..util.operations import GetBestRowsCols
 from ..custom_dateutils import npdt64todatetime as n2d
+from ..kma import ClusterProbabilities
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -81,6 +84,46 @@ def axplot_DWT(ax, dwt, vmin, vmax, wt_color):
     ax.set_yticks([])
 
     return pc
+
+def axplot_DWT_Probs(ax, dwt_probs,
+                     ttl = '', vmin = 0, vmax = 0.1,
+                     cmap = 'Blues'):
+    'axes plot DWT cluster probabilities'
+
+    # clsuter transition plot
+    pc = ax.pcolor(
+        np.flipud(dwt_probs),
+        cmap=cmap, vmin=vmin, vmax=vmax,
+        edgecolors='k',
+    )
+
+    # customize axes
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
+
+    return pc
+
+def axplot_DWT_Hist(ax, bmus, n_clusters, ttl=''):
+    'axes plot DWT cluster count histogram'
+
+    # clsuter transition plot
+    ax.hist(
+        bmus,
+        bins = np.arange(1, n_clusters+2),
+        edgecolor='k'
+    )
+
+    # customize axes
+    #ax.grid('y')
+
+    ax.set_xticks(np.arange(1,n_clusters+1)+0.5)
+    ax.set_xticklabels(np.arange(1,n_clusters+1))
+    ax.set_xlim([1, n_clusters+1])
+    ax.tick_params(axis='both', which='major', labelsize=6)
+
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
+
 
 def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
     '''
@@ -206,6 +249,7 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_D, p_export=None):
         clim=(0, estela_max),
     )
     cb = m.colorbar(pc, location='bottom')
+    cb.set_ticks(range(int(estela_max)))
     cb.set_label('days')
 
     # plot point
@@ -218,7 +262,7 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_D, p_export=None):
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_DWTs_Mean(xds_KMA, xds_var, bmus, p_export=None):
+def Plot_DWTs_Mean(xds_KMA, xds_var, p_export=None):
     '''
     Plot Daily Weather Types (bmus mean)
     '''
@@ -277,6 +321,117 @@ def Plot_DWTs_Mean(xds_KMA, xds_var, bmus, p_export=None):
     cbar_ax = fig.add_axes([pax_l.x0, pax_l.y0-0.05, pax_r.x1 - pax_l.x0, 0.02])
     cb = fig.colorbar(pc, cax=cbar_ax, orientation='horizontal')
     cb.set_label('Pressure (mbar)')
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
+def ClusterProbs_Month(bmus, time, wt_set, month_ix):
+    'Returns Cluster probs by month_ix'
+
+    if isinstance(month_ix, list):
+        tpd = pd.DatetimeIndex(time)
+
+        # get each month indexes
+        l_ix = []
+        for m_ix in month_ix:
+            ixs = np.where(tpd.month==m_ix)[0]
+            l_ix.append(ixs)
+
+        # get all indexes     
+        ix = np.unique(np.concatenate(tuple(l_ix)))
+
+    else:
+        tpd = pd.DatetimeIndex(time)
+        ix = np.where(tpd.month==month_ix)[0]
+
+    bmus_sel = bmus[ix]
+
+    return ClusterProbabilities(bmus_sel, wt_set)
+
+def Plot_DWTs_Probs(xds_KMA, p_export=None):
+    '''
+    Plot Daily Weather Types bmus probabilities
+    '''
+
+    bmus = xds_KMA['sorted_bmus'].values[:] + 1 # index to DWT id
+    bmus_time = xds_KMA['time'].values[:]
+    n_clusters = len(xds_KMA.n_clusters.values[:])
+    wt_set = np.arange(n_clusters) + 1
+
+    # best rows cols combination
+    n_rows, n_cols = GetBestRowsCols(n_clusters)
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+
+    # layout
+    gs = gridspec.GridSpec(4, 7, wspace=0.10, hspace=0.25)
+
+    # list all plots params
+    l_months = [
+        (1, 'January',   gs[1,3]),
+        (2, 'February',  gs[2,3]),
+        (3, 'March',     gs[0,4]),
+        (4, 'April',     gs[1,4]),
+        (5, 'May',       gs[2,4]),
+        (6, 'June',      gs[0,5]),
+        (7, 'July',      gs[1,5]),
+        (8, 'August',    gs[2,5]),
+        (9, 'September', gs[0,6]),
+        (10, 'October',  gs[1,6]),
+        (11, 'November', gs[2,6]),
+        (12, 'December', gs[0,3]),
+    ]
+
+    l_3months = [
+        ([12, 1, 2],  'DJF', gs[3,3]),
+        ([3, 4, 5],   'MAM', gs[3,4]),
+        ([6, 7, 8],   'JJA', gs[3,5]),
+        ([9, 10, 11], 'SON', gs[3,6]),
+    ]
+
+    # plot total probabilities
+    c_T = ClusterProbabilities(bmus, wt_set)
+    C_T = np.reshape(c_T, (n_rows, n_cols))
+
+    ax_probs_T = plt.subplot(gs[:2, :2])
+    pc = axplot_DWT_Probs(ax_probs_T, C_T, ttl = 'DWT Probabilities')
+
+    # plot counts histogram
+    ax_hist = plt.subplot(gs[2:, :3])
+    axplot_DWT_Hist(ax_hist, bmus, n_clusters, ttl = 'DWT Counts')
+
+    # plot probabilities by month
+    for m_ix, m_name, m_gs in l_months:
+
+        # get probs matrix
+        c_M = ClusterProbs_Month(bmus, bmus_time, wt_set, m_ix)
+        C_M = np.reshape(c_M, (n_rows, n_cols))
+
+        # plot axes
+        ax_M = plt.subplot(m_gs)
+        axplot_DWT_Probs(ax_M, C_M, ttl = m_name)
+
+    # plot probabilities by 3 month sets
+    for m_ix, m_name, m_gs in l_3months:
+
+        # get probs matrix
+        c_M = ClusterProbs_Month(bmus, bmus_time, wt_set, m_ix)
+        C_M = np.reshape(c_M, (n_rows, n_cols))
+
+        # plot axes
+        ax_M = plt.subplot(m_gs)
+        axplot_DWT_Probs(ax_M, C_M, ttl = m_name, cmap='Greens')
+
+    # add custom colorbar
+    pp = ax_probs_T.get_position()
+    cbar_ax = fig.add_axes([pp.x1+0.02, pp.y0, 0.02, pp.y1 - pp.y0])
+    cb = fig.colorbar(pc, cax=cbar_ax, cmap='Blues')
+    cb.ax.tick_params(labelsize=8)
 
     # show / export
     if not p_export:
