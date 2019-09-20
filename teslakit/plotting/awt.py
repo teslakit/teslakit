@@ -202,6 +202,8 @@ def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
                                 AWT_bmus, AWT_PCs_fit, AWT_PCs_rnd, AWT_color,
                                 p_export=None):
 
+    from mpl_toolkits.mplot3d import Axes3D
+
     # figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
@@ -399,6 +401,8 @@ def Plot_AWT_PCs_3D(d_PCs_fit, d_PCs_rnd, p_export=None):
     '''
     Plot Annual Weather Types PCs fit - rnd comparison (3D)
     '''
+
+    from mpl_toolkits.mplot3d import Axes3D
 
     # get cluster colors
     cs_awt = colors_awt()

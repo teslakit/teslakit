@@ -17,7 +17,7 @@ from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
 from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean, \
-Plot_DWTs_Probs
+Plot_DWTs_Probs, Plot_DWT_PCs_3D
 
 
 def spatial_gradient(xdset, var_name):
@@ -341,3 +341,37 @@ class Predictor(object):
         # Plot DWTs mean using var_data
         Plot_DWTs_Probs(self.KMA, p_export)
 
+    def Plot_PCs_3D(self, show=True):
+        'Plots Predictor first 3 PCs'
+
+        # first 3 PCs
+        bmus = self.KMA['sorted_bmus'].values[:]
+        PCs = self.PCA.PCs.values[:]
+        variance = self.PCA.variance.values[:]
+
+        n_clusters = len(self.KMA.n_clusters.values[:])
+
+        PC1 = np.divide(PCs[:,0], np.sqrt(variance[0]))
+        PC2 = np.divide(PCs[:,1], np.sqrt(variance[1]))
+        PC3 = np.divide(PCs[:,2], np.sqrt(variance[2]))
+
+        # dictionary of DWT PCs 123 
+        d_PCs = {}
+        for ic in range(n_clusters):
+            ind = np.where(bmus == ic)[:]
+
+            PC123 = np.column_stack((PC1[ind], PC2[ind], PC3[ind]))
+
+            d_PCs['{0}'.format(ic+1)] = PC123
+
+        # handle export path
+        if show:
+            p_export = None
+        else:
+            p_export = op.join(
+                self.p_store,
+                'KMA_RG_PCs123_3D.png'
+            )
+
+        # Plot DWTs PCs 3D 
+        Plot_DWT_PCs_3D(d_PCs, n_clusters, p_export)

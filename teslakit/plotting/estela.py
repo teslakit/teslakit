@@ -20,6 +20,7 @@ from .custom_colors import colors_dwt
 from ..util.operations import GetBestRowsCols
 from ..custom_dateutils import npdt64todatetime as n2d
 from ..kma import ClusterProbabilities
+from .awt import axplot_PCs_3D_allWTs
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -432,6 +433,31 @@ def Plot_DWTs_Probs(xds_KMA, p_export=None):
     cbar_ax = fig.add_axes([pp.x1+0.02, pp.y0, 0.02, pp.y1 - pp.y0])
     cb = fig.colorbar(pc, cax=cbar_ax, cmap='Blues')
     cb.ax.tick_params(labelsize=8)
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
+def Plot_DWT_PCs_3D(d_PCs, n_clusters, p_export=None):
+    '''
+    Plot Annual Weather Types PCs fit - rnd comparison (3D)
+    '''
+
+    from mpl_toolkits.mplot3d import Axes3D
+
+    # get cluster colors
+    cs_awt = colors_dwt(n_clusters)
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize*2/1.66))
+    gs = gridspec.GridSpec(1, 1, wspace=0.10, hspace=0.35)
+    ax_pcs = plt.subplot(gs[0, 0], projection='3d')
+
+    # Plot PCs (3D)
+    axplot_PCs_3D_allWTs(ax_pcs, d_PCs,  cs_awt, ttl='DWT PCs')
 
     # show / export
     if not p_export:

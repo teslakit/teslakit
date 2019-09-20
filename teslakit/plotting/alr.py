@@ -284,7 +284,6 @@ def axplot_PerpYear(ax, num_clusters, bmus_values, bmus_dates, num_sim, month_in
     ax.set_ylim(0, 1)
     ax.set_ylabel('')
 
-
 def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
                           bmus_values_hist, bmus_dates_hist,
