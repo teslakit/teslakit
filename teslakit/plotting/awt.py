@@ -292,7 +292,7 @@ def Plot_AWT_Validation(xds_AWT, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
 
 def Plot_AWTs(xds_AWT, lon, p_export=None):
     '''
-    Plot Annual Weather types
+    Plot Annual Weather Types
     '''
 
     bmus = xds_AWT.bmus.values[:]
@@ -462,18 +462,21 @@ def Plot_EOFs_SST(xds_PCA, n_plot, p_export=None):
 
     for it in range(n_plot):
 
-        # plot figure
-        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
-        # layout
-        gs = gridspec.GridSpec(4, 4, wspace=0.10, hspace=0.2)
-        ax_EOF = plt.subplot(gs[:3, :])
-        ax_evol = plt.subplot(gs[3, :])
-
         # map of the spatial field
         spatial_fields = EOFs[:,it]*np.sqrt(variance[it])
 
         # reshape from vector to matrix with separated months
-        C = np.reshape(spatial_fields[:len_x*12], (12, len_x)).transpose()
+        C = np.reshape(
+            spatial_fields[:len_x*12], (12, len_x)
+        ).transpose()
+
+        # plot figure
+        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+
+        # layout
+        gs = gridspec.GridSpec(4, 4, wspace=0.10, hspace=0.2)
+        ax_EOF = plt.subplot(gs[:3, :])
+        ax_evol = plt.subplot(gs[3, :])
 
         # EOF pcolormesh
         ttl = 'EOF #{0}  ---  {1:.2f}%'.format(it+1, n_percent[it]*100)
