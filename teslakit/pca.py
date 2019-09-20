@@ -204,7 +204,6 @@ def CalcPCA_EstelaPred(xdset, pred_name):
     for ti in range(dp_ur.shape[0]):
         dp_ur_nonan[ti,:] = dp_ur[ti, data_pos]
 
-
     # standarize predictor
     pred_mean = np.mean(dp_ur_nonan, axis=0)
     pred_std = np.std(dp_ur_nonan, axis=0)
@@ -225,9 +224,9 @@ def CalcPCA_EstelaPred(xdset, pred_name):
             'pred_mean': (('n_features',), pred_mean),
             'pred_std': (('n_features',), pred_std),
 
-            'pred_lon': (('n_lon',), xdset.longitude.values),
-            'pred_lat': (('n_lat',), xdset.latitude.values),
-            'pred_time': (('time',), xdset.time.values),
+            'pred_lon': (('n_lon',), xdset.longitude.values[:]),
+            'pred_lat': (('n_lat',), xdset.latitude.values[:]),
+            'pred_time': (('time',), xdset.time.values[:]),
             'pred_data_pos':(('n_points',), data_pos)
         },
 
