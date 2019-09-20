@@ -46,4 +46,7 @@ pred.Load()
 #pred.Plot_DWTs('SLP', mask='mask_estela')
 
 # test DWTs probs plot
-pred.Plot_DWTs_Probs()
+#pred.Plot_DWTs_Probs()
+
+# test DWTs PCs 3D plot
+pred.Plot_PCs_3D()
