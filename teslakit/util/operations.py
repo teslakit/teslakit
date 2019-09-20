@@ -3,6 +3,7 @@
 
 import collections
 import numpy as np
+from math import sqrt
 
 
 def GetDivisors(x):
@@ -29,4 +30,18 @@ def GetUniqueRows(np_array):
 
     np_result = np.asarray(result)
     return np_result
+
+def GetBestRowsCols(n):
+    'try to square number n, used at gridspec plots'
+
+    sqrt_n = sqrt(n)
+    if sqrt_n.is_integer():
+        n_r = int(sqrt_n)
+        n_c = int(sqrt_n)
+    else:
+        l_div = GetDivisors(n)
+        n_r = l_div[len(l_div)/2]
+        n_c = n_clusters/n_rows
+
+    return n_r, n_c
 
