@@ -40,8 +40,8 @@ def GetBestRowsCols(n):
         n_c = int(sqrt_n)
     else:
         l_div = GetDivisors(n)
-        n_r = l_div[len(l_div)/2]
-        n_c = n_clusters/n_rows
+        n_c = l_div[int(len(l_div)/2)]
+        n_r = int(n/n_c)
 
     return n_r, n_c
 
