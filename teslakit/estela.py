@@ -339,7 +339,11 @@ class Predictor(object):
             )
 
         # Plot DWTs mean using var_data
-        Plot_DWTs_Probs(self.KMA, p_export)
+        bmus = self.KMA['sorted_bmus'].values[:] + 1 # index to DWT id
+        bmus_time = self.KMA['time'].values[:]
+        n_clusters = len(self.KMA.n_clusters.values[:])
+
+        Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export)
 
     def Plot_PCs_3D(self, show=True):
         'Plots Predictor first 3 PCs'
