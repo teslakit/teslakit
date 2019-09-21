@@ -6,9 +6,10 @@ import os
 import os.path as op
 import numpy as np
 import copy
-from functools import reduce
+from datetime import datetime
 
 # pip
+from cftime._cftime import DatetimeGregorian
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
@@ -333,34 +334,38 @@ def Plot_DWTs_Mean(xds_KMA, xds_var, p_export=None):
 def ClusterProbs_Month(bmus, time, wt_set, month_ix):
     'Returns Cluster probs by month_ix'
 
-    if isinstance(month_ix, list):
+    # TODO: update custom_dateutils library
+    # get months
+    if isinstance(time[0], DatetimeGregorian):
+        tpd_month = np.asarray([t.month for t in time])
+
+    else:
         tpd = pd.DatetimeIndex(time)
+        tpd_month = tpd.month
+
+    if isinstance(month_ix, list):
 
         # get each month indexes
         l_ix = []
         for m_ix in month_ix:
-            ixs = np.where(tpd.month==m_ix)[0]
+            ixs = np.where(tpd_month==m_ix)[0]
             l_ix.append(ixs)
 
         # get all indexes     
         ix = np.unique(np.concatenate(tuple(l_ix)))
 
     else:
-        tpd = pd.DatetimeIndex(time)
-        ix = np.where(tpd.month==month_ix)[0]
+        ix = np.where(tpd_month==month_ix)[0]
 
     bmus_sel = bmus[ix]
 
     return ClusterProbabilities(bmus_sel, wt_set)
 
-def Plot_DWTs_Probs(xds_KMA, p_export=None):
+def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
     '''
     Plot Daily Weather Types bmus probabilities
     '''
 
-    bmus = xds_KMA['sorted_bmus'].values[:] + 1 # index to DWT id
-    bmus_time = xds_KMA['time'].values[:]
-    n_clusters = len(xds_KMA.n_clusters.values[:])
     wt_set = np.arange(n_clusters) + 1
 
     # best rows cols combination
