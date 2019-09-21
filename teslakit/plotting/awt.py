@@ -17,6 +17,7 @@ import matplotlib.dates as mdates
 # teslakit
 from .custom_colors import colors_awt
 from ..util.operations import GetDivisors
+from ..util.operations import GetBestRowsCols
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -302,19 +303,8 @@ def Plot_AWTs(xds_AWT, lon, p_export=None):
     Km = xds_AWT.Km.values[:]
     n_clusters = len(xds_AWT.n_clusters.values[:])
 
-    ## Get number of rows and cols for gridplot 
-    #sqrt_clusters = sqrt(n_clusters)
-    #if sqrt_clusters.is_integer():
-    #    n_rows = int(sqrt_clusters)
-    #    n_cols = int(sqrt_clusters)
-    #else:
-    #    l_div = GetDivisors(n_clusters)
-    #    n_rows = l_div[len(l_div)//2]
-    #    n_cols = n_clusters//n_rows
-
-    # TODO 6 AWTs
-    n_rows = 2
-    n_cols = 3
+    # get number of rows and cols for gridplot 
+    n_cols, n_rows = GetBestRowsCols(n_clusters)
 
     # get cluster colors
     cs_awt = colors_awt()
