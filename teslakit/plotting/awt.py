@@ -16,7 +16,6 @@ import matplotlib.dates as mdates
 
 # teslakit
 from .custom_colors import colors_awt
-from ..util.operations import GetDivisors
 from ..util.operations import GetBestRowsCols
 
 # import constants
@@ -163,7 +162,7 @@ def axplot_EOF_evolution(ax, years, EOF_evol):
     yfmt = mdates.DateFormatter('%Y')
 
     # get years datetime
-    ys_dt = np.array([datetime(d,1,1) for d in years])
+    ys_dt = np.array([datetime(y,1,1) for y in years])
 
     # plot EOF evolution 
     ax.plot(
