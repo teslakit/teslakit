@@ -17,7 +17,7 @@ from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
 from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean, \
-Plot_DWTs_Probs, Plot_DWT_PCs_3D
+Plot_DWTs_Probs, Plot_DWT_PCs_3D, Plot_DWT_PCs
 
 
 def spatial_gradient(xdset, var_name):
@@ -344,6 +344,29 @@ class Predictor(object):
         n_clusters = len(self.KMA.n_clusters.values[:])
 
         Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export)
+
+    def Plot_DWT_PCs(self, n=3, show=True):
+        '''
+        Plot Daily Weather Types PCs using 2D axis
+        '''
+
+        # get estela data
+        PCs = self.PCA.PCs.values[:]
+        variance = self.PCA.variance.values[:]
+        bmus = self.KMA.sorted_bmus.values[:]  # sorted_bmus
+        n_clusters = len(self.KMA.n_clusters.values[:])
+
+        # handle export path
+        if show:
+            p_export = None
+        else:
+            p_export = op.join(
+                self.p_store,
+                'KMA_RG_PCs123_3D.png'
+            )
+
+        # Plot DWTs PCs
+        Plot_DWT_PCs(PCs, variance, bmus, n_clusters, n, p_export)
 
     def Plot_PCs_3D(self, show=True):
         'Plots Predictor first 3 PCs'
