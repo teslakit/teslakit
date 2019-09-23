@@ -17,7 +17,7 @@ sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 # teslakit
 from teslakit.database import Database
 from teslakit.plotting.awt import Plot_AWT_Validation, Plot_AWTs, \
-Plot_AWTs_Dates, Plot_AWT_PCs_3D, Plot_EOFs_SST
+Plot_AWTs_Dates, Plot_AWT_PCs_3D, Plot_AWT_PCs, Plot_EOFs_SST
 
 
 
@@ -35,8 +35,12 @@ db.SetSite('KWAJALEIN')
 xds_PCA = db.Load_SST_PCA()
 xds_KMA = db.Load_SST_KMA()
 
+
 # Plot 6 EOFs
-Plot_EOFs_SST(xds_PCA, 1)
+Plot_EOFs_SST(xds_PCA, 6)
+
+# Plot 6 PCs 2D
+Plot_AWT_PCs(xds_PCA, xds_KMA, n=6)
 
 # load PCs simulated with copula
 d_PCs_fit, d_PCs_rnd = db.Load_SST_PCs_fit_rnd()
