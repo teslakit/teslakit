@@ -609,11 +609,16 @@ class ALR_WRP(object):
         # get data 
         cluster_size = self.cluster_size
         bmus_values_sim = xds_ALR_sim.evbmus_sims.values
-        #bmus_dates_sim = [npdt2dt(t) for t in xds_ALR_sim.time.values]
         bmus_dates_sim = xds_ALR_sim.time.values[:]
         bmus_values_hist = np.reshape(xds_ALR_fit.bmus.values,[-1,1])
-        bmus_dates_hist = [npdt2dt(t) for t in xds_ALR_fit.time.values]
+        bmus_dates_hist = xds_ALR_fit.time.values[:]
         num_sims = bmus_values_sim.shape[1]
+
+        # fix datetime 64 dates
+        if isinstance(bmus_dates_sim[0], np.datetime64):
+            bmus_dates_sim = [npdt2dt(t) for t in bmus_dates_sim]
+        if isinstance(bmus_dates_hist[0], np.datetime64):
+            bmus_dates_hist = [npdt2dt(t) for t in bmus_dates_hist]
 
         # handle export paths 
         p_save = self.p_report_sim
