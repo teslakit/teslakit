@@ -212,7 +212,8 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
             fig.savefig(p_expi, dpi=_fdpi)
             plt.close()
 
-def Plot_ESTELA(pnt_lon, pnt_lat, estela_D, p_export=None):
+def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D, lon1=None, lon2=None,
+                lat1= None, lat2=None,  p_export=None):
     'Plots ESTELA days at world map '
 
     try:
@@ -222,18 +223,19 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_D, p_export=None):
         return
 
     # estela data
-    estela_lon = estela_D.longitude.values[:]
-    estela_lat = estela_D.latitude.values[:]
-    estela_val = estela_D.values[:]
-    estela_max = np.ceil(estela_D.max().values)
+    estela_lon = estela_F.longitude.values[:]
+    estela_lat = estela_F.latitude.values[:]
+    estela_energy = estela_F.values[:]
+    estela_days = estela_D.values[:]
+    estela_max = np.nanmax(estela_energy)
 
     # figure
     fig, ax = plt.subplots(1, figsize=(_faspect*_fsize, _fsize))
 
     # setup mercator map projection.
     m = Basemap(
-        #llcrnrlon = lon1, llcrnrlat = lat1,
-        #urcrnrlon = lon2, urcrnrlat = lat2,
+        llcrnrlon = lon1, llcrnrlat = lat1,
+        urcrnrlon = lon2, urcrnrlat = lat2,
         resolution = 'l', projection = 'cyl',
         lat_0 = pnt_lat, lon_0 = pnt_lon,
         area_thresh = 0.01,
@@ -242,17 +244,37 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_D, p_export=None):
     m.fillcontinents(color = 'silver')
     m.drawmapboundary(fill_color = 'lightcyan')
     m.drawparallels(np.arange(-90, 90, 20), labels = [1,1,0,0])
-    m.drawmeridians(np.arange(0, 360, 20), labels = [0,0,0,1])
+    m.drawmeridians(np.arange(0, 360, 20), labels = [0,0,1,0])
 
-    # plot estela
-    pc = ax.pcolormesh(
-        estela_lon, estela_lat, estela_val,
-        cmap='jet_r', shading='gouraud',
+    # plot estela energy (pcolormesh)
+    pc = m.pcolormesh(
+        estela_lon, estela_lat, estela_energy,
+        cmap='jet', shading='gouraud', alpha=0.5,
         clim=(0, estela_max),
     )
     cb = m.colorbar(pc, location='bottom')
-    cb.set_ticks(range(int(estela_max)))
-    cb.set_label('days')
+    cb.set_label('Energy Sources')
+
+    # TODO: try to improve pcolormesh using imshow
+    #dx = (estela_lon[1]-estela_lon[0])/2.
+    #dy = (estela_lat[1]-estela_lat[0])/2.
+    #extent = [
+    #    estela_lon[0]-dx, estela_lon[-1]+dx,
+    #    estela_lat[0]-dy, estela_lat[-1]+dy
+    #]
+    #pc = m.imshow(
+    #    estela_energy,
+    #    cmap='jet', interpolation='bilinear', alpha=0.4,
+    #    clim=(0, estela_max),
+    #    extent = extent,
+    #)
+
+    # plot estela days (contour)
+    ac = ax.contour(
+        estela_lon, estela_lat, estela_days,
+        colors='k'
+    )
+    ax.clabel(ac, ac.levels, inline=True, fmt='%d', fontsize=10)
 
     # plot point
     ax.plot(pnt_lon, pnt_lat, 'ok')
