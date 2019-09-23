@@ -21,7 +21,7 @@ from .custom_colors import colors_dwt
 from ..util.operations import GetBestRowsCols
 from ..custom_dateutils import npdt64todatetime as n2d
 from ..kma import ClusterProbabilities
-from .awt import axplot_PCs_3D_allWTs
+from .awt import axplot_PCs_3D_allWTs, axplot_PCs_2D
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -471,78 +471,55 @@ def Plot_DWT_PCs_3D(d_PCs, n_clusters, p_export=None):
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-
-# TODO: not updated functions
-def Plot_PCvsPC(xds_PC123, text=[], p_export = None):
+def Plot_DWT_PCs(PCs, variance, bmus, n_clusters, n=3, p_export=None):
     '''
-    Plot PC1 vs PC2 vs PC3
-
-    xds_PD123
-        (dim,) PC1
-        (dim,) PC2
-        (dim,) PC3
-
-        (dim,) text
-
-    show plot or saves figure to p_export
+    Plot Daily Weather Types PCs using 2D axis
     '''
 
-    # get data
-    pc1_val = xds_PC123.PC1.values
-    pc2_val = xds_PC123.PC2.values
-    pc3_val = xds_PC123.PC3.values
+    # TODO: DUPLICADO DE teslakit/plotting/awt.py
+    # listar duplicados de plots. crear teslakit/plotting/pca.py
 
-    # delta axis
-    pc1_d = np.max([np.absolute(np.max(pc1_val)), np.absolute(np.min(pc1_val))])
-    pc2_d = np.max([np.absolute(np.max(pc2_val)), np.absolute(np.min(pc2_val))])
-    pc3_d = np.max([np.absolute(np.max(pc3_val)), np.absolute(np.min(pc3_val))])
+    # get cluster colors
+    cs_awt = colors_dwt(n_clusters)
 
-    pf = 1.05
-    pc1_d = pc1_d * pf
-    pc2_d = pc2_d * pf
-    pc3_d = pc3_d * pf
+    # get cluster - bmus indexes
+    d_wts = {}
+    for i in range(n_clusters):
+        d_wts[i] = np.where(bmus == i)[:]
 
-    # create figure
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(_faspect*_fsize, _fsize))
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _faspect*_fsize))
+    gs = gridspec.GridSpec(n-1, n-1, wspace=0.0, hspace=0.0)
 
-    ax1.plot(pc2_val, pc1_val, '.r')
-    ax2.plot(pc3_val, pc1_val, '.r')
-    ax4.plot(pc3_val, pc2_val, '.r')
-    ax3.remove()
+    for i in range(n):
+        for j in range(i+1, n):
 
-    # text
-    for p1,p2,p3,t in zip(pc1_val,pc2_val,pc3_val,text):
-        ax1.text(p2,p1,t)
-        ax2.text(p3,p1,t)
-        ax4.text(p3,p2,t)
+            # get PCs to plot
+            PC1 = np.divide(PCs[:,i], np.sqrt(variance[i]))
+            PC2 = np.divide(PCs[:,j], np.sqrt(variance[j]))
 
-    # labels and customize
-    fw = 'bold'
-    ax1.set_xlabel('PC2', fontweight=fw)
-    ax1.set_ylabel('PC1', fontweight=fw)
-    ax2.set_xlabel('PC3', fontweight=fw)
-    ax2.set_ylabel('PC1', fontweight=fw)
-    ax4.set_xlabel('PC3', fontweight=fw)
-    ax4.set_ylabel('PC2', fontweight=fw)
+            # plot PCs (2D)
+            ax = plt.subplot(gs[i, j-1])
+            axplot_PCs_2D(ax, PC1, PC2, d_wts, cs_awt)
 
-    ax1.set_xlim(-pc2_d, pc2_d)
-    ax1.set_ylim(-pc1_d, pc1_d)
-    ax2.set_xlim(-pc3_d, pc3_d)
-    ax2.set_ylim(-pc1_d, pc1_d)
-    ax4.set_xlim(-pc3_d, pc3_d)
-    ax4.set_ylim(-pc2_d, pc2_d)
-
-    lc = 'k'
-    lls = '--'
-    for ax in [ax1, ax2, ax4]:
-        ax.axhline(y=0, color=lc, linestyle=lls)
-        ax.axvline(x=0, color=lc, linestyle=lls)
+            # custom labels
+            if i==0:
+                ax.set_xlabel(
+                    'PC {0}'.format(j+1),
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+                ax.xaxis.set_label_position('top')
+            if j==n-1:
+                ax.set_ylabel(
+                    'PC {0}'.format(i+1),
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+                ax.yaxis.set_label_position('right')
 
     # show / export
     if not p_export:
         plt.show()
-
     else:
-        fig.savefig(p_export, dpi=96)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
