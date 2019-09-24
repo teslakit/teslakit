@@ -13,6 +13,7 @@ from cftime._cftime import DatetimeGregorian
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
+import matplotlib.colors as colors
 from matplotlib import cm
 import pandas as pd
 
@@ -212,8 +213,10 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
             fig.savefig(p_expi, dpi=_fdpi)
             plt.close()
 
-def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D, lon1=None, lon2=None,
-                lat1= None, lat2=None,  p_export=None):
+def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D,
+                lon1=None, lon2=None, lat1= None, lat2=None,
+                p_export=None):
+
     'Plots ESTELA days at world map '
 
     try:
@@ -246,28 +249,24 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D, lon1=None, lon2=None,
     m.drawparallels(np.arange(-90, 90, 20), labels = [1,1,0,0])
     m.drawmeridians(np.arange(0, 360, 20), labels = [0,0,1,0])
 
+    # aux cmap truncate function
+    def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+        new_cmap = colors.LinearSegmentedColormap.from_list(
+            'trunc({n},{a:.2f},{b:.2f})'.format(
+                n=cmap.name, a=minval, b=maxval),
+            cmap(np.linspace(minval, maxval, n)))
+        return new_cmap
+
     # plot estela energy (pcolormesh)
+    cmap = plt.get_cmap('jet')
+    custom_cmap = truncate_colormap(cmap, 0.2, 1)
     pc = m.pcolormesh(
         estela_lon, estela_lat, estela_energy,
-        cmap='jet', shading='gouraud', alpha=0.5,
-        clim=(0, estela_max),
+        cmap = custom_cmap,  shading='gouraud',
+        clim = (0, estela_max),
     )
     cb = m.colorbar(pc, location='bottom')
     cb.set_label('Energy Sources')
-
-    # TODO: try to improve pcolormesh using imshow
-    #dx = (estela_lon[1]-estela_lon[0])/2.
-    #dy = (estela_lat[1]-estela_lat[0])/2.
-    #extent = [
-    #    estela_lon[0]-dx, estela_lon[-1]+dx,
-    #    estela_lat[0]-dy, estela_lat[-1]+dy
-    #]
-    #pc = m.imshow(
-    #    estela_energy,
-    #    cmap='jet', interpolation='bilinear', alpha=0.4,
-    #    clim=(0, estela_max),
-    #    extent = extent,
-    #)
 
     # plot estela days (contour)
     ac = ax.contour(
