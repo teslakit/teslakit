@@ -6,7 +6,7 @@ import os
 import os.path as op
 import numpy as np
 import copy
-from datetime import datetime
+from datetime import datetime, date
 
 # pip
 from cftime._cftime import DatetimeGregorian
@@ -358,7 +358,7 @@ def ClusterProbs_Month(bmus, time, wt_set, month_ix):
 
     # TODO: update custom_dateutils library
     # get months
-    if isinstance(time[0], DatetimeGregorian):
+    if isinstance(time[0], DatetimeGregorian) or isinstance(time[0], date):
         tpd_month = np.asarray([t.month for t in time])
 
     else:
