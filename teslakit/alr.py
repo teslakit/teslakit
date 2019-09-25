@@ -34,8 +34,8 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 from .io.aux_nc import StoreBugXdset
 from .custom_dateutils import npdt64todatetime as npdt2dt
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
-from .plotting.alr import Plot_Compare_Covariate, Plot_Compare_PerpYear, \
-Plot_Validation
+from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions
+from .plotting.alr import Plot_Compare_Covariate
 
 # TODO: organize and refactor time types conversions
 # TODO: optimice operations (double save after sim, plot_compare_perpyear..)
@@ -627,7 +627,7 @@ class ALR_WRP(object):
         if export:
             if not op.isdir(p_save): os.mkdir(p_save)
             p_rep_PY = op.join(p_save, 'PerpetualYear.png')
-            p_rep_VL = op.join(p_save, 'Validation.png')
+            p_rep_VL = op.join(p_save, 'Transitions.png')
 
         # Plot Perpetual Year (daily) - bmus wt
         Plot_Compare_PerpYear(
@@ -639,8 +639,8 @@ class ALR_WRP(object):
         )
 
         # TODO: n_sim > 1 ?
-        # Plot Validation (probability change / scatter Fit vs. Sim) 
-        Plot_Validation(
+        # Plot WTs Transition (probability change / scatter Fit vs. Sim) 
+        Plot_Compare_Transitions(
             cluster_size, bmus_values_hist, bmus_values_sim,
             p_export = p_rep_VL
         )

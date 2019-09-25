@@ -111,3 +111,20 @@ def colors_interp(num_clusters):
 
     return np_colors_rgb
 
+
+def GetClusterColors(num_clusters):
+    'Choose colors or Interpolate custom colormap to number of clusters'
+
+    if num_clusters == 6:
+        np_colors_rgb = colors_awt()  # Annual Weather Types
+
+    if num_clusters == 25:
+        np_colors_rgb = colors_mjo()  # MJO Categories
+
+    elif num_clusters in [36, 42]:
+        np_colors_rgb = colors_dwt(num_clusters)  # Daily Weather Types
+
+    else:
+        np_colors_rgb = colors_interp(num_clusters)  # interpolate
+
+    return np_colors_rgb

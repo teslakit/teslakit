@@ -3,6 +3,7 @@ from . import csiro
 from . import estela
 from . import extremes
 from . import intradaily
+from . import wts
 from . import awt
 from . import mjo
 from . import storms
