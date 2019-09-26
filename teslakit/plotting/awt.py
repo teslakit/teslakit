@@ -143,29 +143,6 @@ def axplot_EOF(ax, EOF_value, lon, ylbl, ttl):
     ax.tick_params(axis='x', which='major', labelsize=8)
     ax.tick_params(axis='y', which='major', labelsize=10)
 
-def axplot_DWT_Probs(ax, dwt_probs,
-                     ttl = '', vmin = 0, vmax = 0.1,
-                     cmap = 'Reds', caxis='black'):
-    'axes plot DWT cluster probabilities'
-
-    # clsuter transition plot
-    ax.pcolor(
-        np.flipud(dwt_probs),
-        cmap=cmap, vmin=vmin, vmax=vmax,
-        edgecolors='k',
-    )
-
-    # customize axes
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
-
-    plt.setp(ax.spines.values(), color=caxis, linewidth=4)
-    plt.setp(
-        [ax.get_xticklines(), ax.get_yticklines()],
-        color=caxis,
-    )
-
 
 def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
                                 AWT_bmus, AWT_PCs_fit, AWT_PCs_rnd, AWT_color,
@@ -411,71 +388,4 @@ def Plot_EOFs_SST(PCs, EOFs, variance, time, lon, n_plot, p_export=None):
             p_expi = op.join(p_export, 'EOFs_{0}.png'.format(it+1))
             fig.savefig(p_expi, dpi=_fdpi)
             plt.close()
-
-
-
-# TODO: move to wts plotting library
-def Plot_AWTs_DWTs_Probs(xds_AWT, ncs_AWT, xds_DWT, ncs_DWT, ttl='', p_export=None):
-    '''
-    Plot Annual Weather Types / Daily Weather Types probabilities
-
-    both DWT and AWT bmus have to start at 0
-    '''
-
-    # reindex AWT to daily dates (year pad to days)
-    xds_AWT = xr_daily(xds_AWT)
-
-    # get common dates AWT-DWT
-    d_comon = xcd_daily([xds_AWT, xds_DWT])
-    xds_AWT = xds_AWT.sel(time=slice(d_comon[0], d_comon[-1]))
-    xds_DWT = xds_DWT.sel(time=slice(d_comon[0], d_comon[-1]))
-
-    # data for plotting
-    awt_bmus = xds_AWT.bmus.values[:]
-    awt_dats = xds_AWT.time.values[:]
-
-    dwt_bmus = xds_DWT.bmus.values[:]
-    dwt_dats = xds_DWT.time.values[:]
-
-    # set of daily weather types
-    dwt_set = np.arange(ncs_DWT)
-
-    # dailt weather types matrix rows and cols
-    n_rows, n_cols = GetBestRowsCols(ncs_DWT)
-
-    # get cluster colors
-    cs_awt = colors_awt()
-
-    # plot figure
-    fig = plt.figure(figsize=(_faspect*_fsize, _fsize/3))
-    gs = gridspec.GridSpec(1, ncs_AWT, wspace=0.10, hspace=0.15)
-
-    for ic in range(ncs_AWT):
-
-        # select DWT bmus at current AWT indexes
-        index_awt = np.where(awt_bmus==ic)[0][:]
-        dwt_bmus_sel = dwt_bmus[index_awt]
-
-        # get DWT cluster probabilities
-        cps = ClusterProbabilities(dwt_bmus_sel, dwt_set)
-        C_T = np.reshape(cps, (n_rows, n_cols))
-
-        # plot axes
-        ax_AWT = plt.subplot(gs[0, ic])
-        axplot_DWT_Probs(
-            ax_AWT, C_T,
-            ttl = 'AWT {0}'.format(ic+1),
-            cmap = 'Reds', caxis = cs_awt[ic],
-        )
-        ax_AWT.set_aspect('equal')
-
-    # add fig title
-    fig.suptitle(ttl, fontsize=14, fontweight='bold')
-
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
 
