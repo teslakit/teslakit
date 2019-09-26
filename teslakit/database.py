@@ -17,6 +17,7 @@ from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
 ReadGowMat, ReadCoastMat, ReadEstelaMat
 from .custom_dateutils import xds_reindex_daily
 from .custom_dateutils import xds_reindex_monthly
+from .custom_dateutils import xds_common_dates_daily as xcd_daily
 
 
 class atdict(dict):
@@ -341,40 +342,106 @@ class Database(object):
         xds['tide'] = xds['tide'] * 1000
         return xds
 
-    def Load_AWTs_DWTs_Plots(self, n_sim=0):
-        'Load data needed for Plots_AWTs_DWTs_Probs'
+    def Load_AWTs_DWTs_Plots_sim(self, n_sim=0):
+        'Load data needed for WT-WT Probs plot'
+
+        # simulated
+        xds_AWT = self.Load_SST_AWT_sim()
+        xds_DWT = self.Load_ESTELA_DWT_sim()
+
+        # AWT simulated - evbmus_sims -1 
+        xds_AWT = xr.Dataset(
+            {'bmus': (('time',), xds_AWT.evbmus_sims.isel(n_sim=n_sim)-1)},
+            coords = {'time': xds_AWT.time.values[:]}
+        )
+
+        # DWT simulated - evbmus_sims -1
+        xds_DWT = xr.Dataset(
+            {'bmus': (('time',), xds_DWT.evbmus_sims.isel(n_sim=n_sim)-1)},
+            coords = {'time': xds_DWT.time.values[:]}
+        )
+
+        # reindex AWT to daily dates (year pad to days)
+        xds_AWT = xds_reindex_daily(xds_AWT)
+
+        # get common dates
+        dc = xcd_daily([xds_AWT, xds_DWT])
+        xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
+        xds_AWT = xds_AWT.sel(time=slice(dc[0], dc[-1]))
+
+        return xds_AWT, xds_DWT
+
+    def Load_AWTs_DWTs_Plots_hist(self):
+        'Load data needed for WT-WT Probs plot'
 
         # historical
-        xds_AWT_hist = self.Load_SST_KMA()
-        xds_DWT_hist = self.Load_ESTELA_KMA()
-
-        # simulation 
-        xds_AWT_sim = self.Load_SST_AWT_sim()
-        xds_DWT_sim = self.Load_ESTELA_DWT_sim()
+        xds_AWT = self.Load_SST_KMA()
+        xds_DWT = self.Load_ESTELA_KMA()
 
         # AWT historical - bmus
-        xds_AWT_hist = xr.Dataset(
-            {'bmus': (('time',), xds_AWT_hist.bmus.values[:])},
-            coords = {'time': xds_AWT_hist.time.values[:]}
+        xds_AWT = xr.Dataset(
+            {'bmus': (('time',), xds_AWT.bmus.values[:])},
+            coords = {'time': xds_AWT.time.values[:]}
         )
+
+        # DWT historical - sorted_bmus_storms
+        xds_DWT = xr.Dataset(
+            {'bmus': (('time',), xds_DWT.sorted_bmus_storms.values[:])},
+            coords = {'time': xds_DWT.time.values[:]}
+        )
+
+        # reindex AWT to daily dates (year pad to days)
+        xds_AWT = xds_reindex_daily(xds_AWT)
+
+        # get common dates
+        dc = xcd_daily([xds_AWT, xds_DWT])
+        xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
+        xds_AWT = xds_AWT.sel(time=slice(dc[0], dc[-1]))
+
+        return xds_AWT, xds_DWT
+
+    def Load_MJO_DWTs_Plots_hist(self):
+        'Load data needed for WT-WT Probs plot'
+
+        # historical
+        xds_MJO = self.Load_MJO_hist()
+        xds_DWT = self.Load_ESTELA_KMA()
+
+        # MJO historical - phase -1
+        xds_MJO['phase'] = xds_MJO.phase - 1
+
         # DWT historical - sorted_bmus
-        xds_DWT_hist = xr.Dataset(
-            {'bmus': (('time',), xds_DWT_hist.sorted_bmus.values[:])},
-            coords = {'time': xds_DWT_hist.time.values[:]}
-        )
-        # AWT simulated - evbmus_sims -1 
-        xds_AWT_sim = xr.Dataset(
-            {'bmus': (('time',), xds_AWT_sim.evbmus_sims.isel(n_sim=n_sim)-1)},
-            coords = {'time': xds_AWT_sim.time.values[:]}
-        )
-        # DWT  simulated - evbmus_sims
-        xds_DWT_sim = xr.Dataset(
-            {'bmus': (('time',), xds_DWT_sim.evbmus_sims.isel(n_sim=n_sim))},
-            coords = {'time': xds_DWT_sim.time.values[:]}
+        xds_DWT = xr.Dataset(
+            {'bmus': (('time',), xds_DWT.sorted_bmus.values[:])},
+            coords = {'time': xds_DWT.time.values[:]}
         )
 
-        return xds_AWT_hist, xds_DWT_hist, xds_AWT_sim, xds_DWT_sim
+        # get common dates
+        dc = xcd_daily([xds_DWT, xds_MJO])
+        xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
+        xds_MJO = xds_MJO.sel(time=slice(dc[0], dc[-1]))
 
+        return xds_MJO, xds_DWT
+
+    def Load_MJO_DWTs_Plots_sim(self, n_sim=0):
+        'Load data needed for WT-WT Probs plot'
+
+        # simulated
+        xds_MJO = self.Load_MJO_sim()
+        xds_DWT = self.Load_ESTELA_DWT_sim()
+
+        # DWT simulated - evbmus_sims
+        xds_DWT = xr.Dataset(
+            {'bmus': (('time',), xds_DWT.evbmus_sims.isel(n_sim=n_sim))},
+            coords = {'time': xds_DWT.time.values[:]}
+        )
+
+        # get common dates
+        dc = xcd_daily([xds_DWT, xds_MJO])
+        xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
+        xds_MJO = xds_MJO.sel(time=slice(dc[0], dc[-1]))
+
+        return xds_MJO, xds_DWT
 
 class PathControl(object):
     'auxiliar object for handling teslakit files paths'
