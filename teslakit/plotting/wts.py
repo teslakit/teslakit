@@ -16,6 +16,7 @@ import matplotlib.colors as mcolors
 from matplotlib.colorbar import ColorbarBase
 
 # teslakit
+from ..util.operations import GetBestRowsCols
 from .custom_colors import GetClusterColors
 from ..kma import ClusterProbabilities, ChangeProbabilities
 
@@ -197,6 +198,56 @@ def axplot_ClusterProbs(ax, cluster_probs_fit, cluster_probs_sim, wt_colors,
     ax.set_ylim([0, axlim])
     ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
 
+def axplot_WT_Probs(ax, wt_probs,
+                     ttl = '', vmin = 0, vmax = 0.1,
+                     cmap = 'Blues', caxis='black'):
+    'axes plot WT cluster probabilities'
+
+    # clsuter transition plot
+    pc = ax.pcolor(
+        np.flipud(wt_probs),
+        cmap=cmap, vmin=vmin, vmax=vmax,
+        edgecolors='k',
+    )
+
+    # customize axes
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
+
+    # axis color
+    plt.setp(ax.spines.values(), color=caxis)
+    plt.setp(
+        [ax.get_xticklines(), ax.get_yticklines()],
+        color=caxis,
+    )
+
+    # axis linewidth
+    if caxis != 'black':
+        plt.setp(ax.spines.values(), linewidth=3)
+
+    return pc
+
+def axplot_WT_Hist(ax, bmus, n_clusters, ttl=''):
+    'axes plot WT cluster count histogram'
+
+    # cluster transition plot
+    ax.hist(
+        bmus,
+        bins = np.arange(1, n_clusters+2),
+        edgecolor='k'
+    )
+
+    # customize axes
+    #ax.grid('y')
+
+    ax.set_xticks(np.arange(1,n_clusters+1)+0.5)
+    ax.set_xticklabels(np.arange(1,n_clusters+1))
+    ax.set_xlim([1, n_clusters+1])
+    ax.tick_params(axis='both', which='major', labelsize=6)
+
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
+
 
 def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
@@ -318,7 +369,61 @@ def Plot_Compare_Transitions(num_clusters, bmus_values_hist, bmus_values_sim,
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
+def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
+                     wt_colors=False, p_export=None):
+    '''
+    Plot WTs_1 / WTs_2 probabilities
 
+    both categories series should start at 0
+    '''
+
+    # set of daily weather types
+    set_2 = np.arange(n_clusters_2)
+
+    # dailt weather types matrix rows and cols
+    n_rows, n_cols = GetBestRowsCols(n_clusters_2)
+
+    # get cluster colors
+    cs_wt =  GetClusterColors(n_clusters_1)
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize/3))
+    gs = gridspec.GridSpec(1, n_clusters_1, wspace=0.10, hspace=0.15)
+
+    for ic in range(n_clusters_1):
+
+        # select DWT bmus at current AWT indexes
+        index_1 = np.where(series_1==ic)[0][:]
+        sel_2 = series_2[index_1]
+
+        # get DWT cluster probabilities
+        cps = ClusterProbabilities(sel_2, set_2)
+        C_T = np.reshape(cps, (n_rows, n_cols))
+
+        # axis colors
+        if wt_colors:
+            caxis = cs_wt[ic]
+        else:
+            caxis = 'black'
+
+        # plot axes
+        ax = plt.subplot(gs[0, ic])
+        axplot_WT_Probs(
+            ax, C_T,
+            ttl = 'WT {0}'.format(ic+1),
+            cmap = 'Reds', caxis = caxis,
+        )
+        ax.set_aspect('equal')
+
+    # add fig title
+    fig.suptitle(ttl, fontsize=14, fontweight='bold')
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
 
 
 
