@@ -352,9 +352,9 @@ class Database(object):
         xds_AWT_sim = self.Load_SST_AWT_sim()
         xds_DWT_sim = self.Load_ESTELA_DWT_sim()
 
-        # AWT historical - bmus_corrected 
+        # AWT historical - bmus
         xds_AWT_hist = xr.Dataset(
-            {'bmus': (('time',), xds_AWT_hist.bmus_corrected.values[:])},
+            {'bmus': (('time',), xds_AWT_hist.bmus.values[:])},
             coords = {'time': xds_AWT_hist.time.values[:]}
         )
         # DWT historical - sorted_bmus
