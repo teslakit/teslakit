@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # common
-import datetime
+from datetime import datetime
 
 # pip
 import numpy as np
@@ -106,8 +106,9 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     pred_var_ra = xdset['{0}_runavg'.format(pred_name)]
 
     # use datetime for indexing
-    dt1 = datetime.datetime(y1,m1,1)
-    dt2 = datetime.datetime(y2+1,m2,28)
+    dt1 = datetime(y1,m1,1)
+    dt2 = datetime(y2+1,m2,28)
+    time_PCA = [datetime(y, m1, 1) for y in range(y1, y2+1)]
 
     # use data inside timeframe
     data_ss = pred_var.loc[:,:,dt1:dt2]
@@ -142,25 +143,24 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     ipca = PCA(n_components=var_anom_demean.shape[0])
     PCs = ipca.fit_transform(var_anom_demean)
 
+    pred_lon = xdset.longitude.values[:]
     return xr.Dataset(
         {
             'PCs': (('n_components', 'n_components'), PCs),
             'EOFs': (('n_components','n_features'), ipca.components_),
             'variance': (('n_components',), ipca.explained_variance_),
 
-            'pred_lon': (('n_lon',), xdset.longitude.values),
-
             'var_anom_std': (('n_features',), var_anom_std),
             'var_anom_mean': (('n_features',), var_anom_mean),
+
+            'time': (('n_components'), time_PCA),
+            'pred_lon': (('n_lon',), pred_lon),
+
         },
 
         # store PCA algorithm metadata
         attrs = {
             'method': 'latitude averaged',
-            'y1': y1,
-            'y2': y2,
-            'm1': m1,
-            'm2': m2,
         }
     )
 
