@@ -16,11 +16,13 @@ import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
 
 # teslakit
-from .custom_colors import colors_awt
 from ..util.operations import GetBestRowsCols
 from ..custom_dateutils import xds_reindex_daily as xr_daily
 from ..custom_dateutils import xds_common_dates_daily as xcd_daily
+from ..custom_dateutils import get_years_months_days
 from ..kma import ClusterProbabilities
+from .custom_colors import colors_awt
+from .pcs import axplot_PC_hist, axplot_PCs_3D
 
 
 # import constants
@@ -96,90 +98,6 @@ def axplot_AWT_years(ax, dates_wt, bmus_wt, color_wt, xticks_clean=False,
         ax.set_xlabel('Year', {'fontsize':8})
 
     if ylab: ax.set_ylabel(ylab)
-
-def axplot_PCs_2D(ax, PC1, PC2, d_wts, c_wts):
-    'axes plot AWT PCs 1,2,3 (3D)'
-
-    # calculate PC centroids
-    pc1_wt = [np.mean(PC1[d_wts[i]]) for i in sorted(d_wts.keys())]
-    pc2_wt = [np.mean(PC2[d_wts[i]]) for i in sorted(d_wts.keys())]
-
-    # scatter  plot
-    ax.scatter(
-        PC1, PC2,
-        c = 'silver',
-        s = 3,
-    )
-
-    # WT centroids
-    for x,y,c in zip(pc1_wt, pc2_wt, c_wts):
-        ax.scatter(x, y, c=[c], s=10)
-
-    ax.set_xlim([-3,3])
-    ax.set_ylim([-3,3])
-    ax.set_xticks([])
-    ax.set_yticks([])
-
-def axplot_PCs_3D(ax, pcs_wt, color_wt, ttl='PCs'):
-    'axes plot AWT PCs 1,2,3 (3D)'
-
-    PC1 = pcs_wt[:,0]
-    PC2 = pcs_wt[:,1]
-    PC3 = pcs_wt[:,2]
-
-    # scatter  plot
-    ax.scatter(
-        PC1, PC2, PC3,
-        c = [color_wt],
-        s = 2,
-    )
-
-    ax.set_xlim([-3,3])
-    ax.set_ylim([-3,3])
-    ax.set_zlim([-3,3])
-    ax.set_xticklabels([])
-    ax.set_yticklabels([])
-    ax.set_zticklabels([])
-    ax.set_title(ttl, {'fontsize':8, 'fontweight':'bold'})
-
-def axplot_PCs_3D_allWTs(ax, d_PCs, wt_colors, ttl='PCs'):
-    'axes plot AWT PCs 1,2,3 (3D)'
-
-    # plot each weather type
-    wt_keys = sorted(d_PCs.keys())
-    for ic, k in enumerate(wt_keys):
-        PC1 = d_PCs[k][:,0]
-        PC2 = d_PCs[k][:,1]
-        PC3 = d_PCs[k][:,2]
-
-        # scatter  plot
-        ax.scatter(
-            PC1, PC2, PC3,
-            c = [wt_colors[ic]],
-            label = k,
-            s = 3,
-        )
-
-    ax.set_xlabel('PC1', {'fontsize':10})
-    ax.set_ylabel('PC2', {'fontsize':10})
-    ax.set_zlabel('PC3', {'fontsize':10})
-    ax.set_xlim([-3,3])
-    ax.set_ylim([-3,3])
-    ax.set_zlim([-3,3])
-    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
-
-def axplot_PC_hist(ax, pc_wt, color_wt, nb=30, ylab=None):
-    'axes plot AWT singular PC histogram'
-
-    ax.hist(pc_wt, nb, density=True, color=color_wt)
-
-    # gridlines and axis properties
-    ax.grid(True, which='both', axis='both', linestyle='--', color='grey')
-    ax.set_xlim([-3,3])
-    ax.set_yticklabels([])
-    ax.tick_params(axis='x', which='major', labelsize=5)
-    if ylab:
-        ax.set_ylabel(ylab, {'fontweight':'bold'}, labelpad=-3)
 
 def axplot_EOF_evolution(ax, years, EOF_evol):
     'axes plot EOFs evolution'
@@ -298,7 +216,7 @@ def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_AWT_Validation(xds_AWT, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
+def Plot_AWT_Validation(bmus, dates, Km, n_clusters, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
     '''
     Plot Annual Weather Types Validation
 
@@ -309,13 +227,6 @@ def Plot_AWT_Validation(xds_AWT, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
 
     # TODO: activate p_export
 
-    # get data
-    bmus = xds_AWT.bmus_corrected.values[:]  # corrected bmus
-    dates = xds_AWT.time.values[:]
-    order = xds_AWT.order.values[:]  # clusters order
-    Km = xds_AWT.Km.values[:]
-    n_clusters = len(xds_AWT.n_clusters.values[:])
-
     # get cluster colors
     cs_awt = colors_awt()
 
@@ -323,13 +234,11 @@ def Plot_AWT_Validation(xds_AWT, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
     for ic in range(n_clusters):
 
         # get cluster data
-        num = order[ic]
-
         id_AWT = ic + 1           # cluster ID
         index = np.where(bmus==ic)[0][:]
         dates_AWT = dates[index]  # cluster dates
         bmus_AWT = bmus[index]    # cluster bmus
-        var_AWT = Km[num,:]
+        var_AWT = Km[ic,:]
         var_AWT_2D = var_AWT.reshape(-1, len(lon))
         num_WTs = len(index)      # number of cluster ocurrences
         clr = cs_awt[ic]          # cluster color
@@ -343,15 +252,10 @@ def Plot_AWT_Validation(xds_AWT, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
             PCs_fit, PCs_rnd,
             clr)
 
-def Plot_AWTs(xds_AWT, lon, p_export=None):
+def Plot_AWTs(bmus, Km, n_clusters, lon, p_export=None):
     '''
     Plot Annual Weather Types
     '''
-
-    bmus = xds_AWT.bmus.values[:]
-    order = xds_AWT.order.values[:]
-    Km = xds_AWT.Km.values[:]
-    n_clusters = len(xds_AWT.n_clusters.values[:])
 
     # get number of rows and cols for gridplot 
     n_cols, n_rows = GetBestRowsCols(n_clusters)
@@ -367,11 +271,10 @@ def Plot_AWTs(xds_AWT, lon, p_export=None):
     gc = 0
 
     for ic in range(n_clusters):
-        num = order[ic]
 
         id_AWT = ic + 1           # cluster ID
-        index = np.where(bmus==num)[0][:]
-        var_AWT = Km[num,:]
+        index = np.where(bmus==ic)[0][:]
+        var_AWT = Km[ic,:]
         var_AWT_2D = var_AWT.reshape(-1, len(lon))
         num_WTs = len(index)
         clr = cs_awt[ic]          # cluster color
@@ -392,17 +295,12 @@ def Plot_AWTs(xds_AWT, lon, p_export=None):
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_AWTs_Dates(xds_AWT, p_export=None):
+def Plot_AWTs_Dates(bmus, dates, n_clusters, p_export=None):
     '''
     Plot Annual Weather Types dates
 
     xds_AWT: KMA output
     '''
-
-    # get data
-    bmus = xds_AWT.bmus_corrected.values[:]  # corrected bmus
-    dates = xds_AWT.time.values[:]
-    n_clusters = len(xds_AWT.n_clusters.values[:])
 
     # get cluster colors
     cs_awt = colors_awt()
@@ -436,89 +334,7 @@ def Plot_AWTs_Dates(xds_AWT, p_export=None):
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_AWT_PCs_3D(d_PCs_fit, d_PCs_rnd, p_export=None):
-    '''
-    Plot Annual Weather Types PCs fit - rnd comparison (3D)
-    '''
-
-    from mpl_toolkits.mplot3d import Axes3D
-
-    # get cluster colors
-    cs_awt = colors_awt()
-
-    # figure
-    fig = plt.figure(figsize=(_faspect*_fsize, _fsize/1.66))
-    gs = gridspec.GridSpec(1, 2, wspace=0.10, hspace=0.35)
-    ax_fit = plt.subplot(gs[0, 0], projection='3d')
-    ax_sim = plt.subplot(gs[0, 1], projection='3d')
-
-    # Plot PCs (3D)
-    axplot_PCs_3D_allWTs(ax_fit, d_PCs_fit,  cs_awt, ttl='PCs fit')
-    axplot_PCs_3D_allWTs(ax_sim, d_PCs_rnd,  cs_awt, ttl='PCs sim')
-
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
-def Plot_AWT_PCs(xds_PCA, xds_KMA, n=3, p_export=None):
-    '''
-    Plot Annual Weather Types PCs using 2D axis
-    '''
-
-    # data
-    PCs = xds_PCA.PCs.values[:]
-    variance = xds_PCA.variance.values[:]
-    bmus = xds_KMA.bmus_corrected.values[:]  # corrected bmus
-    n_clusters = len(xds_KMA.n_clusters.values[:])
-
-    # get cluster - bmus indexes
-    d_wts = {}
-    for i in range(n_clusters):
-        d_wts[i] = np.where(bmus == i)[:]
-
-    # get cluster colors
-    cs_awt = colors_awt()
-
-    # figure
-    fig = plt.figure(figsize=(_faspect*_fsize, _faspect*_fsize))
-    gs = gridspec.GridSpec(n-1, n-1, wspace=0.0, hspace=0.0)
-
-    for i in range(n):
-        for j in range(i+1, n):
-
-            # get PCs to plot
-            PC1 = np.divide(PCs[:,i], np.sqrt(variance[i]))
-            PC2 = np.divide(PCs[:,j], np.sqrt(variance[j]))
-
-            # plot PCs (2D)
-            ax = plt.subplot(gs[i, j-1])
-            axplot_PCs_2D(ax, PC1, PC2, d_wts, cs_awt)
-
-            # custom labels
-            if i==0:
-                ax.set_xlabel(
-                    'PC {0}'.format(j+1),
-                    {'fontsize':10, 'fontweight':'bold'}
-                )
-                ax.xaxis.set_label_position('top')
-            if j==n-1:
-                ax.set_ylabel(
-                    'PC {0}'.format(i+1),
-                    {'fontsize':10, 'fontweight':'bold'}
-                )
-                ax.yaxis.set_label_position('right')
-
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
-def Plot_EOFs_SST(xds_PCA, n_plot, p_export=None):
+def Plot_EOFs_SST(PCs, EOFs, variance, time, lon, n_plot, p_export=None):
     '''
     Plot annual EOFs for 3D predictors
 
@@ -528,24 +344,25 @@ def Plot_EOFs_SST(xds_PCA, n_plot, p_export=None):
         (n_components, ) variance
 
         (n_lon, ) pred_lon: predictor longitude values
+        (n_components, ) time
 
-        attrs: y1, y2, m1, m2: PCA time parameters
         method: latitude averaged
 
     n_plot: number of EOFs plotted
     '''
 
-    # PCA data
-    variance = xds_PCA['variance'].values
-    EOFs = np.transpose(xds_PCA['EOFs'].values)
-    PCs = np.transpose(xds_PCA['PCs'].values)
+    # transpose
+    EOFs = np.transpose(EOFs)
+    PCs = np.transpose(PCs)
+
+    # get start and end month
+    ys, ms, _ = get_years_months_days(time)
 
     # PCA latavg metadata
-    y1 = xds_PCA.attrs['y1']
-    y2 = xds_PCA.attrs['y2']
-    m1 = xds_PCA.attrs['m1']
-    m2 = xds_PCA.attrs['m2']
-    lon = xds_PCA['pred_lon'].values
+    y1 = ys[0]
+    y2 = ys[-1]
+    m1 = ms[0]
+    m2 = ms[-1]
 
     # mesh data
     len_x = len(lon)
@@ -595,6 +412,9 @@ def Plot_EOFs_SST(xds_PCA, n_plot, p_export=None):
             fig.savefig(p_expi, dpi=_fdpi)
             plt.close()
 
+
+
+# TODO: move to wts plotting library
 def Plot_AWTs_DWTs_Probs(xds_AWT, ncs_AWT, xds_DWT, ncs_DWT, ttl='', p_export=None):
     '''
     Plot Annual Weather Types / Daily Weather Types probabilities

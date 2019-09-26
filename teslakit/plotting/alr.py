@@ -123,7 +123,7 @@ def Plot_PValues(p_values, term_names, p_export=None):
     ax.xaxis.tick_bottom()
     ax.set_xticks(np.arange(n_terms), minor=True)
     ax.set_xticks(np.arange(n_terms)+0.5, minor=False)
-    ax.set_xticklabels(term_names, minor=False, rotation=90, fontsize=6)
+    ax.set_xticklabels(term_names, minor=False, rotation=90, fontsize=7)
 
     ax.set_yticks(np.arange(n_wts), minor=True)
     ax.set_yticks(np.arange(n_wts)+0.5, minor=False)
@@ -165,7 +165,7 @@ def Plot_Params(params, term_names, p_export=None):
     ax.xaxis.tick_bottom()
     ax.set_xticks(np.arange(n_terms), minor=True)
     ax.set_xticks(np.arange(n_terms)+0.5, minor=False)
-    ax.set_xticklabels(term_names, minor=False, rotation=90, fontsize=6)
+    ax.set_xticklabels(term_names, minor=False, rotation=90, fontsize=7)
 
     ax.set_yticks(np.arange(n_wts), minor=True)
     ax.set_yticks(np.arange(n_wts)+0.5, minor=False)
