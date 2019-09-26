@@ -198,29 +198,23 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
     '''
 
     # PCA data
-    variance = xds_PCA['variance']
-    EOFs = xds_PCA['EOFs']
-    PCs = xds_PCA['PCs']
+    variance = xds_PCA.variance.values[:]
+    EOFs = xds_PCA.EOFs.values[:]
+    PCs = xds_PCA.PCs.values[:]
 
     var_anom_std = xds_PCA.var_anom_std.values[:]
     var_anom_mean = xds_PCA.var_anom_mean.values[:]
+    time = xds_PCA.time.values[:]
 
     # APEV: the cummulative proportion of explained variance by ith PC
-    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    APEV = np.cumsum(variance) / np.sum(variance)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
 
-    PCsub = PCs.values[:, :nterm+1]
-    EOFsub = EOFs.values[:nterm+1, :]
+    PCsub = PCs[:, :nterm+1]
+    EOFsub = EOFs[:nterm+1, :]
 
     # KMEANS
     kma = KMeans(n_clusters=num_clusters, n_init=2000).fit(PCsub)
-
-    # sort kmeans
-    kma_order = sort_cluster_gen_corr_end(kma.cluster_centers_, num_clusters)
-    bmus_corrected = np.zeros((len(kma.labels_),),)*np.nan
-    for i in range(num_clusters):
-        posc = np.where(kma.labels_==kma_order[i])
-        bmus_corrected[posc] = i
 
     # groupsize
     _, group_size = np.unique(kma.labels_, return_counts=True)
@@ -240,19 +234,31 @@ def KMA_simple(xds_PCA, num_clusters, repres=0.95):
         np.tile(var_anom_std, (num_clusters, 1))
     ) + np.tile(var_anom_mean, (num_clusters, 1))
 
+    # sort kmeans
+    kma_order = np.argsort(np.mean(-km, axis=1))
+
+    # reorder clusters: bmus, km, cenEOFs, centroids, group_size
+    sorted_bmus = np.zeros((len(kma.labels_),),)*np.nan
+    for i in range(num_clusters):
+        posc = np.where(kma.labels_ == kma_order[i])
+        sorted_bmus[posc] = i
+    sorted_km = km[kma_order]
+    sorted_cenEOFs = kma.cluster_centers_[kma_order]
+    sorted_centroids = centroids[kma_order]
+    sorted_group_size = group_size[kma_order]
+
     return xr.Dataset(
         {
-            'order': (('n_clusters'), kma_order),
-            'bmus_corrected': (('n_pcacomp'), bmus_corrected.astype(int)),
-            'cenEOFs': (('n_clusters', 'n_features'), kma.cluster_centers_),
-            'bmus': (('n_pcacomp',), kma.labels_),
-            'centroids': (('n_clusters','n_pcafeat'), centroids),
-            'Km': (('n_clusters','n_pcafeat'), km),
-            'group_size': (('n_clusters'), group_size),
+            'bmus': (('n_pcacomp'), sorted_bmus.astype(int)),
+            'cenEOFs': (('n_clusters', 'n_features'), sorted_cenEOFs),
+            'centroids': (('n_clusters','n_pcafeat'), sorted_centroids),
+            'Km': (('n_clusters','n_pcafeat'), sorted_km),
+            'group_size': (('n_clusters'), sorted_group_size),
 
             # PCA data
             'PCs': (('n_pcacomp','n_features'), PCsub),
             'variance': (('n_pcacomp',), variance),
+            'time': (('n_pcacomp',), time),
         }
     )
 
@@ -273,19 +279,19 @@ def KMA_regression_guided(
     '''
 
     # PCA data
-    variance = xds_PCA['variance']
-    EOFs = xds_PCA['EOFs']
-    PCs = xds_PCA['PCs']
+    variance = xds_PCA['variance'].values[:]
+    EOFs = xds_PCA['EOFs'].values[:]
+    PCs = xds_PCA['PCs'].values[:]
 
     # Yregres data
-    Y = xds_Yregres['Ym']
+    Y = xds_Yregres['Ym'].values[:]
 
     # APEV: the cummulative proportion of explained variance by ith PC
-    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    APEV = np.cumsum(variance) / np.sum(variance)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
 
     nterm = nterm+1
-    PCsub = PCs.values[:, :nterm]
+    PCsub = PCs[:, :nterm]
 
     # append Yregres data to PCs
     data = np.concatenate((PCsub, Y), axis=1)
@@ -400,16 +406,16 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     repres = 0.951
 
     # PREDICTOR: PCA data
-    variance = xds_PCA['variance']
-    EOFs = xds_PCA['EOFs']
-    PCs = xds_PCA['PCs']
+    variance = xds_PCA['variance'].values[:]
+    EOFs = xds_PCA['EOFs'].values[:]
+    PCs = xds_PCA['PCs'].values[:]
 
     # APEV: the cummulative proportion of explained variance by ith PC
-    APEV = np.cumsum(variance.values) / np.sum(variance.values)*100.0
+    APEV = np.cumsum(variance) / np.sum(variance)*100.0
     nterm = np.where(APEV <= repres*100)[0][-1]
 
-    PCsub = PCs.values[:, :nterm-1]
-    EOFsub = EOFs.values[:nterm-1, :]
+    PCsub = PCs[:, :nterm-1]
+    EOFsub = EOFs[:nterm-1, :]
 
     PCsub_std = np.std(PCsub, axis=0)
     PCsub_norm = np.divide(PCsub, PCsub_std)
@@ -417,7 +423,7 @@ def SimpleMultivariateRegressionModel(xds_PCA, xds_WAVES, name_vars):
     X = PCsub_norm  # predictor
 
     # PREDICTAND: WAVES data
-    wd = np.array([xds_WAVES[vn].values for vn in name_vars]).T
+    wd = np.array([xds_WAVES[vn].values[:] for vn in name_vars]).T
     wd_std = np.nanstd(wd, axis=0)
     wd_norm = np.divide(wd, wd_std)
 
