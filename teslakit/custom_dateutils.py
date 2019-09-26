@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from cftime._cftime import DatetimeGregorian
 import calendar
 from time import mktime
 import numpy as np
+import pandas as pd
 
 
 # TODO: refactor, nombre archivo, nombre funciones, localizar usos
@@ -163,19 +164,25 @@ def date2datenum(d):
     # return datetime 
     return datetime.fromtimestamp(mktime(ttup))
 
-def gyears(date_list):
+def get_years_months_days(time):
     '''
-    Returns years for each date in date_list.
+    Returns years, months, days of time in separete lists
+
     (Used to avoid problems with dates type)
     '''
 
-    if isinstance(date_list[0], datetime):
-        ls = [x.year for x in date_list]
+    t0 = time[0]
 
-    elif isinstance(date_list[0], np.datetime64):
-        ls = [int(str(x).split('-')[0]) for x in date_list]
+    if isinstance(t0, (date, datetime, DatetimeGregorian)):
+        ys = np.asarray([x.year for x in time])
+        ms = np.asarray([x.month for x in time])
+        ds = np.asarray([x.day for x in time])
 
     else:
-        pass
+        tpd = pd.DatetimeIndex(time)
+        ys = tpd.year
+        ms = tpd.month
+        ds = tpd.day
 
-    return np.array(ls)
+    return ys, ms, ds
+
