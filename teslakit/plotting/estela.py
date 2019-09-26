@@ -21,6 +21,7 @@ from ..custom_dateutils import npdt64todatetime as n2d
 from ..custom_dateutils import get_years_months_days
 from ..kma import ClusterProbabilities
 from .custom_colors import colors_dwt
+from .wts import axplot_WT_Probs, axplot_WT_Hist
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -86,45 +87,6 @@ def axplot_DWT(ax, dwt, vmin, vmax, wt_color):
     ax.set_yticks([])
 
     return pc
-
-def axplot_DWT_Probs(ax, dwt_probs,
-                     ttl = '', vmin = 0, vmax = 0.1,
-                     cmap = 'Blues'):
-    'axes plot DWT cluster probabilities'
-
-    # clsuter transition plot
-    pc = ax.pcolor(
-        np.flipud(dwt_probs),
-        cmap=cmap, vmin=vmin, vmax=vmax,
-        edgecolors='k',
-    )
-
-    # customize axes
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
-
-    return pc
-
-def axplot_DWT_Hist(ax, bmus, n_clusters, ttl=''):
-    'axes plot DWT cluster count histogram'
-
-    # clsuter transition plot
-    ax.hist(
-        bmus,
-        bins = np.arange(1, n_clusters+2),
-        edgecolor='k'
-    )
-
-    # customize axes
-    #ax.grid('y')
-
-    ax.set_xticks(np.arange(1,n_clusters+1)+0.5)
-    ax.set_xticklabels(np.arange(1,n_clusters+1))
-    ax.set_xlim([1, n_clusters+1])
-    ax.tick_params(axis='both', which='major', labelsize=6)
-
-    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
 
 
 def Plot_EOFs_EstelaPred(xds_PCA, n_plot, p_export=None):
@@ -419,11 +381,11 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
     C_T = np.reshape(c_T, (n_rows, n_cols))
 
     ax_probs_T = plt.subplot(gs[:2, :2])
-    pc = axplot_DWT_Probs(ax_probs_T, C_T, ttl = 'DWT Probabilities')
+    pc = axplot_WT_Probs(ax_probs_T, C_T, ttl = 'DWT Probabilities')
 
     # plot counts histogram
     ax_hist = plt.subplot(gs[2:, :3])
-    axplot_DWT_Hist(ax_hist, bmus, n_clusters, ttl = 'DWT Counts')
+    axplot_WT_Hist(ax_hist, bmus, n_clusters, ttl = 'DWT Counts')
 
     # plot probabilities by month
     for m_ix, m_name, m_gs in l_months:
@@ -434,7 +396,7 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
 
         # plot axes
         ax_M = plt.subplot(m_gs)
-        axplot_DWT_Probs(ax_M, C_M, ttl = m_name)
+        axplot_WT_Probs(ax_M, C_M, ttl = m_name)
 
     # plot probabilities by 3 month sets
     for m_ix, m_name, m_gs in l_3months:
@@ -445,7 +407,7 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
 
         # plot axes
         ax_M = plt.subplot(m_gs)
-        axplot_DWT_Probs(ax_M, C_M, ttl = m_name, cmap='Greens')
+        axplot_WT_Probs(ax_M, C_M, ttl = m_name, cmap='Greens')
 
     # add custom colorbar
     pp = ax_probs_T.get_position()
