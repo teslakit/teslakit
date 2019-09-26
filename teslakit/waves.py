@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 
 # tk
-from teslakit.custom_dateutils import gyears, npdt64todatetime
+from teslakit.custom_dateutils import get_years_months_days, npdt64todatetime
 from datetime import datetime, timedelta
 
 # hide numpy warnings
@@ -287,7 +287,7 @@ def TWL_AnnualMaxima(xds_TWL):
     TWL = xds_TWL.TWL.values[:]
 
     # years array
-    ys = gyears(ts)  # aux. avoid time type problems 
+    ys, _, _ = get_years_months_days(ts)  # aux. avoid time type problems 
     us = np.unique(ys)
 
     # iterate over years
