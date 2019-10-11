@@ -189,6 +189,7 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
 
     # cut storm dataset to selection
     xds_TCs_sel = xds_TCs.isel(storm=l_storms_area)
+    xds_TCs_sel = xds_TCs_sel.assign_coords(storm = np.array(l_storms_area))
 
     # store storms parameters 
     xds_TCs_sel_params = xr.Dataset(
@@ -205,7 +206,7 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             'index_out':(('storm'), np.array(l_ix_out)),
         },
         coords = {
-            'storm':(('storm'), xds_TCs_sel.storm.values[:])
+            'storm':(('storm'), np.array(l_storms_area))
         },
         attrs = {
             'point_lon' : p_lon,
