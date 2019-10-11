@@ -20,6 +20,10 @@ from .custom_dateutils import xds_reindex_monthly
 from .custom_dateutils import xds_common_dates_daily as xcd_daily
 
 
+def clean_files(l_files):
+    for f in l_files:
+        if op.isfile(f): os.remove(f)
+
 class atdict(dict):
     __getattr__= dict.__getitem__
     __setattr__= dict.__setitem__
@@ -191,10 +195,19 @@ class Database(object):
 
     # TODO: indicar _hist en los 4 siguientes
     def Save_TCs_r1(self, xds_tcs, xds_params):
+        clean_files(
+            [self.paths.site.TCs.hist_r1,
+             self.paths.site.TCs.hist_r1_params]
+        )
+
         xds_tcs.to_netcdf(self.paths.site.TCs.hist_r1, 'w')
         xds_params.to_netcdf(self.paths.site.TCs.hist_r1_params, 'w')
 
     def Save_TCs_r2(self, xds_tcs, xds_params):
+        clean_files(
+            [self.paths.site.TCs.hist_r2,
+             self.paths.site.TCs.hist_r2_params]
+        )
         xds_tcs.to_netcdf(self.paths.site.TCs.hist_r2, 'w')
         xds_params.to_netcdf(self.paths.site.TCs.hist_r2_params, 'w')
 
