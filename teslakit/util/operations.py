@@ -45,3 +45,29 @@ def GetBestRowsCols(n):
 
     return n_r, n_c
 
+def GetRepeatedValues(series):
+    'Find adyacent repeated values inside series. Return list of tuples'
+
+    ix = 0
+    s0, s1 = None, None
+    l_subseq_index = []
+    while ix < len(series)-1:
+
+        # subsequence start
+        if series[ix] == series[ix+1] and s0==None: s0 = ix
+
+        # subsequence end
+        elif series[ix] != series[ix+1] and s0!=None: s1 = ix + 1
+
+        # series end
+        if ix == len(series)-2: s1 = ix + 2
+
+        # store subsequence
+        if s0!=None and s1!=None:
+            l_subseq_index.append((s0, s1))
+            s0, s1 = None, None
+
+        ix+=1
+
+    return l_subseq_index
+
