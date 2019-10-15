@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.legend import Legend
 from matplotlib.patches import Circle
+import matplotlib.gridspec as gridspec
 
 # teslakit
 from ..storms import GeoAzimuth
@@ -403,6 +404,153 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
     axlegend_categ(ax)
 
     # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
+
+def axplot_scatter_params(ax, x_hist, y_hist, x_sim, y_sim):
+    'axes scatter plot variable1 vs variable2 historical and simulated'
+
+    # simulated params 
+    ax.scatter(
+        x_sim, y_sim,
+        c = 'silver',
+        s = 3,
+    )
+
+    # historical params 
+    ax.scatter(
+        x_hist, y_hist,
+        c = 'purple',
+        s = 5,
+    )
+
+def axplot_histogram_params(ax, v_hist, v_sim, ttl):
+    'axes histogram plot variable historical and simulated'
+
+    # get bins
+    j = np.concatenate((v_hist, v_sim))
+    bins = np.linspace(np.min(j), np.max(j), 25)
+
+    # historical
+    ax.hist(
+        v_hist, bins=bins,
+        color = 'salmon',
+        edgecolor='black',
+        linewidth=1.2,
+        alpha=0.5,
+        label='Historical',
+        density=True,
+    )
+
+    # simulated 
+    ax.hist(
+        v_sim, bins=bins,
+        color = 'skyblue',
+        edgecolor='black',
+        linewidth=1.2,
+        alpha=0.5,
+        label='Simulated',
+        density=True,
+    )
+
+    ax.set_title(ttl)
+    ax.legend() #loc='upper right')
+
+
+def Plot_Params_Hist_vs_Sim_scatter(TCs_params_hist, TCs_params_sim,
+                                   p_export=None):
+    '''
+    Plot scatter with historical vs simulated parameters
+    '''
+
+    # figure conf.
+    d_lab = {
+        'pressure_min': 'Pmin (mbar)',
+        'gamma': 'gamma (º)',
+        'delta': 'delta (º)',
+        'velocity_mean': 'Vmean (km/h)',
+    }
+
+    # variables to plot
+    vns = ['pressure_min', 'gamma', 'delta', 'velocity_mean']
+    n = len(vns)
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _faspect*_fsize))
+    gs = gridspec.GridSpec(n-1, n-1, wspace=0.2, hspace=0.2)
+
+    for i in range(n):
+        for j in range(i+1, n):
+
+            # get variables to plot
+            vn1 = vns[i]
+            vn2 = vns[j]
+
+            # historical and simulated
+            vvh1 = TCs_params_hist[vn1].values[:]
+            vvh2 = TCs_params_hist[vn2].values[:]
+
+            vvs1 = TCs_params_sim[vn1].values[:]
+            vvs2 = TCs_params_sim[vn2].values[:]
+
+            # scatter plot 
+            ax = plt.subplot(gs[i, j-1])
+            axplot_scatter_params(ax, vvh2, vvh1, vvs2, vvs1)
+
+            # custom labels
+            if j==i+1:
+                ax.set_xlabel(
+                    d_lab[vn2],
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+            if j==i+1:
+                ax.set_ylabel(
+                    d_lab[vn1],
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
+def Plot_Params_Hist_vs_Sim_histogram(TCs_params_hist, TCs_params_sim,
+                                   p_export=None):
+    '''
+    Plot scatter with historical vs simulated parameters
+    '''
+
+    # figure conf.
+    d_lab = {
+        'pressure_min': 'Pmin (mbar)',
+        'gamma': 'gamma (º)',
+        'delta': 'delta (º)',
+        'velocity_mean': 'Vmean (km/h)',
+    }
+
+    # variables to plot
+    vns = ['pressure_min', 'gamma', 'delta', 'velocity_mean']
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _faspect*_fsize))
+    gs = gridspec.GridSpec(2, 2, wspace=0.2, hspace=0.2)
+
+    for c, vn in enumerate(vns):
+
+        # historical and simulated
+        vvh = TCs_params_hist[vn].values[:]
+        vvs = TCs_params_sim[vn].values[:]
+
+        # histograms plot 
+        ax = plt.subplot(gs[c])
+        axplot_histogram_params(ax, vvh, vvs, d_lab[vn])
+
     if not p_export:
         plt.show()
     else:
