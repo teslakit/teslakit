@@ -428,6 +428,31 @@ def axplot_scatter_params(ax, x_hist, y_hist, x_sim, y_sim):
         s = 5,
     )
 
+def axplot_scatter_params_MDA(ax, x_MDA, y_MDA, x_sim, y_sim):
+    'axes scatter plot variable1 vs variable2 historical and simulated'
+
+    # simulated params 
+    ax.scatter(
+        x_sim, y_sim,
+        c = 'silver',
+        s = 3,
+    )
+
+    # MDA params 
+    batch_size = 100
+    n = 4
+    cs = ['black','red','orange','yellow','blue']
+
+    for i in range(n):
+        ix = range(i*100,(i+1)*100)
+
+        ax.scatter(
+            x_MDA[ix], y_MDA[ix],
+            c = cs[i],
+            s = 4,
+            label = '{0}-{1}'.format(i*100,(i+1)*100-1)
+        )
+
 def axplot_histogram_params(ax, v_hist, v_sim, ttl):
     'axes histogram plot variable historical and simulated'
 
@@ -551,6 +576,68 @@ def Plot_Params_Hist_vs_Sim_histogram(TCs_params_hist, TCs_params_sim,
         ax = plt.subplot(gs[c])
         axplot_histogram_params(ax, vvh, vvs, d_lab[vn])
 
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
+def Plot_Params_MDA_vs_Sim_scatter(TCs_params_MDA, TCs_params_sim,
+                                   p_export=None):
+    '''
+    Plot scatter with MDA selection vs simulated parameters
+    '''
+
+    # figure conf.
+    d_lab = {
+        'pressure_min': 'Pmin (mbar)',
+        'gamma': 'gamma (º)',
+        'delta': 'delta (º)',
+        'velocity_mean': 'Vmean (km/h)',
+    }
+
+    # variables to plot
+    vns = ['pressure_min', 'gamma', 'delta', 'velocity_mean']
+    n = len(vns)
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _faspect*_fsize))
+    gs = gridspec.GridSpec(n-1, n-1, wspace=0.2, hspace=0.2)
+
+    for i in range(n):
+        for j in range(i+1, n):
+
+            # get variables to plot
+            vn1 = vns[i]
+            vn2 = vns[j]
+
+            # historical and simulated
+            vvh1 = TCs_params_MDA[vn1].values[:]
+            vvh2 = TCs_params_MDA[vn2].values[:]
+
+            vvs1 = TCs_params_sim[vn1].values[:]
+            vvs2 = TCs_params_sim[vn2].values[:]
+
+            # scatter plot 
+            ax = plt.subplot(gs[i, j-1])
+            axplot_scatter_params_MDA(ax, vvh2, vvh1, vvs2, vvs1)
+
+            # custom labels
+            if j==i+1:
+                ax.set_xlabel(
+                    d_lab[vn2],
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+            if j==i+1:
+                ax.set_ylabel(
+                    d_lab[vn1],
+                    {'fontsize':10, 'fontweight':'bold'}
+                )
+
+            if i==0 and j==n-1:
+                ax.legend()
+
+    # show / export
     if not p_export:
         plt.show()
     else:
