@@ -644,3 +644,28 @@ def Plot_Params_MDA_vs_Sim_scatter(TCs_params_MDA, TCs_params_sim,
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
+def Plot_Category_Change(xds_categ_changeprobs, p_export=None):
+    '''
+    Plot category change betwen r1 and r2
+    '''
+
+    cp = xds_categ_changeprobs.category_change_probs.values[:]
+    cs = xds_categ_changeprobs.category.values[:]
+
+    # figure
+    fig, ax = plt.subplots(1, figsize=(_faspect*_fsize, _faspect*_fsize))
+
+    pc = ax.pcolor(cp)
+    fig.colorbar(pc)
+
+    # custom plot
+    ax.set_title('Category change probabilities')
+    ax.set_xlabel('category')
+    ax.set_ylabel('category')
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
