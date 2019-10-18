@@ -53,7 +53,7 @@ pred.Plot_EOFs_EstelaPred()
 pred.Plot_DWT_PCs(n=6)
 
 # test DWTs mean plot
-pred.Plot_DWTs('SLP', mask='mask_estela')
+pred.Plot_DWTs('SLP')
 
 # test DWTs probs plot
 pred.Plot_DWTs_Probs()
