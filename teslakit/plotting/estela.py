@@ -388,6 +388,7 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
     axplot_WT_Hist(ax_hist, bmus, n_clusters, ttl = 'DWT Counts')
 
     # plot probabilities by month
+    vmax = 0.15
     for m_ix, m_name, m_gs in l_months:
 
         # get probs matrix
@@ -396,9 +397,12 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
 
         # plot axes
         ax_M = plt.subplot(m_gs)
-        axplot_WT_Probs(ax_M, C_M, ttl = m_name)
+        axplot_WT_Probs(ax_M, C_M, ttl = m_name, vmax=vmax)
+
+    # TODO: add second colorbar?
 
     # plot probabilities by 3 month sets
+    vmax = 0.15
     for m_ix, m_name, m_gs in l_3months:
 
         # get probs matrix
@@ -407,7 +411,7 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
 
         # plot axes
         ax_M = plt.subplot(m_gs)
-        axplot_WT_Probs(ax_M, C_M, ttl = m_name, cmap='Greens')
+        axplot_WT_Probs(ax_M, C_M, ttl = m_name, vmax=vmax, cmap='Greens')
 
     # add custom colorbar
     pp = ax_probs_T.get_position()
