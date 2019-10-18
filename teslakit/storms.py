@@ -5,6 +5,8 @@ from math import radians, degrees, sin, cos, asin, acos, sqrt, atan2, pi
 import numpy as np
 import xarray as xr
 
+from .util.operations import GetUniqueRows
+
 
 def GeoDistance(lat1, lon1, lat2, lon2):
     'Returns great circle distance between points in degrees'
@@ -350,4 +352,54 @@ def SortCategoryCount(np_categ, nocat=9):
             rc+=1
 
     return np_sort.astype(int)
+
+def GetCategoryChangeProbs(xds_r1, xds_r2):
+    'Calculates category change probabilities from r1 to r2'
+
+    # Get storm category inside both circles
+    n_storms = len(xds_r1.storm)
+    categ_r1r2 = np.empty((n_storms, 2))
+    for i in range(len(xds_r1.storm)):
+
+        # category inside R1
+        storm_in_r1 = xds_r1.isel(storm=[i])
+        storm_id = storm_in_r1.storm.values[0]
+        storm_cat_r1 = storm_in_r1.category
+
+        # category inside R2
+        if storm_id in xds_r2.storm.values[:]:
+            storm_in_r2 = xds_r2.sel(storm=[storm_id])
+            storm_cat_r2 = storm_in_r2.category
+        else:
+            storm_cat_r2 = 9  # no category
+
+        # store categories
+        categ_r1r2[i,:] = [storm_cat_r1, storm_cat_r2]
+
+    # count category changes and sort it
+    categ_count = GetUniqueRows(categ_r1r2)
+    categ_count = SortCategoryCount(categ_count)
+
+    # calculate probability
+    m_count = np.reshape(categ_count[:,2], (6,-1)).T
+    m_sum = np.sum(m_count,axis=0)
+
+    probs = m_count.astype(float)/m_sum.astype(float)
+    probs_cs = np.cumsum(probs, axis=0)
+
+    # store output using xarray
+    xds_categ_cp = xr.Dataset(
+        {
+            'category_change_count': (('category','category'), m_count[:-1,:]),
+            'category_change_sum': (('category'), m_count[-1,:]),
+            'category_change_probs': (('category','category'), probs[:-1,:]),
+            'category_nochange_probs': (('category'), probs[-1,:]),
+            'category_change_cumsum': (('category','category'), probs_cs[:-1,:]),
+        },
+        coords = {
+            'category': [0,1,2,3,4,5]
+        }
+    )
+
+    return xds_categ_cp
 
