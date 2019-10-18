@@ -295,14 +295,14 @@ class Database(object):
 
     def Load_ESTELA_waves(self):
         return ReadGowMat(self.paths.site.ESTELA.gowpoint)
-    
+
     def Load_ESTELA_waves_np(self):
         import numpy as np
         npzfile=np.load(self.paths.site.ESTELA.gowpoint)
         xr1=xr.Dataset({'Hs':(['time'],npzfile['Hs']), 'Tp':(['time'],npzfile['Tp']),'Tm':(['time'],npzfile['Tm02']),'Dir':(['time'],npzfile['Dir']),
                         'dspr':(['time'],npzfile['dspr'])},coords={'time':npzfile['time']})
         return  xr1
-    
+
     def Load_ESTELA_SLP(self):
         return xr.open_dataset(self.paths.site.ESTELA.slp)
 
