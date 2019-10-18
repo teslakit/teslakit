@@ -32,15 +32,19 @@ db.SetSite('KWAJALEIN')
 # estela predictor
 xds_est = db.Load_ESTELA_data()
 
-pred = Predictor(db.paths.site.ESTELA.pred_slp)
-pred.Load()
-
 
 # plot ESTELA (basemap)
 Plot_ESTELA(
-    167.5, 9.75, xds_est.F_y1993to2012, xds_est.D_y1993to2012,
+    xds_est.pnt_longitude, xds_est.pnt_latitude,
+    xds_est.F_y1993to2012 * xds_est.mask_shadow,
+    xds_est.D_y1993to2012 * xds_est.mask_shadow,
     lon1=110, lon2=290, lat1=-50, lat2=70,
 )
+
+
+# load predictor
+pred = Predictor(db.paths.site.ESTELA.pred_slp)
+pred.Load()
 
 # test ESTELA PCA EOFs plot
 pred.Plot_EOFs_EstelaPred()
