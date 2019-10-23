@@ -86,7 +86,7 @@ def axplot_EOF_evolution(ax, time, EOF_evol):
     ax.grid(True, which='both', axis='x', linestyle='--', color='grey')
     ax.tick_params(axis='both', which='major', labelsize=8)
 
-def axplot_DWT(ax, dwt, vmin, vmax, land=None, wt_color=None):
+def axplot_DWT(ax, dwt, vmin, vmax, wt_num, land=None, wt_color=None):
     'axes plot EOFs 2d map'
 
     cmap = copy.deepcopy(cm.get_cmap('RdBu_r'))
@@ -107,6 +107,9 @@ def axplot_DWT(ax, dwt, vmin, vmax, land=None, wt_color=None):
             np.flipud(landc),
             cmap=colors.ListedColormap([wt_color]), shading='gouraud',
         )
+
+    # wt text
+    ax.text(0.87, 0.85, wt_num, transform=ax.transAxes, fontweight='bold')
 
     # customize axis
     ax.set_xticks([])
@@ -330,6 +333,7 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=
         pc = axplot_DWT(
             ax, np.flipud(c_plot),
             vmin = var_min, vmax = var_max,
+            wt_num = ic+1,
             land = mask_land, wt_color = clr,
         )
 
