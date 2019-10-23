@@ -333,6 +333,10 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=
             land = mask_land, wt_color = clr,
         )
 
+        # anomalies colorbar center at 0 
+        if kind == 'anom':
+            pc.set_clim(-6,6)
+
         # get lower positions
         if gr==n_rows-1 and gc==0:
             pax_l = ax.get_position()
@@ -348,7 +352,10 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=
     # add a colorbar        
     cbar_ax = fig.add_axes([pax_l.x0, pax_l.y0-0.05, pax_r.x1 - pax_l.x0, 0.02])
     cb = fig.colorbar(pc, cax=cbar_ax, orientation='horizontal')
-    cb.set_label('Pressure (mbar)')
+    if kind=='mean':
+        cb.set_label('Pressure (mbar)')
+    elif kind=='anom':
+        cb.set_label('Pressure anomalies (mbar)')
 
     # show / export
     if not p_export:
