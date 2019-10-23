@@ -16,7 +16,7 @@ from .pca import CalcPCA_EstelaPred
 from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
-from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean, \
+from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean_Anom, \
 Plot_DWTs_Probs
 from .plotting.pcs import Plot_PCs_WT, Plot_WT_PCs_3D
 
@@ -294,22 +294,30 @@ class Predictor(object):
         else:
             p_export = op.join(self.p_store, 'EOFs_EP')
 
-        Plot_EOFs_EstelaPred(self.PCA, n_plot, p_export)
+        # optional land mask
+        mask_land = None
+        if 'mask_land' in self.data.keys():
+            mask_land = self.data['mask_land'].values[:]
 
-    def Plot_DWTs(self, var_name, show=True, mask=None):
+        Plot_EOFs_EstelaPred(self.PCA, n_plot, mask_land=mask_land, p_export=p_export)
+
+    def Plot_DWTs(self, var_name, kind='mean', show=True):
         '''
         Plot KMA clusters generated in PCA_EstelaPred (DWTs)
 
-        uses database means at cluster location (bmus corrected)
+        kind = mean / anom
+
+        uses database means/anomalies at cluster location (bmus corrected)
         '''
 
         # data to plot
         xds_DWTs = self.KMA
         var_data = self.data[var_name]
 
-        # data mask
-        if mask:
-            var_data = var_data.where(self.data[mask]==1)
+        # optional land mask
+        mask_land = None
+        if 'mask_land' in self.data.keys():
+            mask_land = self.data['mask_land'].values[:]
 
         if show:
             p_export = None
@@ -319,7 +327,10 @@ class Predictor(object):
                 'KMA_RG_DWTs_mean_{0}.png'.format(var_name))
 
         # Plot DWTs mean using var_data
-        Plot_DWTs_Mean(xds_DWTs, var_data, p_export)
+        Plot_DWTs_Mean_Anom(xds_DWTs, var_data,
+                       kind=kind,
+                       mask_land=mask_land,
+                       p_export=p_export)
 
     def Plot_DWTs_Probs(self, show=True):
         '''
