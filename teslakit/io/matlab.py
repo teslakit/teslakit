@@ -153,12 +153,25 @@ def ReadEstelaMat(p_mfile):
         pol_Y = mf['Polar']['Y'][:]
         pol_Fe = mf['C']['Polar_FEmedia']['y1993to2012'][:]
 
-        # interpolate polar shadows to 2D grid
+        # interpolate polar to 2D grid to generate mask_shadow
         interp_in = np.column_stack((pol_X.ravel(),pol_Y.ravel()))
         interp_out = pol_Fe.ravel()
         grid_x, grid_y = np.meshgrid(longitude, latitude)
         mask_shadow = griddata(interp_in, interp_out, (grid_x, grid_y), method='nearest')
         mask_shadow[~np.isnan(mask_shadow)]=1
+
+        # generate mask for 0.95 energy
+        pol_Fe_95 = pol_Fe.copy()
+        pol_Fe_cs = np.nancumsum(pol_Fe, axis=0)
+        val95 = pol_Fe_cs[-1]*0.95
+        for c in range(pol_Fe_cs.shape[1]):
+            ix_del = np.where(pol_Fe_cs[:,c]>=val95[c])[0][0]
+            pol_Fe_95[ix_del:,c] = np.nan
+
+        interp_out = pol_Fe_95.ravel()
+        grid_x, grid_y = np.meshgrid(longitude, latitude)
+        mask_e95 = griddata(interp_in, interp_out, (grid_x, grid_y), method='nearest')
+        mask_e95[~np.isnan(mask_e95)]=1
 
         # fields
         d_D = {}
@@ -178,8 +191,9 @@ def ReadEstelaMat(p_mfile):
     # return xarray.Dataset
     xdset = xr.Dataset(
         {
-            'mask_shadow':(('latitude','longitude'), mask_shadow),
             'mask_land':(('latitude','longitude'), mask_land),
+            'mask_shadow':(('latitude','longitude'), mask_shadow),
+            'mask_e95':(('latitude','longitude'), mask_e95),
         },
         coords = {
             'longitude': longitude,
