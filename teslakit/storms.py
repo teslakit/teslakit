@@ -238,6 +238,8 @@ def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
         xds_inside: contains TCs custom data inside circle
     '''
 
+    # TODO: if slow, make one simpler to get only category
+
     # point longitude and latitude
     lonlat_p = np.array([[p_lon, p_lat]])
 
@@ -245,11 +247,13 @@ def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
     nm_lon = d_vns['longitude']
     nm_lat = d_vns['latitude']
     nm_prs = d_vns['pressure']
+    nm_tim = d_vns['time']  # int, not timedelta
 
     # storms longitude, latitude, pressure and time (if available)
     lon = xds_TCs[nm_lon].values[:]
     lat = xds_TCs[nm_lat].values[:]
     prs = xds_TCs[nm_prs].values[:]
+    time = xds_TCs[nm_tim].values[:]
 
     # get storms inside circle area
     n_storms = xds_TCs.storm.shape[0]
@@ -257,7 +261,11 @@ def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
 
     # inside parameters holders
     l_prs_min_in = []   # circle minimun pressure
+    l_prs_mean_in = []  # circle mean pressure
+    l_vel_mean_in = []  # circle mean translation speed
     l_categ_in = []     # circle storm category
+    l_gamma = []        # azimuth 
+    l_delta = []        # delta 
 
     for i_storm in range(n_storms):
 
@@ -280,22 +288,80 @@ def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
         ix_in = np.where(geo_dist < r)[0][:]
         if ix_in.any():
 
+            # storm translation velocity
+            # TODO: could we use speed data in Nakajo db?
+            geo_dist_ss = []
+            for i_row in range(lonlat_s.shape[0]-1):
+                i0_lat, i0_lon = lonlat_s[i_row][1], lonlat_s[i_row][0]
+                i1_lat, i1_lon = lonlat_s[i_row+1][1], lonlat_s[i_row+1][0]
+                geo_dist_ss.append(GeoDistance(i0_lat, i0_lon, i1_lat, i1_lon))
+            geo_dist_ss = np.asarray(geo_dist_ss)
+
+            # get delta time in hours
+            delta_h = np.diff(
+                time[i_storm][~np.isnan(time[i_storm])]
+            ).astype(float)
+
+            vel = geo_dist_ss * 111.0/delta_h  # km/h
+
+            # promediate vel 
+            velpm = (vel[:-1] + vel[1:])/2
+            velpm = np.append(vel[0], velpm)
+            velpm = np.append(velpm, vel[-1])
+
+            # calculate azimuth 
+            lat_in_end, lon_in_end = lonlat_s[ix_in[-1]][1], lonlat_s[ix_in[-1]][0]
+            lat_in_ini, lon_in_ini = lonlat_s[ix_in[0]][1], lonlat_s[ix_in[0]][0]
+            gamma = GeoAzimuth(lat_in_end, lon_in_end, lat_in_ini, lon_in_ini)
+            if gamma < 0.0: gamma += 360
+
+            # calculate delta
+            nd = 1000
+            st = 2*np.pi/nd
+            ang = np.arange(0, 2*np.pi + st, st)
+            xps = r * np.cos(ang) + p_lat
+            yps = r * np.sin(ang) + p_lon
+            angle_radius = []
+            for x, y in zip(xps, yps):
+                angle_radius.append(GeoAzimuth(lat_in_end, lon_in_end, x, y))
+            angle_radius = np.asarray(angle_radius)
+
+            im = np.argmin(np.absolute(angle_radius - gamma))
+            delta = GeoAzimuth(p_lat, p_lon, xps[im], yps[im]) # (-180, +180)
+            if delta < 0.0: delta += 360
+
+            # more parameters
             prs_s_in = prs[i_storm][ix_in]          # pressure
             prs_s_min = np.min(prs_s_in)            # pressure minimun
+            prs_s_mean = np.mean(prs_s_in)
+
+            vel_s_in = velpm[ix_in]  # velocity
+            vel_s_mean = np.mean(vel_s_in) # velocity mean
+
             categ = GetStormCategory(prs_s_min)     # category
+
 
             # store parameters
             l_storms_area.append(i_storm)
             l_prs_min_in.append(np.array(prs_s_min))
+            l_prs_mean_in.append(np.array(prs_s_mean))
+            l_vel_mean_in.append(np.array(vel_s_mean))
             l_categ_in.append(np.array(categ))
+            l_gamma.append(gamma)
+            l_delta.append(delta)
 
     # cut storm dataset to selection
     xds_TCs_sel = xds_TCs.isel(storm=l_storms_area)
+    xds_TCs_sel = xds_TCs_sel.assign_coords(storm = np.array(l_storms_area))
 
     # store storms parameters 
     xds_TCs_sel_params = xr.Dataset(
         {
             'pressure_min':(('storm'), np.array(l_prs_min_in)),
+            'pressure_mean':(('storm'), np.array(l_prs_mean_in)),
+            'velocity_mean':(('storm'), np.array(l_vel_mean_in)),
+            'gamma':(('storm'), np.array(l_gamma)),
+            'delta':(('storm'), np.array(l_delta)),
             'category':(('storm'), np.array(l_categ_in)),
         },
         coords = {
