@@ -45,7 +45,7 @@ def GeoAzimuth(lat1, lon1, lat2, lon2):
 
 def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
     '''
-    Extracts TCs inside circle - used with NWO database
+    Extracts TCs inside circle - used with NWO or Nakajo databases
 
     xds_TCs: tropical cyclones track database
         lon, lat, pressure variables
@@ -124,9 +124,21 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             geo_dist_ss = np.asarray(geo_dist_ss)
 
             # get delta time in hours (irregular data time delta)
-            delta_h = np.diff(
-                time[i_storm][~np.isnat(time[i_storm])]
-            ).astype('timedelta64[h]').astype(float)
+            if isinstance(time[i_storm][0], np.datetime64):
+                # round to days
+                time[i_storm] = np.array(
+                    [np.datetime64(xt, 'D') for xt in time[i_storm]]
+                )
+
+                delta_h = np.diff(
+                    time[i_storm][~np.isnat(time[i_storm])]
+                ).astype('timedelta64[h]').astype(float)
+
+            else:
+                # nakajo: time already in hours
+                delta_h = np.diff(
+                    time[i_storm][~np.isnan(time[i_storm])]
+                ).astype(float)
 
             vel = geo_dist_ss * 111.0/delta_h  # km/h
 
@@ -170,7 +182,13 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             p_dm = np.where((dist_in==np.min(dist_in)))[0]  # closest to point
 
             time_s_in = time[i_storm][ix_in]  # time
-            time_closest = np.datetime64(time_s_in[p_dm][0], 'D')
+            time_closest = time_s_in[p_dm][0]  # time closest to point 
+
+            # filter storms 
+            if np.isnan(np.array(prs_s_in)).any() or \
+               (np.array(prs_s_in) <= 860).any() or \
+               gamma == 0.0:
+                continue
 
             # store parameters
             l_storms_area.append(i_storm)
@@ -209,163 +227,6 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
         },
         coords = {
             'storm':(('storm'), np.array(l_storms_area))
-        },
-        attrs = {
-            'point_lon' : p_lon,
-            'point_lat' : p_lat,
-            'point_r' : r,
-        }
-    )
-
-    return xds_TCs_sel, xds_TCs_sel_params
-
-def Extract_Circle_Nakajo(xds_TCs, p_lon, p_lat, r, d_vns):
-    '''
-    Extracts TCs inside circle - optimized for Nakajo
-
-    xds_TCs: tropical cyclones track database
-        lon, lat, pressure variables
-        storm dimension
-
-    circle defined by:
-        p_lon, p_lat  -  circle center
-        r             -  circle radius (degree)
-
-    d_vns: dictionary to set longitude, latitude, time and pressure varnames
-
-    returns:
-        xds_area: selection of xds_TCs inside circle
-        xds_inside: contains TCs custom data inside circle
-    '''
-
-    # TODO: if slow, make one simpler to get only category
-
-    # point longitude and latitude
-    lonlat_p = np.array([[p_lon, p_lat]])
-
-    # get names of vars: longitude, latitude, pressure and time
-    nm_lon = d_vns['longitude']
-    nm_lat = d_vns['latitude']
-    nm_prs = d_vns['pressure']
-    nm_tim = d_vns['time']  # int, not timedelta
-
-    # storms longitude, latitude, pressure and time (if available)
-    lon = xds_TCs[nm_lon].values[:]
-    lat = xds_TCs[nm_lat].values[:]
-    prs = xds_TCs[nm_prs].values[:]
-    time = xds_TCs[nm_tim].values[:]
-
-    # get storms inside circle area
-    n_storms = xds_TCs.storm.shape[0]
-    l_storms_area = []
-
-    # inside parameters holders
-    l_prs_min_in = []   # circle minimun pressure
-    l_prs_mean_in = []  # circle mean pressure
-    l_vel_mean_in = []  # circle mean translation speed
-    l_categ_in = []     # circle storm category
-    l_gamma = []        # azimuth 
-    l_delta = []        # delta 
-
-    for i_storm in range(n_storms):
-
-        # stack storm longitude, latitude
-        lonlat_s = np.column_stack(
-            (lon[i_storm], lat[i_storm])
-        )
-
-        # index for removing nans
-        ix_nonan = ~np.isnan(lonlat_s).any(axis=1)
-        lonlat_s = lonlat_s[ix_nonan]
-
-        # calculate geodesic distance (degree)
-        geo_dist = []
-        for lon_ps, lat_ps in lonlat_s:
-            geo_dist.append(GeoDistance(lat_ps, lon_ps, p_lat, p_lon))
-        geo_dist = np.asarray(geo_dist)
-
-        # find storm inside circle and calculate parameters
-        ix_in = np.where(geo_dist < r)[0][:]
-        if ix_in.any():
-
-            # storm translation velocity
-            # TODO: could we use speed data in Nakajo db?
-            geo_dist_ss = []
-            for i_row in range(lonlat_s.shape[0]-1):
-                i0_lat, i0_lon = lonlat_s[i_row][1], lonlat_s[i_row][0]
-                i1_lat, i1_lon = lonlat_s[i_row+1][1], lonlat_s[i_row+1][0]
-                geo_dist_ss.append(GeoDistance(i0_lat, i0_lon, i1_lat, i1_lon))
-            geo_dist_ss = np.asarray(geo_dist_ss)
-
-            # get delta time in hours
-            delta_h = np.diff(
-                time[i_storm][~np.isnan(time[i_storm])]
-            ).astype(float)
-
-            vel = geo_dist_ss * 111.0/delta_h  # km/h
-
-            # promediate vel 
-            velpm = (vel[:-1] + vel[1:])/2
-            velpm = np.append(vel[0], velpm)
-            velpm = np.append(velpm, vel[-1])
-
-            # calculate azimuth 
-            lat_in_end, lon_in_end = lonlat_s[ix_in[-1]][1], lonlat_s[ix_in[-1]][0]
-            lat_in_ini, lon_in_ini = lonlat_s[ix_in[0]][1], lonlat_s[ix_in[0]][0]
-            gamma = GeoAzimuth(lat_in_end, lon_in_end, lat_in_ini, lon_in_ini)
-            if gamma < 0.0: gamma += 360
-
-            # calculate delta
-            nd = 1000
-            st = 2*np.pi/nd
-            ang = np.arange(0, 2*np.pi + st, st)
-            xps = r * np.cos(ang) + p_lat
-            yps = r * np.sin(ang) + p_lon
-            angle_radius = []
-            for x, y in zip(xps, yps):
-                angle_radius.append(GeoAzimuth(lat_in_end, lon_in_end, x, y))
-            angle_radius = np.asarray(angle_radius)
-
-            im = np.argmin(np.absolute(angle_radius - gamma))
-            delta = GeoAzimuth(p_lat, p_lon, xps[im], yps[im]) # (-180, +180)
-            if delta < 0.0: delta += 360
-
-            # more parameters
-            prs_s_in = prs[i_storm][ix_in]          # pressure
-            prs_s_min = np.min(prs_s_in)            # pressure minimun
-            prs_s_mean = np.mean(prs_s_in)
-
-            vel_s_in = velpm[ix_in]  # velocity
-            vel_s_mean = np.mean(vel_s_in) # velocity mean
-
-            categ = GetStormCategory(prs_s_min)     # category
-
-
-            # store parameters
-            l_storms_area.append(i_storm)
-            l_prs_min_in.append(np.array(prs_s_min))
-            l_prs_mean_in.append(np.array(prs_s_mean))
-            l_vel_mean_in.append(np.array(vel_s_mean))
-            l_categ_in.append(np.array(categ))
-            l_gamma.append(gamma)
-            l_delta.append(delta)
-
-    # cut storm dataset to selection
-    xds_TCs_sel = xds_TCs.isel(storm=l_storms_area)
-    xds_TCs_sel = xds_TCs_sel.assign_coords(storm = np.array(l_storms_area))
-
-    # store storms parameters 
-    xds_TCs_sel_params = xr.Dataset(
-        {
-            'pressure_min':(('storm'), np.array(l_prs_min_in)),
-            'pressure_mean':(('storm'), np.array(l_prs_mean_in)),
-            'velocity_mean':(('storm'), np.array(l_vel_mean_in)),
-            'gamma':(('storm'), np.array(l_gamma)),
-            'delta':(('storm'), np.array(l_delta)),
-            'category':(('storm'), np.array(l_categ_in)),
-        },
-        coords = {
-            'storm':(('storm'), xds_TCs_sel.storm.values[:])
         },
         attrs = {
             'point_lon' : p_lon,
