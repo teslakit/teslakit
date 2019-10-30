@@ -1,90 +1,169 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# pip
+import numpy as np
+import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import numpy as np
 import seaborn as sns
 
-def Waves_Distributions_HsTpDir(xds_wvs_pts):
-    
-    clusters=np.where(np.unique(xds_wvs_pts.bmus)>=0)[0]
-    n_clusters=len(clusters)
-    n_rows=int(np.sqrt(n_clusters+1))
-    n_cols=n_rows
-    
-    fig = plt.figure(figsize=[20,12])
-    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
-    grid_row = 0
-    grid_col = 0
-    for ic in clusters:
-        # data mean
-        pos_cluster = np.where(xds_wvs_pts.bmus==ic)[0][:]
-        ax = plt.subplot(gs[grid_row, grid_col])
-        sns.distplot(xds_wvs_pts.sea_Hs[pos_cluster], bins=40, color='gold');
-        sns.distplot(xds_wvs_pts.sea_Hs[pos_cluster], bins=40, color='gold', hist=False);
-        sns.distplot(xds_wvs_pts.swell_1_Hs[pos_cluster], bins=40, color='darkgreen');
-        sns.distplot(xds_wvs_pts.swell_1_Hs[pos_cluster], bins=40, color='darkgreen', hist=False);
-        sns.distplot(xds_wvs_pts.swell_2_Hs[pos_cluster], bins=40, color='royalblue');
-        sns.distplot(xds_wvs_pts.swell_2_Hs[pos_cluster], bins=40, color='royalblue', hist=False);
-    
-        if grid_row == n_rows-1:
-            ax.set_yticks([])
-            ax.set_xticks([])
-            ax.set_xlabel('Hs',fontsize=14)    
+# teslakit
+from ..custom_dateutils import xds_common_dates_daily as xcd_daily
+from ..util.operations import GetBestRowsCols
+
+# import constants
+from .config import _faspect, _fsize, _fdpi
+
+
+def axplot_distplot(ax, vars_values, vars_colors, n_bins):
+    'axes plot seaborn distplot variable at families'
+
+    for vv, vc in zip(vars_values, vars_colors):
+        sns.distplot(vv, bins=n_bins, color=vc, ax=ax);
+        sns.distplot(vv, bins=n_bins, color=vc, ax=ax, hist=False);
+
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+def axplot_polarhist(ax, vars_values, vars_colors, n_bins):
+    'axes plot seaborn polar hist dir at families'
+
+    for vv, vc in zip(vars_values, vars_colors):
+        sns.distplot(vv, bins=n_bins, color=vc, ax=ax);
+        sns.distplot(vv, bins=n_bins, color=vc, ax=ax, hist=False);
+
+        plt.hist(
+            np.deg2rad(vv),
+            range = [0, np.deg2rad(360)],
+            bins = n_bins, color = vc,
+            histtype='stepfilled', alpha = 0.5
+        )
+
+    ax.set_facecolor('whitesmoke')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+def Plot_Waves_DWTs(xds_wvs_fams, xds_DWTs, p_export=None):
+    '''
+    Plot waves families by DWT
+
+    wvs_fams (waves families):
+        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
+        {any number of families}
+
+    xds_DWTs - ESTELA predictor KMA
+        xarray.Dataset (time,), bmus, ...
+    '''
+
+    # plot_parameters
+    n_bins = 40
+    n_bins_dir = 50
+    fams_colors = ['gold', 'darkgreen', 'royalblue', 'r', 'g', 'b', 'o', 'p']
+
+    # get bmus at waves data (daily resolution)
+    d_bmus_waves = xcd_daily([xds_wvs_fams, xds_DWTs])
+    xds_wvs_fams_sel = xds_wvs_fams.sel(time=d_bmus_waves)
+
+    bmus_wvs_fams = xr.Dataset(
+        {
+            'bmus':(('time',), xds_DWTs['sorted_bmus_storms'].values[:])
+        },
+        coords = {'time': xds_DWTs.time.values[:]}
+    ).sel(time=d_bmus_waves).bmus.values[:]
+
+    n_clusters = len(np.unique(bmus_wvs_fams))
+
+    # get families names
+    n_fams = [vn.replace('_Hs','') for vn in xds_wvs_fams_sel.keys() if '_Hs' in vn]
+
+    # get number of rows and cols for gridplot 
+    n_rows, n_cols = GetBestRowsCols(n_clusters)
+
+    # Hs and Tp
+    for wv in ['Hs', 'Tp']:
+
+        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+        gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
+        gr, gc = 0, 0
+        for ic in range(n_clusters):
+
+            # data mean at clusters
+            pc = np.where(bmus_wvs_fams==ic)[0][:]
+            xds_wvs_c = xds_wvs_fams_sel.isel(time=pc)
+            vrs = [xds_wvs_c['{0}_{1}'.format(fn, wv)].values[:] for fn in n_fams]
+
+            # axes plot
+            ax = plt.subplot(gs[gr, gc])
+            axplot_distplot(ax, vrs, fams_colors, n_bins)
+
+            # fig legend
+            if gc == n_cols-1 and gr==0:
+                plt.legend(
+                    title = 'Families',
+                    labels = n_fams,
+                    bbox_to_anchor=(1.1, 1)
+                )
+
+            # counter
+            gc += 1
+            if gc >= n_cols:
+                gc = 0
+                gr += 1
+
+        fig.suptitle(
+            '{0} Distributions: {1}'.format(wv, ', '.join(n_fams)),
+            fontsize=14, fontweight = 'bold')
+
+        # show / export
+        if not p_export:
+            plt.show()
         else:
-            ax.set_xticks([])
-            ax.set_yticks([])
-    
-        grid_row += 1
-        if grid_row >= n_rows:
-            grid_row = 0
-            grid_col += 1
-    
-    #Tp
-    fig = plt.figure(figsize=[20,12])
-    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
-    grid_row = 0
-    grid_col = 0
-    for ic in clusters:
-        # data mean
-        pos_cluster = np.where(xds_wvs_pts.bmus==ic)[0][:]
-        ax = plt.subplot(gs[grid_row, grid_col])
-        sns.distplot(xds_wvs_pts.sea_Tp[pos_cluster], bins=40, color='gold');
-        sns.distplot(xds_wvs_pts.sea_Tp[pos_cluster], bins=40, color='gold', hist=False);
-        sns.distplot(xds_wvs_pts.swell_1_Tp[pos_cluster], bins=40, color='darkgreen');
-        sns.distplot(xds_wvs_pts.swell_1_Tp[pos_cluster], bins=40, color='darkgreen', hist=False);
-        sns.distplot(xds_wvs_pts.swell_2_Tp[pos_cluster], bins=40, color='royalblue');
-        sns.distplot(xds_wvs_pts.swell_2_Tp[pos_cluster], bins=40, color='royalblue', hist=False);
-    
-        if grid_row == n_rows-1:
-            ax.set_yticks([])
-            #ax.set_xticks(np.arange(5,21, step=5))
-            ax.set_xticks([])
-            ax.set_xlabel('Tp',fontsize=14)
-        else:
-            ax.set_xticks([])
-            ax.set_yticks([])
-    
-        grid_row += 1
-        if grid_row >= n_rows:
-            grid_row = 0
-            grid_col += 1
-    
-    #dir    
-    fig = plt.figure(figsize=[20,12])
-    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
-    grid_row = 0
-    grid_col = 0
-    for ic in clusters:
-        # data mean
-        pos_cluster = np.where(xds_wvs_pts.bmus==ic)[0][:]
-        ax = plt.subplot(gs[grid_row, grid_col], projection='polar')
-        plt.hist(np.deg2rad(xds_wvs_pts.sea_Dir[pos_cluster]),range=[0,np.deg2rad(360)],bins=50,color='gold',histtype='stepfilled', alpha=0.5)
-        plt.hist(np.deg2rad(xds_wvs_pts.swell_1_Dir[pos_cluster]),range=[0,np.deg2rad(360)],bins=50,color='darkgreen',histtype='stepfilled', alpha=0.5)
-        plt.hist(np.deg2rad(xds_wvs_pts.swell_2_Dir[pos_cluster]),range=[0,np.deg2rad(360)],bins=50,color='royalblue',histtype='stepfilled', alpha=0.5)
-    
-        ax.set_xticks([])
-        ax.set_yticks([])
-    
-    grid_row += 1
-    if grid_row >= n_rows:
-        grid_row = 0
-        grid_col += 1
+            nme = 'wvs_fams_{0}.png'.format(wv)
+            p_e = op.join(p_export, nme)
+            fig.savefig(p_e, dpi=_fdpi)
+            plt.close()
+
+    # Dir    
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.1)
+    gr, gc = 0, 0
+    for ic in range(n_clusters):
+
+        # data mean at clusters
+        pc = np.where(bmus_wvs_fams==ic)[0][:]
+        xds_wvs_c = xds_wvs_fams_sel.isel(time=pc)
+        vrs = [xds_wvs_c['{0}_Dir'.format(fn)].values[:] for fn in n_fams]
+
+        # axes plot
+        ax = plt.subplot(gs[gr, gc], projection='polar')
+        axplot_polarhist(ax, vrs, fams_colors, n_bins_dir)
+
+        # fig legend
+        if gc == n_cols-1 and gr==0:
+            plt.legend(
+                title = 'Families',
+                labels = n_fams,
+                bbox_to_anchor=(1.1, 1)
+            )
+
+        # counter
+        gc += 1
+        if gc >= n_cols:
+            gc = 0
+            gr += 1
+
+    fig.suptitle(
+        '{0} Distributions: {1}'.format('Dir', ', '.join(n_fams)),
+        fontsize=14, fontweight='bold')
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        nme = 'wvs_fams_dir_DWTs.png'
+        p_e = op.join(p_export, nme)
+        fig.savefig(p_e, dpi=_fdpi)
+        plt.close()
+
