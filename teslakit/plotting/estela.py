@@ -1,14 +1,13 @@
-
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os
 import os.path as op
-import numpy as np
 import copy
 from datetime import datetime, date
 
 # pip
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
@@ -306,8 +305,7 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
     gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
-    gr = 0
-    gc = 0
+    gr, gc = 0, 0
 
     for ic in range(n_clusters):
 
