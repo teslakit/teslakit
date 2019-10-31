@@ -93,6 +93,20 @@ def colors_dwt(num_clusters):
 
     return np_colors_rgb
 
+def colors_fams_3():
+    'custom colors for 3 waves families'
+
+    l_named_colors = [
+        'gold', 'darkgreen', 'royalblue',
+    ]
+
+    # get rgb colors as numpy array
+    np_colors_rgb = np.array(
+        [mcolors.to_rgb(c) for c in l_named_colors]
+    )
+
+    return np_colors_rgb
+
 def colors_interp(num_clusters):
 
     # generate spectral colormap
@@ -126,5 +140,16 @@ def GetClusterColors(num_clusters):
 
     else:
         np_colors_rgb = colors_interp(num_clusters)  # interpolate
+
+    return np_colors_rgb
+
+def GetFamsColors(num_fams):
+    'Choose colors or Interpolate custom colormap to number of waves families'
+
+    if num_fams == 3:
+        np_colors_rgb = colors_fams_3()  # choosen colors 
+
+    else:
+        np_colors_rgb = colors_interp(num_fams)  # interpolate
 
     return np_colors_rgb
