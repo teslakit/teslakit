@@ -261,8 +261,14 @@ class Database(object):
     def Load_WAVES_partitions_nc(self):
         return xr.open_dataset(self.paths.site.WAVES.partitions_p1)
 
+    def Load_WAVES_fams(self):
+        return xr.open_dataset(self.paths.site.WAVES.families)
+
     def Load_WAVES_fams_noTCs(self):
         return xr.open_dataset(self.paths.site.WAVES.families_notcs)
+
+    def Save_WAVES_fams(self, xds_fams):
+        xds_fams.to_netcdf(self.paths.site.WAVES.families, 'w')
 
     def Save_WAVES_ptsfams_noTCs(self, xds_pts, xds_fams):
         xds_pts.to_netcdf(self.paths.site.WAVES.partitions_notcs, 'w')
