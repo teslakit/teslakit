@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
 import os
 import os.path as op
 import configparser
 from shutil import copyfile
 import pickle
 
+# pip
 from prettytable import PrettyTable
 import xarray as xr
+import numpy as np
 
+# teslakit
 from .io.getinfo import description
 from .io.aux_nc import StoreBugXdset
 from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
@@ -123,6 +126,9 @@ class Database(object):
         print(tb)
 
     # database i/o
+
+    # SST
+
     def Load_SST(self):
         return xr.open_dataset(self.paths.site.SST.hist_pacific)
 
@@ -181,6 +187,8 @@ class Database(object):
     def Load_SST_PCs_sim_m(self):
         return xr.open_dataset(self.paths.site.SST.pcs_sim_m)
 
+    # MJO
+
     def Load_MJO_hist(self):
         return xr.open_dataset(self.paths.site.MJO.hist)
 
@@ -190,11 +198,12 @@ class Database(object):
     def Load_MJO_sim(self):
         return xr.open_dataset(self.paths.site.MJO.sim)
 
+    # TCs
+
     def Load_TCs_noaa(self):
         return xr.open_dataset(self.paths.site.TCs.noaa)
 
-    # TODO: indicar _hist en los 4 siguientes
-    def Save_TCs_r1(self, xds_tcs, xds_params):
+    def Save_TCs_r1_hist(self, xds_tcs, xds_params):
         clean_files(
             [self.paths.site.TCs.hist_r1,
              self.paths.site.TCs.hist_r1_params]
@@ -203,7 +212,7 @@ class Database(object):
         xds_tcs.to_netcdf(self.paths.site.TCs.hist_r1, 'w')
         xds_params.to_netcdf(self.paths.site.TCs.hist_r1_params, 'w')
 
-    def Save_TCs_r2(self, xds_tcs, xds_params):
+    def Save_TCs_r2_hist(self, xds_tcs, xds_params):
         clean_files(
             [self.paths.site.TCs.hist_r2,
              self.paths.site.TCs.hist_r2_params]
@@ -211,11 +220,11 @@ class Database(object):
         xds_tcs.to_netcdf(self.paths.site.TCs.hist_r2, 'w')
         xds_params.to_netcdf(self.paths.site.TCs.hist_r2_params, 'w')
 
-    def Load_TCs_r1(self):
+    def Load_TCs_r1_hist(self):
         return xr.open_dataset(self.paths.site.TCs.hist_r1), \
                 xr.open_dataset(self.paths.site.TCs.hist_r1_params)
 
-    def Load_TCs_r2(self):
+    def Load_TCs_r2_hist(self):
         return xr.open_dataset(self.paths.site.TCs.hist_r2), \
                 xr.open_dataset(self.paths.site.TCs.hist_r2_params)
 
@@ -255,6 +264,8 @@ class Database(object):
     def Load_TCs_probs_synth(self):
         return xr.open_dataset(self.paths.site.TCs.probs_synth)
 
+    # WAVES
+
     def Load_WAVES_partitions(self):
         return ReadGowMat(self.paths.site.WAVES.partitions_p1)
 
@@ -293,6 +304,8 @@ class Database(object):
             d_WT_TCs_wvs['{0}'.format(k)] = xr.open_dataset(p_s)
         return d_WT_TCs_wvs
 
+    # ESTELA
+
     def Load_ESTELA_coast(self):
         return ReadCoastMat(self.paths.site.ESTELA.coastmat)
 
@@ -303,10 +316,17 @@ class Database(object):
         return ReadGowMat(self.paths.site.ESTELA.gowpoint)
 
     def Load_ESTELA_waves_np(self):
-        import numpy as np
-        npzfile=np.load(self.paths.site.ESTELA.gowpoint)
-        xr1=xr.Dataset({'Hs':(['time'],npzfile['Hs']), 'Tp':(['time'],npzfile['Tp']),'Tm':(['time'],npzfile['Tm02']),'Dir':(['time'],npzfile['Dir']),
-                        'dspr':(['time'],npzfile['dspr'])},coords={'time':npzfile['time']})
+        npzfile = np.load(self.paths.site.ESTELA.gowpoint)
+        xr1 = xr.Dataset(
+            {
+                'Hs': (['time'], npzfile['Hs']),
+                'Tp': (['time'], npzfile['Tp']),
+                'Tm': (['time'], npzfile['Tm02']),
+                'Dir': (['time'], npzfile['Dir']),
+                'dspr': (['time'], npzfile['dspr'])
+            },
+            coords = {'time': npzfile['time']}
+        )
         return  xr1
 
     def Load_ESTELA_SLP(self):
@@ -322,6 +342,8 @@ class Database(object):
     def Load_ESTELA_DWT_sim(self):
         return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
 
+    # HYDROGRAMS
+
     def Save_MU_TAU_hydrograms(self, l_xds):
 
         p_mutau = self.paths.site.ESTELA.hydrog_mutau
@@ -329,6 +351,8 @@ class Database(object):
         if not op.isdir(p_mutau): os.makedirs(p_mutau)
         for x in l_xds:
             n_store = 'MUTAU_WT{0:02}.nc'.format(x.WT)
+
+            clean_files([op.join(p_mutau, n_store)])
             x.to_netcdf(op.join(p_mutau, n_store), 'w')
 
     def Load_MU_TAU_hydrograms(self):
@@ -342,16 +366,35 @@ class Database(object):
         l_xds = [xr.open_dataset(x) for x in l_mutau_ncs]
         return l_xds
 
+    # TIDE
+
     def Load_TIDE_hist_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.hist_astro)
-        xds.rename({'observed':'level','predicted':'tide'}, inplace=True)
+        xds.rename({'observed':'level', 'predicted':'tide'}, inplace=True)
         return xds
 
     def Save_TIDE_sim_astro(self, xds):
         StoreBugXdset(xds, self.paths.site.TIDE.sim_astro)
 
+    def Load_TIDE_sim_astro(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.sim_astro)
+        return xds
+
     def Save_TIDE_sim_mmsl(self, xds):
+        # monthly
         StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
+
+        # hourly
+        xds_h = xds.resample(time='1H').pad()
+        StoreBugXdset(xds_h, self.paths.site.TIDE.sim_mmsl_h)
+
+    def Load_TIDE_sim_mmsl(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl)
+        return xds
+
+    def Load_TIDE_sim_mmsl_h(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl_h)
+        return xds
 
     def Load_TIDE_mareografo(self):
         xds = xr.open_dataset(self.paths.site.TIDE.mareografo_nc)
@@ -360,6 +403,8 @@ class Database(object):
         xds.rename({'WaterLevel':'tide'}, inplace=True)
         xds['tide'] = xds['tide'] * 1000
         return xds
+
+    # SPECIAL
 
     def Load_AWTs_DWTs_Plots_sim(self, n_sim=0):
         'Load data needed for WT-WT Probs plot'
