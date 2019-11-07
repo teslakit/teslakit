@@ -344,9 +344,10 @@ def Aggregate_WavesFamilies(wvs_fams):
     TP = np.sqrt(np.sum(tmp1, axis=1) / np.sum(tmp2, axis=1))
 
     # Dir from families
+    max_Tp = np.max(vv_Tp)
     tmp3 = np.arctan2(
-        np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
-        np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
+        np.sum(np.power(vv_Hs,2) * max_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
+        np.sum(np.power(vv_Hs,2) * max_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
     )
     tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
 
@@ -433,7 +434,7 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
         vv_sf = vv_full[ix]
 
         # interpolate to fill all hours
-        h_times = np.arange(vt_sf[0], vt_sf[-1], 1)
+        h_times = np.arange(vt_sf[0], vt_sf[-1] + 1, 1)
         h_values = np.interp(h_times, vt_sf, vv_sf)
 
         # fix times
@@ -445,25 +446,12 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
     hourly_Hs, hourly_times = CalcHydro(Hs, s_cs_h, tau_h, mu)
     hourly_ss, _ = CalcHydro(ss, s_cs_h, tau_h, mu)
 
+    # resample waves data to hourly (pad Tp and Dir)
+    xds_wvs_h = xds_wvs.resample(time='1H').pad()
 
-    # horizontal variables: Tp, Dir 
-    # TODO: problemas memoria con numpy repeat?
-    #hourly_Tp = np.repeat(Tp, s_cs_h, axis=0)
-    #hourly_Dir = np.repeat(Dir, s_cs_h, axis=0)
-    hourly_Tp = np.zeros(len(hourly_times))
-    hourly_Dir = np.zeros(len(hourly_times))
+    # add Hs and SS 
+    xds_wvs_h['Hs'] =(('time',), hourly_Hs)
+    xds_wvs_h['SS'] =(('time',), hourly_ss)
 
-    # output
-    hourly_npdt = np.arange(ts[0], ts[-1], timedelta(hours=1)).astype(datetime)
-    xds_hydrographs = xr.Dataset(
-        {
-        'Hs'  : (('time',), hourly_Hs),
-        'Tp'  : (('time',), hourly_Tp),
-        'Dir' : (('time',), hourly_Dir),
+    return xds_wvs_h
 
-        'SS'  : (('time',), hourly_ss),
-        },
-        coords = {'time' : hourly_npdt}
-    )
-
-    return xds_hydrographs
