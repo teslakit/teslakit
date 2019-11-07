@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from cftime._cftime import DatetimeGregorian
 import calendar
-from time import mktime
 import numpy as np
 import pandas as pd
 
@@ -105,7 +104,17 @@ def xds_reindex_monthly(xds_data):
 
 def xds_common_dates_daily(xds_list):
     '''
-    returns daily datetime array between 2 xarray.Dataset common dates
+    returns daily datetime array between a list of xarray.Dataset comon date
+    limits
+    '''
+
+    d1, d2 = xds_limit_dates(xds_list)
+
+    return [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+
+def xds_limit_dates(xds_list):
+    '''
+    returns datetime common limits between a list of xarray.Dataset
     '''
 
     d1 = None
@@ -128,7 +137,7 @@ def xds_common_dates_daily(xds_list):
         d1 = max(xds_e_dt1, d1)
         d2 = min(xds_e_dt2, d2)
 
-    return [d1 + timedelta(days=i) for i in range((d2-d1).days+1)]
+    return d1, d2
 
 def date2yearfrac(d):
     'Returns date d in fraction of the year'
@@ -162,7 +171,7 @@ def date2datenum(d):
         ttup = d.timetuple()
 
     # return datetime 
-    return datetime.fromtimestamp(mktime(ttup))
+    return datetime(*ttup[:6])
 
 def get_years_months_days(time):
     '''
