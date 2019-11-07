@@ -144,7 +144,7 @@ def axplot_ChangeProbs(ax, change_probs, wt_colors,
     )
     cbar_x.set_ticks([])
 
-    # custom color axis X
+    # custom color axis Y
     cax_y= ax.figure.add_axes(cax_y_pos)
     cbar_y = ColorbarBase(
         cax_y, cmap = ccmap, orientation='vertical',
