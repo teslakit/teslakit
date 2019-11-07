@@ -33,7 +33,7 @@ def axplot_distplot(ax, vars_values, vars_colors, n_bins, wt_num, xlims):
     ax.set_yticks([])
 
 def axplot_polarhist(ax, vars_values, vars_colors, n_bins, wt_num):
-    'axes plot seaborn polar hist dir at families'
+    'axes plot polar hist dir at families'
 
     for vv, vc in zip(vars_values, vars_colors):
         plt.hist(
@@ -50,6 +50,20 @@ def axplot_polarhist(ax, vars_values, vars_colors, n_bins, wt_num):
     ax.set_facecolor('whitesmoke')
     ax.set_xticks([])
     ax.set_yticks([])
+
+def axplot_histcompare(ax, var_fit, var_sim, fam_color, n_bins):
+    'axes plot histogram comparison between fit-sim waves variables'
+
+    ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
+            alpha=0.9, color='white', ec='k', label = 'Historical')
+    ax.hist(var_sim, n_bins, weights=np.ones(len(var_sim)) / len(var_sim),
+            alpha=0.7, color=fam_color, ec='k', label = 'Simulation')
+
+    # customize axes
+    ax.legend(prop={'size':8})
+    #ax.set_facecolor('whitesmoke')
+    #ax.set_xticks([])
+    #ax.set_yticks([])
 
 
 def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
@@ -181,5 +195,65 @@ def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
         nme = 'wvs_fams_dir_DWTs.png'
         p_e = op.join(p_export, nme)
         fig.savefig(p_e, dpi=_fdpi)
+        plt.close()
+
+def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim, vns=['Hs', 'Tp', 'Dir'], p_export=None):
+    '''
+    Plot waves families histogram fitting - simulation comparison
+
+    wvs_fams_sim, wvs_fams_sim (waves families):
+        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
+
+    vns - variables to plot
+    '''
+
+    # plot_parameters
+    n_bins = 40
+
+    # get families names and colors
+    n_fams = [vn.replace('_Hs','') for vn in wvs_fams_hist.keys() if
+              '_{0}'.format(vns[0]) in vn]
+    fams_colors = GetFamsColors(len(n_fams))
+
+
+    # fig params
+    n_rows = len(vns)
+    n_cols = len(n_fams)
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    gs = gridspec.GridSpec(n_rows, n_cols) #, wspace=0.0, hspace=0.0)
+
+    # iterate families
+    for nf, fc in zip(n_fams, fams_colors):
+
+        # iterate variables
+        for nv in vns:
+
+            # get variable fit and sim
+            vf = wvs_fams_hist['{0}_{1}'.format(nf, nv)].values[:]
+            vs = wvs_fams_sim['{0}_{1}'.format(nf, nv)].values[:]
+
+            # axes plot
+            gr = vns.index(nv)
+            gc = n_fams.index(nf)
+            ax = plt.subplot(gs[gr, gc])
+
+            axplot_histcompare(ax, vf, vs, fc, n_bins)
+
+            # first row titles
+            if nv == vns[0]:
+                ax.set_title(nf, fontweight='bold')
+
+    fig.suptitle(
+        'Historical - Simulation Waves Families Comparison',
+        fontsize=14, fontweight = 'bold'
+    )
+
+    # show / export
+    if not p_export:
+        plt.show()
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
