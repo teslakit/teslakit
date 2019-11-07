@@ -8,9 +8,8 @@ import matplotlib.pyplot as plt
 
 from ..custom_dateutils import date2datenum as d2d
 
-# fig aspect and size
-_faspect = (1+5**0.5)/2.0
-_fsize = 7
+# import constants
+from .config import _faspect, _fsize, _fdpi
 
 
 def Plot_AstronomicalTide(time, atide, p_export=None):
@@ -31,7 +30,7 @@ def Plot_AstronomicalTide(time, atide, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_ValidateTTIDE(time, atide, atide_ttide, p_export=None):
@@ -59,7 +58,7 @@ def Plot_ValidateTTIDE(time, atide, atide_ttide, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Tide_SLR(time, atide, slr, p_export=None):
@@ -85,7 +84,7 @@ def Plot_Tide_SLR(time, atide, slr, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Tide_RUNM(time, atide, slr, p_export=None):
@@ -111,7 +110,7 @@ def Plot_Tide_RUNM(time, atide, slr, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Tide_MMSL(
@@ -139,7 +138,7 @@ def Plot_Tide_MMSL(
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Validate_MMSL_tseries(
@@ -167,7 +166,7 @@ def Plot_Validate_MMSL_tseries(
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Validate_MMSL_scatter(mmsl_data, mmsl_pred, p_export=None):
@@ -193,7 +192,7 @@ def Plot_Validate_MMSL_scatter(mmsl_data, mmsl_pred, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_MMSL_Prediction(mmsl_time, mmsl_data, p_export=None):
@@ -218,7 +217,7 @@ def Plot_MMSL_Prediction(mmsl_time, mmsl_data, p_export=None):
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_MMSL_Histogram(
@@ -234,5 +233,5 @@ def Plot_MMSL_Histogram(
     if not p_export:
         plt.show()
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
