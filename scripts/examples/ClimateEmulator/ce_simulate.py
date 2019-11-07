@@ -1,22 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# basic import
+# common 
 import os
 import os.path as op
 import sys
-sys.path.insert(0, op.join(op.dirname(__file__),'..','..'))
-
-# python libs
-import numpy as np
-import xarray as xr
 
 # DEV: override installed teslakit
 import sys
-sys.path.insert(0,'../../../')
+sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
+
+# pip 
+import numpy as np
+import xarray as xr
 
 # teslakit
-from teslakit.project_site import PathControl, Site
+from teslakit.database import Database
 from teslakit.climate_emulator import Climate_Emulator
 from teslakit.custom_dateutils import datevec2datetime as d2d
 from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
@@ -24,24 +23,19 @@ from teslakit.io.matlab import ReadMatfile
 
 
 # --------------------------------------
-# Test data storage
+# Teslakit database
 
-pc = PathControl()
-p_tests = pc.p_test_data
-p_test_ce = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
+p_data = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
+db = Database(p_data)
 
-# input
-p_ce = op.join(p_test_ce, 'ce')  # climate emulator
-
+# set site
+db.SetSite('KWAJALEIN')
 
 
 # --------------------------------------
 #  MATLAB TEST DATA    
 
-
-# Test data storage
-pc = PathControl()
-p_tests = pc.p_test_data
+p_tests = '/Users/nico/Projects/TESLA-kit/TeslaKit/data/tests/'
 p_test = op.join(p_tests, 'ClimateEmulator', 'ml_jupyter')
 
 
@@ -94,12 +88,13 @@ for i in range(6):
 
 
 # TODO: for testing
-xds_DWT = xds_DWT.isel(time=slice(0,500), n_sim=slice(0,1))
+xds_DWT = xds_DWT.isel(time=slice(0,365*10), n_sim=slice(0,2))
+
 
 
 # --------------------------------------
 # Climate Emulator object 
-CE = Climate_Emulator(p_ce)
+CE = Climate_Emulator(db.paths.site.EXTREMES.climate_emulator)
 CE.Load()
 
 
@@ -111,6 +106,8 @@ print(ls_wvs_sim[0])
 print()
 
 
+import sys; sys.exit()
+# TODO: filtrar oleaje: wave stepnessm etc
 
 
 
