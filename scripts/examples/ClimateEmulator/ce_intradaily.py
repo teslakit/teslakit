@@ -11,20 +11,21 @@ import xarray as xr
 
 # DEV: override installed teslakit
 import sys
-sys.path.insert(0,'../../../')
+sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 
 # teslakit
-from teslakit.project_site import PathControl
+from teslakit.database import Database
 from teslakit.climate_emulator import Climate_Emulator
 from teslakit.waves import Aggregate_WavesFamilies, Intradaily_Hydrograph
 
 
 # --------------------------------------
-# Test data storage
+# Teslakit database
 
-pc = PathControl()
-p_tests = pc.p_test_data
-p_test = op.join(p_tests, 'ClimateEmulator', 'CE_FitExtremes')
+p_data = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
+db = Database(p_data)
+
+p_test = op.join(p_data, 'tests', 'ClimateEmulator', 'CE_FitExtremes')
 
 # input
 p_ce = op.join(p_test, 'ce')
