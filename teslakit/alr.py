@@ -608,7 +608,7 @@ class ALR_WRP(object):
 
         # get data 
         cluster_size = self.cluster_size
-        bmus_values_sim = xds_ALR_sim.evbmus_sims.values
+        bmus_values_sim = xds_ALR_sim.evbmus_sims.values[:]
         bmus_dates_sim = xds_ALR_sim.time.values[:]
         bmus_values_hist = np.reshape(xds_ALR_fit.bmus.values,[-1,1])
         bmus_dates_hist = xds_ALR_fit.time.values[:]
@@ -638,12 +638,14 @@ class ALR_WRP(object):
             p_export = p_rep_PY
         )
 
-        # TODO: n_sim > 1 ?
         # Plot WTs Transition (probability change / scatter Fit vs. Sim) 
-        Plot_Compare_Transitions(
-            cluster_size, bmus_values_hist, bmus_values_sim,
-            p_export = p_rep_VL
-        )
+        for s in range(num_sims):
+
+            # plot each simulation 
+            Plot_Compare_Transitions(
+                cluster_size, bmus_values_hist, bmus_values_sim[:,s],
+                p_export = p_rep_VL
+            )
 
         return
 
