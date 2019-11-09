@@ -54,9 +54,10 @@ def axplot_polarhist(ax, vars_values, vars_colors, n_bins, wt_num):
 def axplot_histcompare(ax, var_fit, var_sim, fam_color, n_bins):
     'axes plot histogram comparison between fit-sim waves variables'
 
-    ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
+    (_, bins, _) = ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
             alpha=0.9, color='white', ec='k', label = 'Historical')
-    ax.hist(var_sim, n_bins, weights=np.ones(len(var_sim)) / len(var_sim),
+
+    ax.hist(var_sim, bins=bins, weights=np.ones(len(var_sim)) / len(var_sim),
             alpha=0.7, color=fam_color, ec='k', label = 'Simulation')
 
     # customize axes
@@ -233,6 +234,10 @@ def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim, vns=['Hs', 'Tp', 'D
             # get variable fit and sim
             vf = wvs_fams_hist['{0}_{1}'.format(nf, nv)].values[:]
             vs = wvs_fams_sim['{0}_{1}'.format(nf, nv)].values[:]
+
+            # remove nans
+            vf = vf[~np.isnan(vf)]
+            vs = vs[~np.isnan(vs)]
 
             # axes plot
             gr = vns.index(nv)
