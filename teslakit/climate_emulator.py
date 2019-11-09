@@ -26,7 +26,7 @@ def tqdm(*args, **kwargs):
 
 # tk
 from .statistical import Empirical_ICDF
-from .waves import TWL
+from .waves import AWL
 from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from .plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
@@ -241,7 +241,7 @@ class Climate_Emulator(object):
         'Returns xarray.Dataset with max. TWL value and time'
 
         # Get TWL from waves partitions data 
-        xda_TWL = TWL(xds_WVS_pts.hs, xds_WVS_pts.tp)
+        xda_TWL = AWL(xds_WVS_pts.hs, xds_WVS_pts.tp)
 
         # find max TWL inside each storm 
         TWL_WT_max = []
@@ -289,8 +289,6 @@ class Climate_Emulator(object):
 
         # Fit each wave family var to GEV distribution (using KMA bmus)
         for vn in vars_gev:
-            # TODO: quitar
-            #print(vn)
             gp_pars = FitGEV_KMA_Frechet(
                 bmus, n_clusters, xds_WVS_MS[vn].values[:])
             xds_GEV_Par[vn] = (('n_cluster', 'parameter',), gp_pars)
@@ -465,12 +463,6 @@ class Climate_Emulator(object):
                     # concatenate data for correlation
                     to_corr = np.concatenate((to_corr, inv_n.T), axis=0)
 
-                    # TODO: esto falla a raiz de los nan en fit_fretchet
-                    #print(uc)
-                    #print(i_c)
-                    #print(to_corr)
-                    #print()
-
                 # sigma: spearman correlation
                 corr, pval = spearmanr(to_corr, axis=1)
 
@@ -592,8 +584,6 @@ class Climate_Emulator(object):
         xds_DWT          - xarray.Dataset, vars: evbmus_sims (time, n_sim,)
         dict_WT_TCs_wvs  - dict of xarray.Dataset (waves data) for TCs WTs
         '''
-
-        # TODO: meter wave stepness
 
         # max. storm waves and KMA
         xds_KMA_MS = self.KMA_MS
@@ -849,12 +839,12 @@ class Climate_Emulator(object):
                 continue
 
             # wave stepness 
-            # TODO: activar y comprobar
-            #ws_s = hs_s / (9.81 * tp_s**2 / 2*np.pi)
-            #if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
-            #    continue
+            ws_s = hs_s / (1.56 * tp_s**2 )
+            if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
+                continue
 
             # store simulation
+            sim_row[sim_row==0] = np.nan  # nan data at crom 0 
             sims_out[c] = sim_row
             c+=1
 
