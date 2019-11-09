@@ -53,17 +53,16 @@ def running_mean(x, N, mode_str='mean'):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
 
-def CalcRunningMean(xdset, pred_name, window=5):
+def RunnningMean_Monthly(xdset, var_name, window=5):
     '''
     Calculate running average grouped by months
-    Dylan methodology
 
-    xdset: (longitude, latitude, time) pred_name
-    returns xdset with new variable "pred_name_runavg"
+    xdset: (longitude, latitude, time) variables: var_name
+
+    returns xdset with new variable "var_name_runavg"
     '''
-    # TODO: MUY LENTO, OPTIMIZAR
 
-    tempdata_runavg = np.empty(xdset[pred_name].shape)
+    tempdata_runavg = np.empty(xdset[var_name].shape)
 
     for lon in xdset.longitude.values:
        for lat in xdset.latitude.values:
@@ -76,24 +75,22 @@ def CalcRunningMean(xdset, pred_name, window=5):
 
              # point running average
              time_mnt = xdset.time[ix_mnt]
-             data_pnt = xdset[pred_name].loc[lon, lat, time_mnt]
-
+             data_pnt = xdset[var_name].loc[lon, lat, time_mnt]
 
              tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(
                  data_pnt.values, window)
 
     # store running average
-    xdset['{0}_runavg'.format(pred_name)]= (
+    xdset['{0}_runavg'.format(var_name)]= (
         ('longitude', 'latitude', 'time'),
         tempdata_runavg)
 
     return xdset
 
-
-def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
+def PCA_LatitudeAverage(xdset, var_name, y1, y2, m1, m2):
     '''
     Principal component analysis
-    method: monthly data and latitude average
+    method: remove monthly running mean and latitude average
 
     xdset:
         (longitude, latitude, time), pred_name | pred_name_runavg
@@ -101,49 +98,52 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
     returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
     '''
 
+    # calculate monthly running mean
+    xdset = RunnningMean_Monthly(xdset, var_name)
+
     # predictor variable and variable_runnavg from dataset
-    pred_var = xdset[pred_name]
-    pred_var_ra = xdset['{0}_runavg'.format(pred_name)]
+    var_val = xdset[var_name]
+    var_val_ra = xdset['{0}_runavg'.format(var_name)]
 
     # use datetime for indexing
-    dt1 = datetime(y1,m1,1)
-    dt2 = datetime(y2+1,m2,28)
+    dt1 = datetime(y1, m1, 1)
+    dt2 = datetime(y2+1, m2, 28)
     time_PCA = [datetime(y, m1, 1) for y in range(y1, y2+1)]
 
     # use data inside timeframe
-    data_ss = pred_var.loc[:,:,dt1:dt2]
-    data_ss_ra = pred_var_ra.loc[:,:,dt1:dt2]
+    data_ss = var_val.loc[:,:,dt1:dt2]
+    data_ss_ra = var_val_ra.loc[:,:,dt1:dt2]
 
-    # Removing the running mean of monthly mean sea levels, this gives us a
-    # time series and spatial distribution of ANOMALIES in sea surface temp
+    # anomalies: remove the monthly running mean
     data_anom = data_ss - data_ss_ra
 
-    # Getting an average across all Latitudes for each Longitude in the bound at each instance in time
+    # average across all latitudes
     data_avg_lat = data_anom.mean(dim='latitude')
 
-    # we need to reshape to collapse 12 months of data to a single vector
+    # collapse 12 months of data to a single vector
     nlon = data_avg_lat.longitude.shape[0]
     ntime = data_avg_lat.time.shape[0]
-    hovmoller=xr.DataArray(
-        np.reshape(data_avg_lat.values, (12*nlon, ntime//12), order='F'))
+    hovmoller = xr.DataArray(
+        np.reshape(data_avg_lat.values, (12*nlon, ntime//12), order='F')
+    )
     hovmoller = hovmoller.transpose()
 
     # mean and standard deviation
     var_anom_mean = hovmoller.mean(axis=0)
     var_anom_std = hovmoller.std(axis=0)
 
-    # Ok, so we're removing those means, and normalizing by the standard
-    # deviation at anomaly.  This gives a matrix with rows = time (observations)
-    # and columns = longitude (locations)
+    # remove means and normalize by the standard deviation at anomaly
+    # rows = time, columns = longitude
     nk_m = np.kron(np.ones((y2-y1+1,1)), var_anom_mean)
     nk_s = np.kron(np.ones((y2-y1+1,1)), var_anom_std)
-    var_anom_demean = (hovmoller - nk_m)/nk_s
+    var_anom_demean = (hovmoller - nk_m) / nk_s
 
-    # principal components analysis
+    # sklearn principal components analysis
     ipca = PCA(n_components=var_anom_demean.shape[0])
     PCs = ipca.fit_transform(var_anom_demean)
 
     pred_lon = xdset.longitude.values[:]
+
     return xr.Dataset(
         {
             'PCs': (('n_components', 'n_components'), PCs),
@@ -155,12 +155,11 @@ def CalcPCA_latavg(xdset, pred_name, y1, y2, m1, m2):
 
             'time': (('n_components'), time_PCA),
             'pred_lon': (('n_lon',), pred_lon),
-
         },
 
         # store PCA algorithm metadata
         attrs = {
-            'method': 'latitude averaged',
+            'method': 'anomalies, latitude averaged',
         }
     )
 
