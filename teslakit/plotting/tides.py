@@ -204,7 +204,7 @@ def Plot_MMSL_Prediction(mmsl_time, mmsl_data, p_export=None):
     # plot figure
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize))
     plt.plot(
-        mmsl_time, mmsl_data, '-g',
+        mmsl_time, mmsl_data*1000, '-g',
         linewidth = 0.5, label = 'mmsl prediction'
     )
     axs.legend()
