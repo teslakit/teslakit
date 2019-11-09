@@ -240,51 +240,27 @@ def GetDistribution_ws(xds_wps, swell_sectors):
 
     return xds_parts
 
-def TWL(hs, tp):
-    'Returns Total Water Level'
+def AWL(hs, tp):
+    'Returns Atmospheric Water Level'
 
-    # TODO: tp/1.25 ?
-    #return 0.043*(hs*1.56*(tp/1.25)**2)**(0.5)
     return 0.043*(hs*1.56*(tp/1.00)**2)**(0.5)
 
-def TWL_WavesFamilies(wvs_fams):
+def TWL(awl, ss, at, mmsl):
+    'Returns Total Water Level'
+
+    return awl + ss + at + mmsl
+
+def AnnualMaxima(xds_data, var_name):
     '''
-    Calculates TWL for waves families data
-
-    wvs_fams (waves families):
-        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
-        {any number of families}
-
-    returns
-        xarray.Dataset (time,), Hs, Tp, TWL
-    '''
-
-    # Aggregate waves families Hs, Tp, Dir
-    wvs_aggr = Aggregate_WavesFamilies(wvs_fams)
-
-    # Calculate TWL
-    Hs = wvs_aggr.Hs.values[:]
-    Tp = wvs_aggr.Tp.values[:]
-    twl = TWL(Hs, Tp)
-
-    # return xarray.Dataset
-    xds_TWL = wvs_aggr.assign({'TWL' : (('time',), twl)})
-
-    return xds_TWL
-
-def TWL_AnnualMaxima(xds_TWL):
-    '''
-    Calculate annual maxima TWL (time index not monotonic)
-    requires xarray.Dataset with TWL (time) variable
+    Calculate annual maxima for "var_name" (time index not monotonic)
+    requires xarray.Dataset with var_name (time)
 
     returns xarray.Dataset with selection of annual maxima
     '''
 
-    # TODO: cambiar por comando xarray directo?
-
     # get TWL and times
-    ts = xds_TWL.time.values[:]
-    TWL = xds_TWL.TWL.values[:]
+    ts = xds_data.time.values[:]
+    vs = xds_data[var_name].values[:]
 
     # years array
     ys, _, _ = get_years_months_days(ts)  # aux. avoid time type problems 
@@ -295,9 +271,9 @@ def TWL_AnnualMaxima(xds_TWL):
     for y in us:
 
         # find year max TWL position
-        y_twl = TWL[np.where(y==ys)]
+        y_vs = vs[np.where(y==ys)]
         y_time = ts[np.where(y==ys)]
-        p_mt = np.where(y_twl == np.max(y_twl))[0][0]
+        p_mt = np.where(y_vs == np.max(y_vs))[0][0]
 
         yt_mt = y_time[p_mt]
         p_mt = np.where(ts == yt_mt)[0][0]
@@ -305,9 +281,9 @@ def TWL_AnnualMaxima(xds_TWL):
         p_amax.append(p_mt)
 
     # Select annual maxima
-    xds_TWL_AMAX = xds_TWL.isel(time=p_amax)
+    xds_AMAX = xds_data.isel(time=p_amax)
 
-    return xds_TWL_AMAX
+    return xds_AMAX
 
 def Aggregate_WavesFamilies(wvs_fams):
     '''
@@ -332,26 +308,29 @@ def Aggregate_WavesFamilies(wvs_fams):
     vv_Dir = np.column_stack([wvs_fams[v].values[:] for v in vs_Dir])
 
     # Hs from families
-    HS = np.sqrt(np.sum(np.power(vv_Hs,2), axis=1))
+    HS = np.sqrt(np.nansum(np.power(vv_Hs,2), axis=1))
 
-    # Tp from families
-    tmp1 = np.power(vv_Hs,2)
-    tmp2 = np.divide(np.power(vv_Hs,2), np.power(vv_Tp,2))
+    # Hs maximun position 
+    p_max_hs = np.nanargmax(vv_Hs, axis=1)
 
-    tmp1[np.isnan(tmp2)] = 0  # remove data with Tp=0
-    tmp2[np.isnan(tmp2)] = 0
+    # Tp from families (Hs max pos)
+    TP = np.array([r[i] for r,i in zip(vv_Tp, p_max_hs)])
 
-    TP = np.sqrt(np.sum(tmp1, axis=1) / np.sum(tmp2, axis=1))
+    # Dir from families (Hs max pos)
+    DIR = np.array([r[i] for r,i in zip(vv_Dir, p_max_hs)])
+
+    # TP from families 
+    #tmp1 = np.power(vv_Hs,2)
+    #tmp2 = np.divide(np.power(vv_Hs,2), np.power(vv_Tp,2))
+    #TP = np.sqrt(np.nansum(tmp1, axis=1) / np.nansum(tmp2, axis=1))
 
     # Dir from families
-    max_Tp = np.max(vv_Tp)
-    tmp3 = np.arctan2(
-        np.sum(np.power(vv_Hs,2) * max_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
-        np.sum(np.power(vv_Hs,2) * max_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
-    )
-    tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
-
-    DIR = tmp3 * 180/np.pi
+    #tmp3 = np.arctan2(
+    #    np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
+    #    np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
+    #)
+    #tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
+    #DIR = tmp3 * 180/np.pi
 
     # return xarray.Dataset
     xds_AGGR = xr.Dataset(
