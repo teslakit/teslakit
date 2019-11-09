@@ -222,7 +222,6 @@ def Plot_TCs_TracksParams(TCs_tracks, TCs_params, show=True):
     if show: plt.show()
     return fig
 
-# TODO: small refactor 
 def Plot_TCs_HistoricalTracks(xds_TCs_r1, xds_TCs_r2,
                               lon1, lon2, lat1, lat2,
                               pnt_lon, pnt_lat, r1, r2,
@@ -474,12 +473,11 @@ def axplot_histogram_params(ax, v_hist, v_sim, ttl):
         density=True,
     )
 
-    ax.set_title(ttl)
+    ax.set_title(ttl, fontweight='bold')
     ax.legend() #loc='upper right')
 
 
-def Plot_Params_Hist_vs_Sim_scatter(TCs_params_hist, TCs_params_sim,
-                                   p_export=None):
+def Plot_TCs_Params_HISTvsSIM(TCs_params_hist, TCs_params_sim, show=True):
     '''
     Plot scatter with historical vs simulated parameters
     '''
@@ -530,15 +528,12 @@ def Plot_Params_Hist_vs_Sim_scatter(TCs_params_hist, TCs_params_sim,
                     {'fontsize':10, 'fontweight':'bold'}
                 )
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_Params_Hist_vs_Sim_histogram(TCs_params_hist, TCs_params_sim,
-                                   p_export=None):
+def Plot_TCs_Params_HISTvsSIM_histogram(TCs_params_hist, TCs_params_sim,
+                                        show=True):
     '''
     Plot scatter with historical vs simulated parameters
     '''
@@ -568,14 +563,11 @@ def Plot_Params_Hist_vs_Sim_histogram(TCs_params_hist, TCs_params_sim,
         ax = plt.subplot(gs[c])
         axplot_histogram_params(ax, vvh, vvs, d_lab[vn])
 
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_Params_MDA_vs_Sim_scatter(TCs_params_MDA, TCs_params_sim,
-                                   p_export=None):
+def Plot_TCs_Params_MDAvsSIM(TCs_params_MDA, TCs_params_sim, show=True):
     '''
     Plot scatter with MDA selection vs simulated parameters
     '''
@@ -629,12 +621,9 @@ def Plot_Params_MDA_vs_Sim_scatter(TCs_params_MDA, TCs_params_sim,
             if i==0 and j==n-1:
                 ax.legend()
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def Plot_Category_Change(xds_categ_changeprobs, cmap='Blues', show=True):
     '''
