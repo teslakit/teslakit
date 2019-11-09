@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# pip
 import os
 import os.path as op
 import numpy as np
@@ -169,7 +170,7 @@ def axlegend_vel(ax):
     ax.add_artist(leg_vel)
 
 
-def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
+def Plot_TCs_TracksParams(TCs_tracks, TCs_params, show=True):
     'Plots storms tracks and storms parametrized'
 
     # custom wmo names
@@ -217,18 +218,15 @@ def Plot_TCs_TracksParams(TCs_tracks, TCs_params, p_export=None):
     axlegend_categ(axs[1])
     axlegend_vel(axs[1])
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 # TODO: small refactor 
-def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
-                               lon1, lon2, lat1, lat2,
-                               pnt_lon, pnt_lat, r1, r2,
-                               p_export=None):
+def Plot_TCs_HistoricalTracks(xds_TCs_r1, xds_TCs_r2,
+                              lon1, lon2, lat1, lat2,
+                              pnt_lon, pnt_lat, r1, r2,
+                              show=True):
     'Plot Historical TCs tracks map, requires basemap module'
 
     try:
@@ -324,17 +322,14 @@ def Plot_Historical_TCs_Tracks(xds_TCs_r1, xds_TCs_r2,
     ax.set_title('Historical TCs', fontsize=15)
     ax.legend(loc=0, fontsize=14)
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
-                                        lon1, lon2, lat1, lat2,
-                                        pnt_lon, pnt_lat, r1,
-                                        p_export=None):
+def Plot_TCs_HistoricalTracks_Category(xds_TCs_r1, cat,
+                                      lon1, lon2, lat1, lat2,
+                                      pnt_lon, pnt_lat, r1,
+                                      show=True):
     'Plot Historical TCs category map, requires basemap module'
 
     try:
@@ -403,12 +398,9 @@ def Plot_Historical_TCs_Tracks_Category(xds_TCs_r1, cat,
     ax.legend(loc=0, fontsize=14)
     axlegend_categ(ax)
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 
 def axplot_scatter_params(ax, x_hist, y_hist, x_sim, y_sim):
@@ -644,7 +636,7 @@ def Plot_Params_MDA_vs_Sim_scatter(TCs_params_MDA, TCs_params_sim,
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_Category_Change(xds_categ_changeprobs, p_export=None):
+def Plot_Category_Change(xds_categ_changeprobs, cmap='Blues', show=True):
     '''
     Plot category change betwen r1 and r2
     '''
@@ -653,19 +645,25 @@ def Plot_Category_Change(xds_categ_changeprobs, p_export=None):
     cs = xds_categ_changeprobs.category.values[:]
 
     # figure
-    fig, ax = plt.subplots(1, figsize=(_faspect*_fsize, _faspect*_fsize))
+    fig, ax = plt.subplots(1, figsize=(_faspect*_fsize/2, _faspect*_fsize/3))
 
-    pc = ax.pcolor(cp)
+    pc = ax.pcolor(cp, cmap=cmap)
     fig.colorbar(pc)
 
-    # custom plot
-    ax.set_title('Category change probabilities')
+    # customize axes
+    ttl = 'Category change probabilities'
+    ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
     ax.set_xlabel('category')
     ax.set_ylabel('category')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    ticks = np.arange(cp.shape[0]) + 0.5
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+    ticks_labs = np.arange(cp.shape[0])
+    ax.set_xticklabels(ticks_labs)
+    ax.set_yticklabels(ticks_labs)
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
