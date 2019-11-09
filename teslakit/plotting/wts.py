@@ -252,7 +252,7 @@ def axplot_WT_Hist(ax, bmus, n_clusters, ttl=''):
 def Plot_Compare_PerpYear(num_clusters,
                           bmus_values_sim, bmus_dates_sim,
                           bmus_values_hist, bmus_dates_hist,
-                          n_sim = 1, month_ini = 1, p_export=None):
+                          n_sim = 1, month_ini = 1, show=True):
     '''
     Plot simulated - historical bmus comparison in a perpetual year
 
@@ -268,7 +268,6 @@ def Plot_Compare_PerpYear(num_clusters,
         print('timedelta (days): Hist - {0}, Sim - {1})'.format(
             td_h.days, td_s.days))
         return
-
 
     # plot figure
     fig, (ax_hist, ax_sim) = plt.subplots(2,1, figsize=(_faspect*_fsize, _fsize))
@@ -304,18 +303,18 @@ def Plot_Compare_PerpYear(num_clusters,
     # text
     fig.suptitle('Perpetual Year', fontweight='bold', fontsize=12)
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def Plot_Compare_Transitions(num_clusters, bmus_values_hist, bmus_values_sim,
-                             p_export=None):
+                             sttl=None, show=True):
+    '''
+    Plot many probabilities transition comparisons between 2 bmus series
 
-    # TODO: make compatible with bmus_values_sim size [n_xim x bmus]
+    bmus_values_hist, bmus_values_sim - bmus series to compare
+    num_clusters  - total number of clusters at series
+    '''
 
     # get cluster colors
     wt_colors = GetClusterColors(num_clusters)
@@ -362,12 +361,13 @@ def Plot_Compare_Transitions(num_clusters, bmus_values_hist, bmus_values_sim,
                        'Sim. vs. Hist. WT Probabilities',
                        )
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # suptitle
+    if sttl != None:
+        fig.suptitle(sttl, fontweight='bold', fontsize=12)
+
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
                      wt_colors=False, p_export=None):

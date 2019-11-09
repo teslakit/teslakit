@@ -10,6 +10,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.mplot3d import Axes3D
 
 # teslakit
 from .custom_colors import GetClusterColors
@@ -103,9 +104,12 @@ def axplot_PCs_3D_WTs(ax, d_PCs, wt_colors, ttl='PCs'):
     ax.set_title(ttl, {'fontsize':10, 'fontweight':'bold'})
 
 
-def Plot_PCs_WT(PCs, variance, bmus, n_clusters, n=3, p_export=None):
+def Plot_PCs_WT(PCs, variance, bmus, n_clusters, n=3, show=True):
     '''
     Plot Annual Weather Types PCs using 2D axis
+
+    PCs, variance, bmus - from KMA_simple() or KMA_regression_guided()
+    n                   - number of PCs to plot
     '''
 
     # get cluster colors
@@ -145,19 +149,14 @@ def Plot_PCs_WT(PCs, variance, bmus, n_clusters, n=3, p_export=None):
                 )
                 ax.yaxis.set_label_position('right')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_PCs_3D_Compare(d_PCs_fit, d_PCs_rnd, p_export=None):
+def Plot_PCs_Compare_3D(d_PCs_fit, d_PCs_rnd, show=True):
     '''
-    Plot Annual Weather Types PCs fit - rnd comparison (3D)
+    Plot Annual Weather Types PCs fit - PCs rnd comparison (3D)
     '''
-
-    from mpl_toolkits.mplot3d import Axes3D
 
     # get cluster colors
     n_clusters = len(d_PCs_fit.keys())
@@ -173,19 +172,14 @@ def Plot_PCs_3D_Compare(d_PCs_fit, d_PCs_rnd, p_export=None):
     axplot_PCs_3D_WTs(ax_fit, d_PCs_fit,  cs_wt, ttl='PCs fit')
     axplot_PCs_3D_WTs(ax_sim, d_PCs_rnd,  cs_wt, ttl='PCs sim')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def Plot_WT_PCs_3D(d_PCs, n_clusters, p_export=None):
     '''
     Plot Weather Types PCs (3D)
     '''
-
-    from mpl_toolkits.mplot3d import Axes3D
 
     # get cluster colors
     cs_wt = GetClusterColors(n_clusters)
