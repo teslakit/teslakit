@@ -578,7 +578,7 @@ class ALR_WRP(object):
         # return ALR simulation data in a xr.Dataset
         xds_out = xr.Dataset(
             {
-                'evbmus_sims': (('time', 'n_sim'), evbmus_sims),
+                'evbmus_sims': (('time', 'n_sim'), evbmus_sims.astype(int)),
                 'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
             },
 
@@ -592,7 +592,7 @@ class ALR_WRP(object):
 
         return xds_out
 
-    def Report_Sim(self, py_month_ini=1, export=False): #xds_cov_sim=None
+    def Report_Sim(self, py_month_ini=1, show=True):
         '''
         Report that Compare fitting to simulated bmus
 
@@ -620,32 +620,36 @@ class ALR_WRP(object):
         if isinstance(bmus_dates_hist[0], np.datetime64):
             bmus_dates_hist = [npdt2dt(t) for t in bmus_dates_hist]
 
-        # handle export paths 
-        p_save = self.p_report_sim
-        p_rep_PY = None
-        p_rep_VL = None
-        if export:
-            if not op.isdir(p_save): os.mkdir(p_save)
-            p_rep_PY = op.join(p_save, 'PerpetualYear.png')
-            p_rep_VL = op.join(p_save, 'Transitions.png')
 
         # Plot Perpetual Year (daily) - bmus wt
-        Plot_Compare_PerpYear(
+        fig_PP = Plot_Compare_PerpYear(
             cluster_size,
             bmus_values_sim, bmus_dates_sim,
             bmus_values_hist, bmus_dates_hist,
             n_sim = num_sims, month_ini=py_month_ini,
-            p_export = p_rep_PY
+            show = show,
         )
 
         # Plot WTs Transition (probability change / scatter Fit vs. Sim) 
+        l_figs = []
         for s in range(num_sims):
 
             # plot each simulation 
-            Plot_Compare_Transitions(
+            sttl = 'Cluster Probabilities Transitions. Simulation {0}'.format(s)
+            fig = Plot_Compare_Transitions(
                 cluster_size, bmus_values_hist, bmus_values_sim[:,s],
-                p_export = p_rep_VL
+                sttl = sttl, show = show,
             )
+            l_figs.append(fig)
+
+        # TODO export handling (if show=False)    
+        #p_save = self.p_report_sim
+        #p_rep_PY = None
+        #p_rep_VL = None
+        #if export:
+        #    if not op.isdir(p_save): os.mkdir(p_save)
+        #    p_rep_PY = op.join(p_save, 'PerpetualYear.png')
+        #    p_rep_VL = op.join(p_save, 'Transitions.png')
 
         return
 
