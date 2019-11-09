@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from scipy.interpolate import interp1d
 
-# tk
+# import constants
+from .config import _faspect, _fsize, _fdpi
 
 # TODO: REFACTOR CHROM Y SIGMA
 
@@ -28,7 +29,7 @@ def Plot_GEVParams(xda_gev_var, p_export=None):
     }
 
     # plot figure
-    fig, axs = plt.subplots(2,2, figsize=(16,9))
+    fig, axs = plt.subplots(2,2, figsize=(_faspect*_fsize, _fsize))
     axs = [i for sl in axs for i in sl]
 
     # empty last axis
@@ -60,7 +61,7 @@ def Plot_GEVParams(xda_gev_var, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_ChromosomesProbs(xds_chrom, p_export=None):
@@ -99,7 +100,7 @@ def Plot_ChromosomesProbs(xds_chrom, p_export=None):
     maxsize = 1.5/maxprob
 
     # figure
-    fig, axs = plt.subplots(ss, ss, figsize=(22,16))
+    fig, axs = plt.subplots(ss, ss, figsize=(_faspect*_fsize*1.2, _fsize*1.2))
     axs = [i for sl in axs for i in sl]
 
     # plot each WT
@@ -196,7 +197,7 @@ def Plot_SigmaCorrelation(xds_chrom, d_sigma, p_export=None):
     maxsize = 1.5/maxcorr
 
     # figure
-    fig, axs = plt.subplots(ss, ss, figsize=(22,16))
+    fig, axs = plt.subplots(ss, ss, figsize=(_faspect*_fsize*1.2, _fsize*1.2))
     axs = [i for sl in axs for i in sl]
 
     # plot each WT
@@ -250,9 +251,25 @@ def Plot_SigmaCorrelation(xds_chrom, d_sigma, p_export=None):
         plt.show()
 
     else:
-        fig.savefig(p_export, dpi=128)
+        fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
 def Plot_Schemaball(xds_data):
     # TODO
     return None
+
+def Plot_ReturnPeriodValidation(xds_hist, xds_sim, var_name, p_export=None):
+    'Plot Return Period historical - simulation validation'
+    # TODO
+    pass
+
+    fig, axs = plt.subplots(111, figsize=(_faspect*_fsize, _fsize))
+
+    # show / export
+    if not p_export:
+        plt.show()
+
+    else:
+        fig.savefig(p_export, dpi=_fdpi)
+        plt.close()
+
