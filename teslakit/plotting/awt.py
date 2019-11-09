@@ -14,6 +14,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
+from mpl_toolkits.mplot3d import Axes3D
 
 # teslakit
 from ..util.operations import GetBestRowsCols
@@ -146,9 +147,8 @@ def axplot_EOF(ax, EOF_value, lon, ylbl, ttl):
 
 def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
                                 AWT_bmus, AWT_PCs_fit, AWT_PCs_rnd, AWT_color,
-                                p_export=None):
+                                show=True):
 
-    from mpl_toolkits.mplot3d import Axes3D
 
     # figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
@@ -186,28 +186,23 @@ def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
     axplot_PC_hist(ax_PC3_hst_fit, AWT_PCs_fit[:,2], AWT_color)
     axplot_PC_hist(ax_PC3_hst_rnd, AWT_PCs_rnd[:,2], AWT_color, ylab='PC3')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show
+    if show: plt.show()
 
-def Plot_AWT_Validation(bmus, dates, Km, n_clusters, lon, d_PCs_fit, d_PCs_rnd, p_export=None):
+def Plot_AWTs_Validation(bmus, dates, Km, n_clusters, lon, d_PCs_fit,
+                         d_PCs_rnd, show=True):
     '''
     Plot Annual Weather Types Validation
 
-    xds_AWT               - KMA output
-    lon                   - predictor longitude
-    d_PCs_fit, d_PCs_rnd 1,2,3
+    bmus, dates, Km, n_clusters, lon - from KMA_simple()
+    d_PCs_fit, d_PCs_rnd - historical and simulated PCs by WT
     '''
-
-    # TODO: activate p_export
 
     # get cluster colors
     cs_awt = colors_awt()
 
     # each cluster has a figure
+    l_figs = []
     for ic in range(n_clusters):
 
         # get cluster data
@@ -223,15 +218,21 @@ def Plot_AWT_Validation(bmus, dates, Km, n_clusters, lon, d_PCs_fit, d_PCs_rnd, 
         PCs_rnd = d_PCs_rnd['{0}'.format(id_AWT)]
 
         # plot cluster figure
-        Plot_AWT_Validation_Cluster(
+        fig = Plot_AWT_Validation_Cluster(
             var_AWT_2D, num_WTs, id_AWT,
             dates_AWT, bmus_AWT,
             PCs_fit, PCs_rnd,
-            clr)
+            clr, show=show)
 
-def Plot_AWTs(bmus, Km, n_clusters, lon, p_export=None):
+        l_figs.append(fig)
+
+    return l_figs
+
+def Plot_AWTs(bmus, Km, n_clusters, lon, show=True):
     '''
     Plot Annual Weather Types
+
+    bmus, Km, n_clusters, lon - from KMA_simple()
     '''
 
     # get number of rows and cols for gridplot 
@@ -244,8 +245,7 @@ def Plot_AWTs(bmus, Km, n_clusters, lon, p_export=None):
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
     gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.10, hspace=0.15)
-    gr = 0
-    gc = 0
+    gr, gc = 0, 0
 
     for ic in range(n_clusters):
 
@@ -265,18 +265,15 @@ def Plot_AWTs(bmus, Km, n_clusters, lon, p_export=None):
             gc = 0
             gr += 1
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_AWTs_Dates(bmus, dates, n_clusters, p_export=None):
+def Plot_AWTs_Dates(bmus, dates, n_clusters, show=True):
     '''
     Plot Annual Weather Types dates
 
-    xds_AWT: KMA output
+    bmus, dates, n_clusters - from KMA_simple()
     '''
 
     # get cluster colors
@@ -301,31 +298,21 @@ def Plot_AWTs_Dates(bmus, dates, n_clusters, p_export=None):
             xaxis_clean=False
 
         # axs plot
-        axplot_AWT_years(axs[ic], dates_AWT, bmus_AWT, clr, xaxis_clean,
-                         ylabel)
+        axplot_AWT_years(
+            axs[ic], dates_AWT, bmus_AWT,
+            clr, xaxis_clean, ylabel,
+        )
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_EOFs_SST(PCs, EOFs, variance, time, lon, n_plot, p_export=None):
+def Plot_AWTs_EOFs(PCs, EOFs, variance, time, lon, n_plot, show=True):
     '''
     Plot annual EOFs for 3D predictors
 
-    xds_PCA:
-        (n_components, n_components) PCs
-        (n_components, n_features) EOFs
-        (n_components, ) variance
-
-        (n_lon, ) pred_lon: predictor longitude values
-        (n_components, ) time
-
-        method: latitude averaged
-
-    n_plot: number of EOFs plotted
+    PCs, EOFs, variance, time, lon - from PCA_LatitudeAverage()
+    n_plot                         - number of EOFs plotted
     '''
 
     # transpose
@@ -352,6 +339,7 @@ def Plot_EOFs_SST(PCs, EOFs, variance, time, lon, n_plot, p_export=None):
     # percentage of variance each field explains
     n_percent = variance / np.sum(variance)
 
+    l_figs = []
     for it in range(n_plot):
 
         # map of the spatial field
@@ -378,14 +366,10 @@ def Plot_EOFs_SST(PCs, EOFs, variance, time, lon, n_plot, p_export=None):
         evol =  PCs[it,:]/np.sqrt(variance[it])
         axplot_EOF_evolution(ax_evol, years, evol)
 
-        # show / export
-        if not p_export:
-            plt.show()
+        l_figs.append(fig)
 
-        else:
-            if not op.isdir(p_export):
-                os.makedirs(p_export)
-            p_expi = op.join(p_export, 'EOFs_{0}.png'.format(it+1))
-            fig.savefig(p_expi, dpi=_fdpi)
-            plt.close()
+        # show
+        if show: plt.show()
+
+    return l_figs
 
