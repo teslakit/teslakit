@@ -100,7 +100,7 @@ def Plot_Output(xds_out_h, p_export=None):
     axplot_series(axs[7], xds_out_h.AT, 'solid', 'purple', 'AT(m)')
 
     # MMSL
-    axplot_series(axs[8], xds_out_h.MMSL, 'solid', 'green', 'MMSL(mm)')
+    axplot_series(axs[8], xds_out_h.MMSL, 'solid', 'green', 'MMSL(m)')
 
     # TWL
     axplot_series(axs[9], xds_out_h.TWL, 'solid', 'blue', 'TWL(m)')
