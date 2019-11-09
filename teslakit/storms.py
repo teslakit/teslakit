@@ -127,7 +127,7 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             if isinstance(time[i_storm][0], np.datetime64):
                 # round to days
                 time[i_storm] = np.array(
-                    [np.datetime64(xt, 'D') for xt in time[i_storm]]
+                    [np.datetime64(xt, 'h') for xt in time[i_storm]]
                 )
 
                 delta_h = np.diff(
