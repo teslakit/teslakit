@@ -8,31 +8,30 @@ from datetime import datetime
 import numpy as np
 import xarray as xr
 
-def GetMJOCategories(rmm1, rmm2, phase):
+def MJO_Categories(rmm1, rmm2, phase):
     '''
     Divides MJO data in 25 categories.
+
+    rmm1, rmm2, phase - MJO parameters
+
     returns array with categories time series
     and corresponding rmm
     '''
 
-    rmm = np.sqrt(rmm1**2+rmm2**2)
-    categ = np.empty(rmm.shape)*np.nan
+    rmm = np.sqrt(rmm1**2 + rmm2**2)
+    categ = np.empty(rmm.shape) * np.nan
 
     for i in range(1,9):
         s = np.squeeze(np.where(phase == i))
         rmm_p = rmm[s]
 
-        # TODO: VA LENTO. OPTIMIZAR
-        # usar busqueda y remplazar por indices .where
-        for j in s:
-            if rmm[j] > 2.5:
-                categ[j] = i
-            elif rmm[j] > 1.5:
-                categ[j] = i+8
-            elif rmm[j] > 1:
-                categ[j] = i+8*2
-            elif rmm[j] <= 1:
-                categ[j] = 25
+        # categories
+        categ_p = np.empty(rmm_p.shape) * np.nan
+        categ_p[rmm_p <=1] =  25
+        categ_p[rmm_p > 1] =  i + 8*2
+        categ_p[rmm_p > 1.5] =  i + 8
+        categ_p[rmm_p > 2.5] =  i
+        categ[s] = categ_p
 
     # get rmm_categ
     rmm_categ = {}

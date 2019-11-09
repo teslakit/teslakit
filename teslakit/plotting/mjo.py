@@ -14,7 +14,7 @@ from .custom_colors import colors_mjo
 from .config import _faspect, _fsize, _fdpi
 
 
-def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
+def Plot_MJO_phases(rmm1, rmm2, phase, show=True):
     'Plot MJO data separated by phase'
 
     # parameters for custom plot
@@ -61,15 +61,11 @@ def Plot_MJOphases(rmm1, rmm2, phase, p_export=None):
     plt.ylabel('RMM2')
     ax.set_aspect('equal')
 
-    # show / export
-    if not p_export:
-        plt.show()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
-def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
+def Plot_MJO_Categories(rmm1, rmm2, categ, show=True):
     'Plot MJO data separated by 25 categories'
 
     # parameters for custom plot
@@ -167,11 +163,7 @@ def Plot_MJOCategories(rmm1, rmm2, categ, p_export=None):
     plt.ylabel('RMM2')
     ax.set_aspect('equal')
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
