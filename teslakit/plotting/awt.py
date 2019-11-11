@@ -188,6 +188,7 @@ def Plot_AWT_Validation_Cluster(AWT_2D, AWT_num_wts, AWT_ID, AWT_dates,
 
     # show
     if show: plt.show()
+    return fig
 
 def Plot_AWTs_Validation(bmus, dates, Km, n_clusters, lon, d_PCs_fit,
                          d_PCs_rnd, show=True):
