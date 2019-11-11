@@ -301,11 +301,19 @@ def Aggregate_WavesFamilies(wvs_fams):
     vs_Hs = [x for x in vs if x.endswith('_Hs')]
     vs_Tp = [x for x in vs if x.endswith('_Tp')]
     vs_Dir = [x for x in vs if x.endswith('_Dir')]
+    times = wvs_fams.time.values[:]
 
     # join variable values
     vv_Hs = np.column_stack([wvs_fams[v].values[:] for v in vs_Hs])
     vv_Tp = np.column_stack([wvs_fams[v].values[:] for v in vs_Tp])
     vv_Dir = np.column_stack([wvs_fams[v].values[:] for v in vs_Dir])
+
+    # TODO: entire row nan?
+    #p_rn = np.where([x.all() for x in np.isnan(vv_Hs)])[0]
+    #vv_Hs = vv_Hs[~p_rn]
+    #vv_Tp = vv_Tp[~p_rn]
+    #vv_Dir = vv_Dir[~p_rn]
+    #times = wvs_fams.time.values[~p_rn]
 
     # Hs from families
     HS = np.sqrt(np.nansum(np.power(vv_Hs,2), axis=1))
@@ -340,7 +348,7 @@ def Aggregate_WavesFamilies(wvs_fams):
             'Dir': (('time',), DIR),
         },
         coords = {
-            'time': wvs_fams.time.values[:]  # get time from input
+            'time': times,  # get time from input
         }
     )
 
