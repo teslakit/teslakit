@@ -16,6 +16,7 @@ from .pca import CalcPCA_EstelaPred
 from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
+
 from .plotting.estela import Plot_EOFs_EstelaPred, Plot_DWTs_Mean_Anom, \
 Plot_DWTs_Probs
 from .plotting.pcs import Plot_PCs_WT, Plot_WT_PCs_3D
@@ -289,17 +290,13 @@ class Predictor(object):
     def Plot_EOFs_EstelaPred(self, n_plot=3, show=True):
         'Plot EOFs generated in PCA_EstelaPred'
 
-        if show:
-            p_export = None
-        else:
-            p_export = op.join(self.p_store, 'EOFs_EP')
-
         # optional land mask
         mask_land = None
         if 'mask_land' in self.data.keys():
             mask_land = self.data['mask_land'].values[:]
 
-        Plot_EOFs_EstelaPred(self.PCA, n_plot, mask_land=mask_land, p_export=p_export)
+        l_fs = Plot_EOFs_EstelaPred(self.PCA, n_plot, mask_land=mask_land, show=show)
+        return l_fs
 
     def Plot_DWTs(self, var_name, kind='mean', show=True):
         '''
@@ -319,18 +316,15 @@ class Predictor(object):
         if 'mask_land' in self.data.keys():
             mask_land = self.data['mask_land'].values[:]
 
-        if show:
-            p_export = None
-        else:
-            p_export = op.join(
-                self.p_store,
-                'KMA_RG_DWTs_mean_{0}.png'.format(var_name))
-
         # Plot DWTs mean using var_data
-        Plot_DWTs_Mean_Anom(xds_DWTs, var_data,
-                       kind=kind,
-                       mask_land=mask_land,
-                       p_export=p_export)
+        fig = Plot_DWTs_Mean_Anom(
+            xds_DWTs, var_data,
+            kind = kind,
+            mask_land = mask_land,
+            show = show
+        )
+
+        return fig
 
     def Plot_DWTs_Probs(self, show=True):
         '''
@@ -341,21 +335,14 @@ class Predictor(object):
             - probs by 3month
         '''
 
-        # handle export path
-        if show:
-            p_export = None
-        else:
-            p_export = op.join(
-                self.p_store,
-                'KMA_RG_DWTs_Probs.png'
-            )
-
         # Plot DWTs mean using var_data
         bmus = self.KMA['sorted_bmus'].values[:] + 1 # index to DWT id
         bmus_time = self.KMA['time'].values[:]
         n_clusters = len(self.KMA.n_clusters.values[:])
 
-        Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export)
+        fig = Plot_DWTs_Probs(bmus, bmus_time, n_clusters, show=show)
+
+        return fig
 
     def Plot_DWT_PCs(self, n=3, show=True):
         '''
@@ -368,17 +355,10 @@ class Predictor(object):
         bmus = self.KMA.sorted_bmus.values[:]  # sorted_bmus
         n_clusters = len(self.KMA.n_clusters.values[:])
 
-        # handle export path
-        if show:
-            p_export = None
-        else:
-            p_export = op.join(
-                self.p_store,
-                'KMA_RG_PCs123_3D.png'
-            )
-
         # Plot DWTs PCs
-        Plot_PCs_WT(PCs, variance, bmus, n_clusters, n, p_export)
+        fig = Plot_PCs_WT(PCs, variance, bmus, n_clusters, n, show=show)
+
+        return fig
 
     def Plot_PCs_3D(self, show=True):
         'Plots Predictor first 3 PCs'
@@ -402,15 +382,8 @@ class Predictor(object):
             PC123 = np.column_stack((PC1[ind], PC2[ind], PC3[ind]))
             d_PCs['{0}'.format(ic+1)] = PC123
 
-        # handle export path
-        if show:
-            p_export = None
-        else:
-            p_export = op.join(
-                self.p_store,
-                'KMA_RG_PCs123_3D.png'
-            )
-
         # Plot DWTs PCs 3D 
-        Plot_WT_PCs_3D(d_PCs, n_clusters, p_export)
+        fig = Plot_WT_PCs_3D(d_PCs, n_clusters, show=show)
+
+        return fig
 
