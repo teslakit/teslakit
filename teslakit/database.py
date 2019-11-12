@@ -18,8 +18,7 @@ from .io.getinfo import description
 from .io.aux_nc import StoreBugXdset
 from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
 ReadGowMat, ReadCoastMat, ReadEstelaMat
-from .custom_dateutils import xds_reindex_daily
-from .custom_dateutils import xds_reindex_monthly
+from .custom_dateutils import xds_reindex_daily, xds_reindex_monthly, xds_limit_dates
 from .custom_dateutils import xds_common_dates_daily as xcd_daily
 
 
@@ -195,8 +194,15 @@ class Database(object):
     def Save_MJO_sim(self, xds):
         StoreBugXdset(xds, self.paths.site.MJO.sim)
 
+        # hourly
+        xds_h = xds.resample(time='1H').pad()
+        StoreBugXdset(xds_h, self.paths.site.MJO.sim_h)
+
     def Load_MJO_sim(self):
         return xr.open_dataset(self.paths.site.MJO.sim)
+
+    def Load_MJO_sim_h(self):
+        return xr.open_dataset(self.paths.site.MJO.sim_h)
 
     # TCs
 
@@ -339,8 +345,15 @@ class Database(object):
     def Save_ESTELA_DWT_sim(self, xds):
         StoreBugXdset(xds, self.paths.site.ESTELA.sim_dwt)
 
+        # hourly
+        xds_h = xds.resample(time='1H').pad()
+        StoreBugXdset(xds_h, self.paths.site.ESTELA.sim_dwt_h)
+
     def Load_ESTELA_DWT_sim(self):
         return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
+
+    def Load_ESTELA_DWT_sim_h(self):
+        return xr.open_dataset(self.paths.site.ESTELA.sim_dwt_h)
 
     # HYDROGRAMS
 
@@ -404,7 +417,42 @@ class Database(object):
         xds['tide'] = xds['tide'] * 1000
         return xds
 
-    # SPECIAL
+    # COMPLETE DATA 
+
+    def Load_SIM_hourly(self, n_sim=0):
+        'Load all simulated data (hourly): AWTs, DWTs, MJO, MMSL, AT'
+
+        # TODO devolver todos n_sim x time
+        # TODO ignorar los que no existan
+
+        # TODO: metodo crea nans (solo funciona copy o values[:]?). fix it
+
+        # load hourly data
+        AWTs = self.Load_SST_AWT_sim()
+        AWTs_h = AWTs.resample(time='1H').pad()
+        AWTs_h = AWTs_h.isel(n_sim=n_sim)
+        DWTs_h = self.Load_ESTELA_DWT_sim_h().isel(n_sim=n_sim)
+        MJO_h  = self.Load_MJO_sim_h().isel(n_sim=n_sim)
+        MMSL_h = self.Load_TIDE_sim_mmsl_h().isel(n_sim=n_sim)
+        AT_h   = self.Load_TIDE_sim_astro()
+
+        # common dates limits
+        d1, d2 = xds_limit_dates([AWTs_h, DWTs_h, MJO_h, AT_h, MMSL_h])
+
+        AWTs_h = AWTs_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'AWT'})
+        MJO_h = MJO_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'MJO'})
+        DWTs_h = DWTs_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'DWT'})
+        AT_h =     AT_h.sel(time=slice(d1,d2)).rename({'tide':'AT'})
+        MMSL_h = MMSL_h.sel(time=slice(d1,d2)).rename({'mmsl':'MMSL'})
+
+        time = AWTs_h.time
+
+        # merge all data
+        xds = xr.merge([AWTs_h, MJO_h, DWTs_h, AT_h, MMSL_h])
+
+        return xds
+
+    # SPECIAL PLOTS
 
     def Load_AWTs_DWTs_Plots_sim(self, n_sim=0):
         'Load data needed for WT-WT Probs plot'
