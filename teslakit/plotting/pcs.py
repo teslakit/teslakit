@@ -176,7 +176,7 @@ def Plot_PCs_Compare_3D(d_PCs_fit, d_PCs_rnd, show=True):
     if show: plt.show()
     return fig
 
-def Plot_WT_PCs_3D(d_PCs, n_clusters, p_export=None):
+def Plot_WT_PCs_3D(d_PCs, n_clusters, show=True):
     '''
     Plot Weather Types PCs (3D)
     '''
@@ -192,10 +192,6 @@ def Plot_WT_PCs_3D(d_PCs, n_clusters, p_export=None):
     # Plot PCs (3D)
     axplot_PCs_3D_WTs(ax_pcs, d_PCs,  cs_wt, ttl='PCs')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
+    # show and return figure
+    if show: plt.show()
+    return fig

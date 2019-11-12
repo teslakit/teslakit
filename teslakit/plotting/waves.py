@@ -67,7 +67,7 @@ def axplot_histcompare(ax, var_fit, var_sim, fam_color, n_bins):
     #ax.set_yticks([])
 
 
-def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
+def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, show=True):
     '''
     Plot waves families by DWT
 
@@ -90,6 +90,7 @@ def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
     n_rows, n_cols = GetBestRowsCols(n_clusters)
 
     # Hs and Tp
+    l_figs = []
     for wv in ['Hs', 'Tp']:
 
         # get common xlims for histogram
@@ -137,15 +138,10 @@ def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
         fig.suptitle(
             '{0} Distributions: {1}'.format(wv, ', '.join(n_fams)),
             fontsize=14, fontweight = 'bold')
+        l_figs.append(fig)
 
-        # show / export
-        if not p_export:
-            plt.show()
-        else:
-            nme = 'wvs_fams_{0}.png'.format(wv)
-            p_e = op.join(p_export, nme)
-            fig.savefig(p_e, dpi=_fdpi)
-            plt.close()
+        # show 
+        if show: plt.show()
 
     # Dir    
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
@@ -189,14 +185,11 @@ def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
         '{0} Distributions: {1}'.format('Dir', ', '.join(n_fams)),
         fontsize=14, fontweight='bold')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        nme = 'wvs_fams_dir_DWTs.png'
-        p_e = op.join(p_export, nme)
-        fig.savefig(p_e, dpi=_fdpi)
-        plt.close()
+    l_figs.append(fig)
+
+    # show 
+    if show: plt.show()
+    return l_figs
 
 def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim,
                                 vns=['Hs', 'Tp','Dir'], show=True):

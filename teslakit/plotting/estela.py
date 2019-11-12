@@ -117,7 +117,7 @@ def axplot_DWT(ax, dwt, vmin, vmax, wt_num, land=None, wt_color=None):
     return pc
 
 
-def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, p_export=None):
+def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, show=True):
     '''
     Plot annual EOFs for 3D predictors
 
@@ -133,8 +133,6 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, p_export=None):
         method: gradient + estela
 
     n_plot: number of EOFs plotted
-
-    show plot or saves figure to p_export
     '''
 
     # PCA data
@@ -152,6 +150,7 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, p_export=None):
     # percentage of variance each field explains
     n_percent = variance / np.sum(variance)
 
+    l_figs = []
     for it in range(n_plot):
 
         # get vargrd 
@@ -169,7 +168,7 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, p_export=None):
         C2 = np.reshape(grd, (len(lon), len(lat)))
 
         # figure
-        fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+        fig = plt.figure(figsize=(_faspect*_fsize, 2.0/3.0*_fsize))
 
         # layout
         gs = gridspec.GridSpec(4, 4, wspace=0.10, hspace=0.2)
@@ -190,20 +189,15 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, p_export=None):
         ttl = 'EOF #{0}  ---  {1:.2f}%'.format(it+1, n_percent[it]*100)
         fig.suptitle(ttl, fontsize=14, fontweight='bold')
 
-        # show / export
-        if not p_export:
-            plt.show()
+        l_figs.append(fig)
 
-        else:
-            if not op.isdir(p_export):
-                os.makedirs(p_export)
-            p_expi = op.join(p_export, 'EOFs_{0}_{1}.png'.format(pred_name, it+1))
-            fig.savefig(p_expi, dpi=_fdpi)
-            plt.close()
+    # show and return figure
+    if show: plt.show()
+    return l_figs
 
 def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D,
                 lon1=None, lon2=None, lat1= None, lat2=None,
-                p_export=None):
+                show=True):
 
     'Plots ESTELA days at world map '
 
@@ -275,14 +269,12 @@ def Plot_ESTELA(pnt_lon, pnt_lat, estela_F, estela_D,
     # plot point
     ax.plot(pnt_lon, pnt_lat, 'ok')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=None):
+def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None,
+                        show=True):
     '''
     Plot Daily Weather Types (bmus mean)
     kind - mean/anom
@@ -359,12 +351,9 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None, p_export=
     elif kind=='anom':
         cb.set_label('Pressure anomalies (mbar)')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def ClusterProbs_Month(bmus, time, wt_set, month_ix):
     'Returns Cluster probs by month_ix'
@@ -390,7 +379,7 @@ def ClusterProbs_Month(bmus, time, wt_set, month_ix):
 
     return ClusterProbabilities(bmus_sel, wt_set)
 
-def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
+def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, show=True):
     '''
     Plot Daily Weather Types bmus probabilities
     '''
@@ -472,11 +461,7 @@ def Plot_DWTs_Probs(bmus, bmus_time, n_clusters, p_export=None):
     cb = fig.colorbar(pc, cax=cbar_ax, cmap='Blues')
     cb.ax.tick_params(labelsize=8)
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
+    # show and return figure
+    if show: plt.show()
+    return fig
 
