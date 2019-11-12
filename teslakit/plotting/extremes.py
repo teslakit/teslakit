@@ -18,7 +18,7 @@ from .config import _faspect, _fsize, _fdpi
 
 # TODO: REFACTOR CHROM Y SIGMA
 
-def Plot_GEVParams(xda_gev_var, p_export=None):
+def Plot_GEVParams(xda_gev_var, show=True):
     'Plot GEV params for a GEV parameter variable (sea_Hs, swell_1_Hs, ...)'
 
     name = xda_gev_var.name
@@ -35,8 +35,6 @@ def Plot_GEVParams(xda_gev_var, p_export=None):
 
     # empty last axis
     axs[3].axis('off')
-    axs[3].text(0, 0.9, 'GEV parameters: {0}'.format(name),
-                fontsize=20, fontweight='bold')
 
     for c, par in enumerate(params):
         ax = axs[c]
@@ -49,23 +47,24 @@ def Plot_GEVParams(xda_gev_var, p_export=None):
         else:
             cl = (np.min(par_values), np.max(par_values))
 
-        ax.pcolor(rr_pv, cmap='coolwarm_r', clim=cl)
+        cc=ax.pcolor(rr_pv, cmap='coolwarm_r', clim=cl, edgecolor='k')
+        fig.colorbar(cc, ax=ax)
 
         # add grid and title
-        ax.set_title(par, fontweight='bold')
-        ax.grid(True, which='major', axis='both', linestyle='-', color='k')
+        ax.set_title(par)
         ax.set_xticklabels([])
         ax.set_yticklabels([])
+        ax.set_xticks([])
+        ax.set_yticks([])
 
-    # show / export
-    if not p_export:
-        plt.show()
+    ttl = 'GEV - {0}'.format(name)
+    fig.suptitle(ttl, fontweight='bold', fontsize=14)
 
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show
+    if show: plt.show()
+    return fig
 
-def Plot_ChromosomesProbs(xds_chrom, p_export=None):
+def Plot_ChromosomesProbs(xds_chrom, show=True):
     'Plot chromosomes probabilities for each WT using chrom triangles'
 
     # TODO: colores poco fuertes
@@ -138,18 +137,14 @@ def Plot_ChromosomesProbs(xds_chrom, p_export=None):
         ax.axis('off')
         #ax.set_title('WT: {0}'.format(c_wt+1))
 
-        fig.suptitle('Chromosomes Probabilities - WTs')
+        ttl = 'Chromosomes Probabilities - WTs'
+        fig.suptitle(ttl, fontweight='bold', fontsize=14)
 
+    # show
+    if show: plt.show()
+    return fig
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=128)
-        plt.close()
-
-def Plot_SigmaCorrelation(xds_chrom, d_sigma, p_export=None):
+def Plot_SigmaCorrelation(xds_chrom, d_sigma, show=True):
     'Plot sigma correlation (Hs1-Hs2, Hs1-Tp1) for each WT using chrom triangles'
 
     # Get sigma correlation values for plot
@@ -245,15 +240,12 @@ def Plot_SigmaCorrelation(xds_chrom, d_sigma, p_export=None):
         ax.axis('off')
         #ax.set_title('WT: {0}'.format(c_wt+1))
 
-        fig.suptitle('Sigma Correlation - WTs')
+        ttl = 'Sigma Correlation - WTs'
+        fig.suptitle(ttl, fontweight='bold', fontsize=14)
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show
+    if show: plt.show()
+    return fig
 
 def Plot_Schemaball(xds_data):
     # TODO
