@@ -198,7 +198,8 @@ def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, p_export=None):
         fig.savefig(p_e, dpi=_fdpi)
         plt.close()
 
-def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim, vns=['Hs', 'Tp', 'Dir'], p_export=None):
+def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim,
+                                vns=['Hs', 'Tp','Dir'], show=True):
     '''
     Plot waves families histogram fitting - simulation comparison
 
@@ -247,18 +248,18 @@ def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim, vns=['Hs', 'Tp', 'D
             axplot_histcompare(ax, vf, vs, fc, n_bins)
 
             # first row titles
-            if nv == vns[0]:
+            if gr == 0:
                 ax.set_title(nf, fontweight='bold')
+            # first column variables
+            if gc == 0:
+                ax.set_ylabel(nv, fontweight='bold')
 
     fig.suptitle(
         'Historical - Simulation Waves Families Comparison',
         fontsize=14, fontweight = 'bold'
     )
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
