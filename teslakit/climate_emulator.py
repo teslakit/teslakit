@@ -114,62 +114,60 @@ class Climate_Emulator(object):
         self.vars_GEV = l_GEV_vars
         self.vars_EMP = l_EMP_vars
 
-    def FitExtremes(self, xds_KMA, xds_WVS_parts, xds_WVS_fams, config):
+    def FitExtremes(self, KMA, WVS_prts, WVS_fams, config):
         '''
         GEV extremes fitting.
         Input data (waves vars series and bmus) shares time dimension
 
-        xds_KMA        - xarray.Dataset, vars: bmus (time,), cenEOFs(n_clusters,n_features)
-        xds_WVS_parts  - xarray.Dataset: (time,), phs, pspr, pwfrac... {0-5 partitions}
-        xds_WVS_fams   - xarray.Dataset: (time,), fam_V, {fam: sea,swell_1,swell2. V: Hs,Tp,Dir}
-        config         - dictionary: name_fams, force_empirical
+        KMA        - xarray.Dataset, vars: bmus (time,), cenEOFs(n_clusters,n_features)
+        WVS_prts   - xarray.Dataset: (time,), Hs, Tp, Dir,  phs, pspr, pwfrac... {0-5 partitions}
+        WVS_fams   - xarray.Dataset: (time,), fam_V, {fam: sea,swell_1,swell2. V: Hs,Tp,Dir}
+        config     - dictionary: name_fams, force_empirical
         '''
-
-        # TODO: repasar con Ana: partitions o agregar aqui?
 
         # configure waves fams variables parameters from config dict
         self.ConfigVariables(config)
 
         # get start and end dates for each storm
-        lt_storm_dates = self.Calc_StormsDates(xds_KMA)
+        lt_storm_dates = self.Calc_StormsDates(KMA)
 
         # TODO: try agregated data
-        # calculate max. TWL for each storm
-        #xds_WVS_agr = Aggregate_WavesFamilies(xds_WVS_fams)
-        #xds_max_TWL = self.Calc_StormsMaxTWL(xds_WVS_agr, lt_storm_dates)
+        # calculate max. AWL for each storm
+        #WVS_agr = Aggregate_WavesFamilies(WVS_fams)
+        #ms_AWL = self.Calc_StormsMaxTWL(WVS_agr.Hs, WVS_agr.Tp, lt_storm_dates)
 
-        # calculate max. TWL for each storm
-        xds_max_TWL = self.Calc_StormsMaxTWL(xds_WVS_parts, lt_storm_dates)
-        xds_WVS_a = xds_WVS_parts.sel(time = xds_max_TWL.time)
+        # calculate max. AWL for each storm
+        ms_AWL = self.Calc_StormsMaxTWL(WVS_prts.Hs, WVS_prts.Tp, lt_storm_dates)
 
-        # select WVS_families data at storms max. TWL 
-        xds_WVS_MS = xds_WVS_fams.sel(time = xds_max_TWL.time)
-        xds_WVS_MS['AWL'] = ('time', xds_max_TWL.TWL.values[:])
+        # select waves families and partitions at storms max. AWL 
+        ms_WVS_fams = WVS_fams.sel(time = ms_AWL.time)
+        ms_WVS_prts = WVS_prts.sel(time = ms_AWL.time)
 
-        # Fill data 
-        xds_WVS_MS['Hs'] = xds_WVS_a.Hs
-        xds_WVS_MS['Tp'] = xds_WVS_a.Tp
-        xds_WVS_MS['Dir'] = xds_WVS_a.Dir
+        # Fill data for storage 
+        ms_WVS_fams['AWL'] = ms_AWL.AWL
+        ms_WVS_fams['Hs']  = ms_WVS_prts.Hs
+        ms_WVS_fams['Tp']  = ms_WVS_prts.Tp
+        ms_WVS_fams['Dir'] = ms_WVS_prts.Dir
 
-        # select KMA data at storms max. TWL 
-        xds_KMA_MS = xds_KMA.sel(time = xds_max_TWL.time)
+        # select KMA data at storms max. AWL 
+        ms_KMA = KMA.sel(time = ms_AWL.time)
 
         # calculate chromosomes and probabilities
-        xds_chrom = self.Calc_Chromosomes(xds_KMA_MS, xds_WVS_MS)
+        chromosomes = self.Calc_Chromosomes(ms_KMA, ms_WVS_fams)
 
         # GEV: Fit each wave family to a GEV distribution (KMA bmus)
-        xds_GEV_Par = self.Calc_GEVParams(xds_KMA_MS, xds_WVS_MS)
+        GEV_Par = self.Calc_GEVParams(ms_KMA, ms_WVS_fams)
 
         # Calculate sigma spearman for each KMA - fams chromosome
         d_sigma = self.Calc_SigmaCorrelation(
-            xds_KMA_MS, xds_WVS_MS, xds_GEV_Par
+            ms_KMA, ms_WVS_fams, GEV_Par
         )
 
         # store data
-        self.WVS_MS = xds_WVS_MS
-        self.KMA_MS = xds_KMA_MS
-        self.GEV_Par = xds_GEV_Par
-        self.chrom = xds_chrom
+        self.WVS_MS = ms_WVS_fams
+        self.KMA_MS = ms_KMA
+        self.GEV_Par = GEV_Par
+        self.chrom = chromosomes
         self.sigma = d_sigma
         self.Save()
 
@@ -251,36 +249,32 @@ class Climate_Emulator(object):
 
         return dates_tup_WT
 
-    def Calc_StormsMaxTWL(self, xds_WVS_pts, lt_storm_dates):
-        'Returns xarray.Dataset with max. TWL value and time'
+    def Calc_StormsMaxTWL(self, wvs_hs, wvs_tp, lt_storm_dates):
+        'Returns xarray.Dataset with max. AWL value and time'
 
-        # TODO: use partition file or aggregated families?
+        # Get AWL from waves partitions data 
+        wvs_AWL = AWL(wvs_hs, wvs_tp)
 
-        # Get TWL from waves partitions data 
-        xda_TWL = AWL(xds_WVS_pts.Hs, xds_WVS_pts.Tp)
-
-        # find max TWL inside each storm 
-        TWL_WT_max = []
-        times_WT_max = []
+        # find max TWL inside each storm
+        ms_AWL = []
+        ms_times = []
         for d1, d2 in lt_storm_dates:
 
             # get TWL inside WT window
-            wt_TWL = xda_TWL.sel(time=slice(d1,d2))[:]
+            wt_AWL = wvs_AWL.sel(time=slice(d1,d2))[:]
 
             # get window maximum TWL date
-            wt_max_TWL = wt_TWL.where(wt_TWL==wt_TWL.max(), drop=True).squeeze()
-            max_TWL = wt_max_TWL.values
-            max_date = wt_max_TWL.time.values
+            wt_AWL_max = wt_AWL.where(wt_AWL==wt_AWL.max(), drop=True).squeeze()
 
             # append data
-            TWL_WT_max.append(max_TWL)
-            times_WT_max.append(max_date)
+            ms_AWL.append(wt_AWL_max.values)
+            ms_times.append(wt_AWL_max.time.values)
 
         return xr.Dataset(
             {
-                'TWL': (('time',), TWL_WT_max),
+                'AWL': (('time',), ms_AWL),
             },
-            coords = {'time': times_WT_max}
+            coords = {'time': ms_times}
         )
 
     def Calc_GEVParams(self, xds_KMA_MS, xds_WVS_MS):
@@ -1041,46 +1035,31 @@ class Climate_Emulator(object):
         return xds_TCs_sim, xds_WVS_sim_updated
 
 
-    def Report_Fit(self, export=False):
+    def Report_Fit(self, show=True):
         'Report for extremes model fitting'
 
         # get data (fams hs)
         vars_gev_params = [x for x in self.vars_GEV if 'Hs' in x]
-        xds_GEV_Par = self.GEV_Par
-        xds_chrom = self.chrom
+        GEV_Par = self.GEV_Par
+        chrom = self.chrom
         d_sigma = self.sigma
 
-        if export:
+        f_out = []
+        # Plot GEV params for each WT
+        for gvn in vars_gev_params:
+            f = Plot_GEVParams(GEV_Par[gvn], show=show)
+            f_out.append(f)
 
-            # report folder
-            p_save = self.p_report_fit
-            if not op.isdir(p_save):
-                os.mkdir(p_save)
+        # Plot cromosomes probabilities
+        f = Plot_ChromosomesProbs(chrom, show=show)
+        f_out.append(f)
 
-            # Plot GEV params for each WT
-            for gvn in vars_gev_params:
-                p_plot = op.join(p_save, 'GEV_params_{0}.png'.format(gvn))
-                Plot_GEVParams(xds_GEV_Par[gvn], p_export=p_plot)
 
-            # Plot cromosomes probabilities
-            p_plot = op.join(p_save, 'chromosomes_probs.png')
-            Plot_ChromosomesProbs(xds_chrom, p_export=p_plot)
+        # Plot sigma correlation triangle
+        f = Plot_SigmaCorrelation(chrom, d_sigma, show=show)
+        f_out.append(f)
 
-            # Plot sigma correlation triangle
-            p_plot = op.join(p_save, 'sigma_correlation.png')
-            Plot_SigmaCorrelation(xds_chrom, d_sigma, p_export=p_plot)
-
-        else:
-
-            # Plot GEV params for each WT
-            for gvn in vars_gev_params:
-                Plot_GEVParams(xds_GEV_Par[gvn])
-
-            # Plot cromosomes probabilities
-            Plot_ChromosomesProbs(xds_chrom)
-
-            # Plot sigma correlation triangle
-            Plot_SigmaCorrelation(xds_chrom, d_sigma)
+        return f_out
 
 
 def ChromMatrix(vs):
