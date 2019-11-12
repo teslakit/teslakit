@@ -60,7 +60,7 @@ def axplot_series(ax, vv, ls, lc, lab):
     ax.set_ylabel(lab, rotation=0, fontweight='bold', labelpad=35)
 
 
-def Plot_Output(xds_out_h, p_export=None):
+def Plot_Simulation(xds_out_h, show=True):
     '''
     Plot all simulated output variables
     '''
@@ -113,10 +113,7 @@ def Plot_Output(xds_out_h, p_export=None):
     for i in range(10):
         axs[i].set_position(gs[i].get_position(fig))
 
-    # show / export
-    if not p_export:
-        plt.show()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
