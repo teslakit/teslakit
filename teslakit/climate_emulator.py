@@ -26,10 +26,11 @@ def tqdm(*args, **kwargs):
 
 # tk
 from .statistical import Empirical_ICDF
-from .waves import AWL
+from .waves import AWL, Aggregate_WavesFamilies
 from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from .plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
+
 
 # TODO: CREAR LOG
 # TODO: introducir switch log on / log off para ejecuciones silenciosas
@@ -124,18 +125,31 @@ class Climate_Emulator(object):
         config         - dictionary: name_fams, force_empirical
         '''
 
+        # TODO: repasar con Ana: partitions o agregar aqui?
+
         # configure waves fams variables parameters from config dict
         self.ConfigVariables(config)
 
         # get start and end dates for each storm
         lt_storm_dates = self.Calc_StormsDates(xds_KMA)
 
+        # TODO: try agregated data
+        # calculate max. TWL for each storm
+        #xds_WVS_agr = Aggregate_WavesFamilies(xds_WVS_fams)
+        #xds_max_TWL = self.Calc_StormsMaxTWL(xds_WVS_agr, lt_storm_dates)
+
         # calculate max. TWL for each storm
         xds_max_TWL = self.Calc_StormsMaxTWL(xds_WVS_parts, lt_storm_dates)
+        xds_WVS_a = xds_WVS_parts.sel(time = xds_max_TWL.time)
 
         # select WVS_families data at storms max. TWL 
         xds_WVS_MS = xds_WVS_fams.sel(time = xds_max_TWL.time)
-        xds_WVS_MS['max_TWL'] = ('time', xds_max_TWL.TWL.values[:])
+        xds_WVS_MS['AWL'] = ('time', xds_max_TWL.TWL.values[:])
+
+        # Fill data 
+        xds_WVS_MS['Hs'] = xds_WVS_a.Hs
+        xds_WVS_MS['Tp'] = xds_WVS_a.Tp
+        xds_WVS_MS['Dir'] = xds_WVS_a.Dir
 
         # select KMA data at storms max. TWL 
         xds_KMA_MS = xds_KMA.sel(time = xds_max_TWL.time)
@@ -240,8 +254,10 @@ class Climate_Emulator(object):
     def Calc_StormsMaxTWL(self, xds_WVS_pts, lt_storm_dates):
         'Returns xarray.Dataset with max. TWL value and time'
 
+        # TODO: use partition file or aggregated families?
+
         # Get TWL from waves partitions data 
-        xda_TWL = AWL(xds_WVS_pts.hs, xds_WVS_pts.tp)
+        xda_TWL = AWL(xds_WVS_pts.Hs, xds_WVS_pts.Tp)
 
         # find max TWL inside each storm 
         TWL_WT_max = []
