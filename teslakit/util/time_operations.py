@@ -5,12 +5,14 @@ from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from cftime._cftime import DatetimeGregorian
 import calendar
+
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-
-# TODO: refactor, nombre archivo, nombre funciones, localizar usos
+# TODO replace xds2datetime with date2datenum (needs new date type switch) 
+# TODO make a fast_reindex daily option
+# TODO optimize, refactor, and tests
 
 
 # MATLAB TIMES
@@ -42,7 +44,7 @@ def DateConverter_Mat2Py(datearray_matlab):
 
 def xds2datetime(d64):
     'converts xr.Dataset np.datetime64[ns] into datetime'
-    # TODO: MUY INEFICIENTE. Demasiado simple, eliminar si posible
+    # TODO: hour minutes and seconds 
 
     return datetime(d64.dt.year, d64.dt.month, d64.dt.day)
 
@@ -115,6 +117,9 @@ def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     Reindex xarray.Dataset to daily data between optional limits
     '''
 
+    # TODO: remove limits from inside function
+
+    # TODO: remove this swich and use date2datenum
     if isinstance(xds_data.time.values[0], datetime):
         xds_dt1 = xds_data.time.values[0]
         xds_dt2 = xds_data.time.values[-1]
@@ -143,6 +148,7 @@ def xds_reindex_monthly(xds_data):
     Reindex xarray.Dataset to monthly data
     '''
 
+    # TODO: remove this swich and use date2datenum
     if isinstance(xds_data.time.values[0], datetime):
         xds_dt1 = xds_data.time.values[0]
         xds_dt2 = xds_data.time.values[-1]
@@ -181,11 +187,11 @@ def xds_limit_dates(xds_list):
 
     for xds_e in xds_list:
 
+        # TODO: remove this swich and use date2datenum
         if isinstance(xds_e.time.values[0], datetime):
             xds_e_dt1 = xds_e.time.values[0]
             xds_e_dt2 = xds_e.time.values[-1]
         else:
-            # TODO: resolucion hourly aqui?
             # parse xds times to python datetime
             xds_e_dt1 = xds2datetime(xds_e.time[0])
             xds_e_dt2 = xds2datetime(xds_e.time[-1])
@@ -219,6 +225,8 @@ def date2yearfrac(d):
 
 def date2datenum(d):
     'Returns date d (any format) in datetime'
+
+    # TODO: new type switch for xarray.core numpy.datetime64
 
     if isinstance(d, datetime):
         return d
