@@ -17,8 +17,8 @@ import xarray as xr
 # teslakit
 from teslakit.database import Database
 from teslakit.climate_emulator import Climate_Emulator
-from teslakit.custom_dateutils import datevec2datetime as d2d
-from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
+from teslakit.util.time_operations import datevec2datetime as d2d
+from teslakit.util.time_operations import DateConverter_Mat2Py as dmp
 from teslakit.io.matlab import ReadMatfile
 
 

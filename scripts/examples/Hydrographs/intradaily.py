@@ -19,7 +19,7 @@ sys.path.insert(0,'../../../')
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadGowMat, ReadMatfile
 from teslakit.intradaily import Calculate_Hydrographs
-from teslakit.custom_dateutils import datevec2datetime
+from teslakit.util.time_operations import datevec2datetime
 
 # TODO: add hydrograph plots teslakit/plotting/intradaily
 

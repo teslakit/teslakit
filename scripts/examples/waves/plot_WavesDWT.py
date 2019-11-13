@@ -17,7 +17,7 @@ sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 # teslakit
 from teslakit.database import Database
 from teslakit.estela import Predictor
-from teslakit.custom_dateutils import xds_common_dates_daily as xcd_daily
+from teslakit.util.time_operations import xds_common_dates_daily as xcd_daily
 from teslakit.plotting.waves import Plot_Waves_DWTs
 
 

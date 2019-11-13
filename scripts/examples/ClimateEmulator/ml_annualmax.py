@@ -17,7 +17,7 @@ sys.path.insert(0,'../../../')
 from teslakit.project_site import PathControl
 from teslakit.waves import TWL_WavesFamilies, TWL_AnnualMaxima
 from teslakit.io.matlab import ReadMatfile
-from teslakit.custom_dateutils import DateConverter_Mat2Py as dmp
+from teslakit.util.time_operations import DateConverter_Mat2Py as dmp
 
 
 # --------------------------------------

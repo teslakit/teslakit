@@ -18,10 +18,10 @@ sys.path.insert(0,'../../../')
 # teslakit
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadMatfile as rmat
-from teslakit.custom_dateutils import datevec2datetime
+from teslakit.util.time_operations import datevec2datetime
+from teslakit.util.time_operations import xds2datetime as x2d
 from teslakit.plotting.wts import Plot_PerpYear, Plot_Compare_PerpYear
 from teslakit.plotting.ALR import Plot_Covariate, Plot_Compare_Covariate
-from teslakit.custom_dateutils import xds2datetime as x2d
 
 
 # --------------------------------------

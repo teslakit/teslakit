@@ -29,15 +29,15 @@ db = Database(p_data)
 db.SetSite('KWAJALEIN')
 
 # alr test
-p_alrw = db.paths.site.SST.alrw
-#p_alrw = db.paths.site.MJO.alrw
+#p_alrw = db.paths.site.SST.alrw
+p_alrw = db.paths.site.MJO.alrw
 #p_alrw = db.paths.site.ESTELA.alrw
 
 # ALR wrap
 ALRW = ALR_WRP(p_alrw)
 
 # show model report 
-#ALRW.Report_Fit(terms_fit=True, summary=True, export=True)
+#ALRW.Report_Fit(terms_fit=True, summary=True)
 
 # show simulation report
 ALRW.Report_Sim(py_month_ini=6)

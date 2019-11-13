@@ -18,8 +18,8 @@ sys.path.insert(0,'../../../')
 from teslakit.project_site import PathControl
 from teslakit.alr import ALR_WRP
 from teslakit.io.matlab import ReadMatfile as rmat
-from teslakit.custom_dateutils import xds_common_dates_daily as xcd_daily
-from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
+from teslakit.util.time_operations import xds_common_dates_daily as xcd_daily
+from teslakit.util.time_operations import xds_reindex_daily as xr_daily
 from teslakit.plotting.eofs import Plot_PCvsPC
 
 

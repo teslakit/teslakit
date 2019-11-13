@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, op.join(op.dirname(__file__), '..', '..'))
 
 # teslakit
-from teslakit.custom_dateutils import date2datenum
+from teslakit.util.time_operations import date2datenum
 
 
 # --------------------------------------

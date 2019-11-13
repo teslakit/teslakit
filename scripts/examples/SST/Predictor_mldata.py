@@ -16,7 +16,7 @@ sys.path.insert(0,'../../../')
 from teslakit.project_site import PathControl
 from teslakit.io.matlab import ReadMatfile
 from teslakit.pca import CalcRunningMean
-from teslakit.custom_dateutils import DateConverter_Mat2Py
+from teslakit.util.time_operations import DateConverter_Mat2Py
 
 # --------------------------------------
 # data storage and path control

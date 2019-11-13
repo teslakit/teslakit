@@ -19,7 +19,7 @@ sys.path.insert(0,'../../../')
 from teslakit.project_site import Site
 from teslakit.statistical import ksdensity_CDF, ksdensity_ICDF, copulafit, copularnd
 from teslakit.alr import ALR_WRP
-from teslakit.custom_dateutils import xds_reindex_daily as xr_daily
+from teslakit.util.time_operations import xds_reindex_daily as xr_daily
 from teslakit.io.aux_nc import StoreBugXdset as sbxds
 
 
