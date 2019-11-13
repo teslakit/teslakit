@@ -7,6 +7,7 @@ import os.path as op
 import configparser
 from shutil import copyfile
 import pickle
+from datetime import timedelta
 
 # pip
 from prettytable import PrettyTable
@@ -20,6 +21,7 @@ from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
 ReadGowMat, ReadCoastMat, ReadEstelaMat
 from .custom_dateutils import xds_reindex_daily, xds_reindex_monthly, xds_limit_dates
 from .custom_dateutils import xds_common_dates_daily as xcd_daily
+from .custom_dateutils import fast_reindex_hourly, generate_datetimes
 
 
 def clean_files(l_files):
@@ -194,15 +196,8 @@ class Database(object):
     def Save_MJO_sim(self, xds):
         StoreBugXdset(xds, self.paths.site.MJO.sim)
 
-        # hourly
-        xds_h = xds.resample(time='1H').pad()
-        StoreBugXdset(xds_h, self.paths.site.MJO.sim_h)
-
     def Load_MJO_sim(self):
         return xr.open_dataset(self.paths.site.MJO.sim)
-
-    def Load_MJO_sim_h(self):
-        return xr.open_dataset(self.paths.site.MJO.sim_h)
 
     # TCs
 
@@ -345,10 +340,6 @@ class Database(object):
     def Save_ESTELA_DWT_sim(self, xds):
         StoreBugXdset(xds, self.paths.site.ESTELA.sim_dwt)
 
-        # hourly
-        xds_h = xds.resample(time='1H').pad()
-        StoreBugXdset(xds_h, self.paths.site.ESTELA.sim_dwt_h)
-
     def Load_ESTELA_DWT_sim(self):
         return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
 
@@ -391,22 +382,20 @@ class Database(object):
 
     def Load_TIDE_sim_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_astro)
+
+        # manual fix problems with hourly time
+        d1 = xds.time.values[0]
+        d2 = d1 + timedelta(hours=len(xds.time.values[:])-1)
+        time_fix =  generate_datetimes(d1, d2, 'datetime64[h]')
+        xds['time'] = time_fix
+
         return xds
 
     def Save_TIDE_sim_mmsl(self, xds):
-        # monthly
         StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
-
-        # hourly
-        xds_h = xds.resample(time='1H').pad()
-        StoreBugXdset(xds_h, self.paths.site.TIDE.sim_mmsl_h)
 
     def Load_TIDE_sim_mmsl(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl)
-        return xds
-
-    def Load_TIDE_sim_mmsl_h(self):
-        xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl_h)
         return xds
 
     def Load_TIDE_mareografo(self):
@@ -419,36 +408,50 @@ class Database(object):
 
     # COMPLETE DATA 
 
-    def Load_SIM_hourly(self, n_sim=0):
+    def Load_SIM_hourly(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0):
         'Load all simulated data (hourly): AWTs, DWTs, MJO, MMSL, AT'
 
-        # TODO devolver todos n_sim x time
-        # TODO ignorar los que no existan
+        # TODO ignorar los archivos que no existan / elegirlos en args
 
-        # TODO: metodo crea nans (solo funciona copy o values[:]?). fix it
+        # load data
+        AWT = self.Load_SST_AWT_sim()
+        MSL = self.Load_TIDE_sim_mmsl()
+        MJO = self.Load_MJO_sim()
+        DWT = self.Load_ESTELA_DWT_sim()
+        ATD_h = self.Load_TIDE_sim_astro()  # hourly data, 1 sim
 
-        # load hourly data
-        AWTs = self.Load_SST_AWT_sim()
-        AWTs_h = AWTs.resample(time='1H').pad()
-        AWTs_h = AWTs_h.isel(n_sim=n_sim)
-        DWTs_h = self.Load_ESTELA_DWT_sim_h().isel(n_sim=n_sim)
-        MJO_h  = self.Load_MJO_sim_h().isel(n_sim=n_sim)
-        MMSL_h = self.Load_TIDE_sim_mmsl_h().isel(n_sim=n_sim)
-        AT_h   = self.Load_TIDE_sim_astro()
+        # select n_sim
+        AWT = AWT.isel(n_sim=n_sim_awt)
+        MSL = MSL.isel(n_sim=n_sim_awt)
+        MJO = MJO.isel(n_sim=n_sim_mjo)
+        DWT = DWT.isel(n_sim=n_sim_dwt)
+
+        # reindex data to hourly (pad)
+        AWT_h = fast_reindex_hourly(AWT)
+        MSL_h = fast_reindex_hourly(MSL)
+        MJO_h = fast_reindex_hourly(MJO)
+        DWT_h = fast_reindex_hourly(DWT)
 
         # common dates limits
-        d1, d2 = xds_limit_dates([AWTs_h, DWTs_h, MJO_h, AT_h, MMSL_h])
+        d1, d2 = xds_limit_dates([AWT_h, ATD_h, MSL_h, MJO_h, DWT_h, ATD_h])
+        AWT_h = AWT_h.sel(time = slice(d1,d2))
+        MSL_h = MSL_h.sel(time = slice(d1,d2))
+        MJO_h = MJO_h.sel(time = slice(d1,d2))
+        DWT_h = DWT_h.sel(time = slice(d1,d2))
+        ATD_h = ATD_h.sel(time = slice(d1,d2))
 
-        AWTs_h = AWTs_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'AWT'})
-        MJO_h = MJO_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'MJO'})
-        DWTs_h = DWTs_h.sel(time=slice(d1,d2)).rename({'evbmus_sims':'DWT'})
-        AT_h =     AT_h.sel(time=slice(d1,d2)).rename({'tide':'AT'})
-        MMSL_h = MMSL_h.sel(time=slice(d1,d2)).rename({'mmsl':'MMSL'})
-
-        time = AWTs_h.time
-
-        # merge all data
-        xds = xr.merge([AWTs_h, MJO_h, DWTs_h, AT_h, MMSL_h])
+        # copy to new dataset
+        times = AWT_h.time.values[:]
+        xds = xr.Dataset(
+            {
+                'AWT': (('time',), AWT_h.evbmus_sims.values[:].astype(int)),
+                'MJO': (('time',), MJO_h.evbmus_sims.values[:].astype(int)),
+                'DWT': (('time',), DWT_h.evbmus_sims.values[:].astype(int)),
+                'MMSL': (('time',), MSL_h.mmsl.values[:]),
+                'AT': (('time',), ATD_h.tide.values[:]),
+            },
+            coords = {'time': times}
+        )
 
         return xds
 
