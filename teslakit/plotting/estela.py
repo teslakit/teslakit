@@ -16,8 +16,8 @@ from matplotlib import cm
 
 # teslakit
 from ..util.operations import GetBestRowsCols
-from ..custom_dateutils import npdt64todatetime as n2d
-from ..custom_dateutils import get_years_months_days
+from ..util.time_operations import npdt64todatetime as n2d
+from ..util.time_operations import get_years_months_days
 from ..kma import ClusterProbabilities
 from .custom_colors import colors_dwt
 from .wts import axplot_WT_Probs, axplot_WT_Hist

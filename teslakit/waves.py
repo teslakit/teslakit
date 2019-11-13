@@ -3,10 +3,10 @@
 
 import numpy as np
 import xarray as xr
+from datetime import datetime, timedelta
 
 # tk
-from teslakit.custom_dateutils import get_years_months_days, npdt64todatetime
-from datetime import datetime, timedelta
+from .util.time_operations import get_years_months_days, npdt64todatetime
 
 # hide numpy warnings
 np.warnings.filterwarnings('ignore')

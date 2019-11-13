@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 # tk
-from .custom_dateutils import npdt64todatetime
+from .util.time_operations import npdt64todatetime
 
 # TODO: refactor con waves.py/hydrographs
 

@@ -6,7 +6,8 @@ import os.path as op
 import numpy as np
 import matplotlib.pyplot as plt
 
-from ..custom_dateutils import date2datenum as d2d
+# teslakit
+from ..util.time_operations import date2datenum as d2d
 
 # import constants
 from .config import _faspect, _fsize, _fdpi

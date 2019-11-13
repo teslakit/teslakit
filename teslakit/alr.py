@@ -32,7 +32,7 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 
 # tk
 from .io.aux_nc import StoreBugXdset
-from .custom_dateutils import npdt64todatetime as npdt2dt
+from .util.time_operations import npdt64todatetime as npdt2dt
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions
 from .plotting.alr import Plot_Compare_Covariate

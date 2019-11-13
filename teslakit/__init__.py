@@ -11,7 +11,6 @@ __keywords__    = 'wave prediction statistics analysys'
 
 from . import alr
 from . import climate_emulator
-from . import custom_dateutils
 from . import database
 from . import estela
 from . import extremes

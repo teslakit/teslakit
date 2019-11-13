@@ -19,9 +19,10 @@ from .io.getinfo import description
 from .io.aux_nc import StoreBugXdset
 from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
 ReadGowMat, ReadCoastMat, ReadEstelaMat
-from .custom_dateutils import xds_reindex_daily, xds_reindex_monthly, xds_limit_dates
-from .custom_dateutils import xds_common_dates_daily as xcd_daily
-from .custom_dateutils import fast_reindex_hourly, generate_datetimes
+
+from .util.time_operations import xds_reindex_daily, xds_reindex_monthly, \
+xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
+generate_datetimes
 
 
 def clean_files(l_files):
@@ -480,7 +481,7 @@ class Database(object):
         xds_AWT = xds_reindex_daily(xds_AWT)
 
         # get common dates
-        dc = xcd_daily([xds_AWT, xds_DWT])
+        dc = xds_common_dates_daily([xds_AWT, xds_DWT])
         xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
         xds_AWT = xds_AWT.sel(time=slice(dc[0], dc[-1]))
 
@@ -509,7 +510,7 @@ class Database(object):
         xds_AWT = xds_reindex_daily(xds_AWT)
 
         # get common dates
-        dc = xcd_daily([xds_AWT, xds_DWT])
+        dc = xds_common_dates_daily([xds_AWT, xds_DWT])
         xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
         xds_AWT = xds_AWT.sel(time=slice(dc[0], dc[-1]))
 
@@ -532,7 +533,7 @@ class Database(object):
         )
 
         # get common dates
-        dc = xcd_daily([xds_DWT, xds_MJO])
+        dc = xds_common_dates_daily([xds_DWT, xds_MJO])
         xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
         xds_MJO = xds_MJO.sel(time=slice(dc[0], dc[-1]))
 
@@ -552,7 +553,7 @@ class Database(object):
         )
 
         # get common dates
-        dc = xcd_daily([xds_DWT, xds_MJO])
+        dc = xds_common_dates_daily([xds_DWT, xds_MJO])
         xds_DWT = xds_DWT.sel(time=slice(dc[0], dc[-1]))
         xds_MJO = xds_MJO.sel(time=slice(dc[0], dc[-1]))
 
