@@ -370,7 +370,7 @@ def Plot_Compare_Transitions(num_clusters, bmus_values_hist, bmus_values_sim,
     return fig
 
 def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
-                     wt_colors=False, p_export=None):
+                     wt_colors=False, show=True):
     '''
     Plot WTs_1 / WTs_2 probabilities
 
@@ -418,19 +418,15 @@ def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
     # add fig title
     fig.suptitle(ttl, fontsize=14, fontweight='bold')
 
-    # show / export
-    if not p_export:
-        plt.show()
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 
 # TODO: following functions are not finished / tested
 
 def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
-                  p_export=None):
+                  show=True):
     'Plots ARL bmus simulated in a perpetual_year stacked bar chart'
 
     # TODO: UPDATE
@@ -464,11 +460,7 @@ def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,
     plt.xlabel('Perpetual year')
     plt.ylabel('')
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
