@@ -406,7 +406,7 @@ class ALR_WRP(object):
 
         return xr.open_dataset(self.p_save_sim_xds)
 
-    def Report_Fit(self, terms_fit=False, summary=False, export=False):
+    def Report_Fit(self, terms_fit=False, summary=False, show=True):
         'Report containing model fitting info'
 
         # load model
@@ -422,40 +422,28 @@ class ALR_WRP(object):
             print('warning - statsmodels MNLogit could not provide p-values')
             return
 
-        # handle export paths 
-        p_save = self.p_report_fit
-        p_rep_pval = None
-        p_rep_pars = None
-        p_rep_trms = None
-        p_summ = None
-        if export:
-            if not op.isdir(p_save): os.mkdir(p_save)
-            p_rep_pval = op.join(p_save, 'pval.png')
-            p_rep_pars = op.join(p_save, 'params.png')
-            p_rep_trms = op.join(p_save, 'terms_fit.png')
-            p_summ = op.join(p_save, 'summary.txt')
-
+        # output figs
+        l_figs = []
 
         # plot p-values
-        Plot_PValues(pval_df.values, name_terms, p_rep_pval)
+        f = Plot_PValues(pval_df.values, name_terms, show=show)
+        l_figs.append(f)
 
         # plot parameters
-        Plot_Params(params_df.values, name_terms, p_rep_pars)
+        f = Plot_Params(params_df.values, name_terms, show=show)
+        l_figs.append(f)
 
         # plot terms used for fitting
         if terms_fit:
-            self.Report_Terms_Fit(p_rep_trms)
+            f = self.Report_Terms_Fit(p_rep_trms, show=show)
+            l_figs.append(f)
 
         # write summary
         if summary:
             summ = self.model.summary()
-            if p_summ == None:
-                print(summ.as_text())
-            else:
-                with open(p_summ, 'w') as fW:
-                    fW.write(summ.as_text())
+            print(summ.as_text())
 
-    def Report_Terms_Fit(self, p_export=None):
+    def Report_Terms_Fit(self, show=True):
         'Plot terms used for model fitting'
 
         # load bmus fit
@@ -467,7 +455,8 @@ class ALR_WRP(object):
         term_ns = self.terms_fit_names
 
         # Plot terms
-        Plot_Terms(term_mx, term_ds, term_ns, p_export)
+        f = Plot_Terms(term_mx, term_ds, term_ns, show=show)
+        return f
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
         'Launch ARL model simulations'
