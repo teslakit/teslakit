@@ -7,6 +7,7 @@ from cftime._cftime import DatetimeGregorian
 import calendar
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 
 # TODO: refactor, nombre archivo, nombre funciones, localizar usos
@@ -50,6 +51,64 @@ def npdt64todatetime(dt64):
 
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
     return datetime.utcfromtimestamp(ts)
+
+# declare aux function for generating datetime.datetime array
+def generate_datetimes(t0, t1, dtype='datetime64[h]'):
+
+    # lambda vectorized: datetime.datetime from utc timestamp
+    lb_dfts = lambda t: datetime.utcfromtimestamp(t)
+    np_dfts = np.vectorize(lb_dfts)
+
+    tg = np.arange(t0, t1 + timedelta(hours=1), dtype=dtype)
+    tg = (tg - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+    tg = np_dfts(tg)
+
+    return tg
+
+def fast_reindex_hourly(xds_data):
+    '''
+    Fast and secure method to reindex (pad) xarray.Dataset to hourly data
+
+    xds_data - xarray.Dataset with time coordinate
+    '''
+
+    # TODO: add daily option
+
+    # def aux function for getting timedeltas as int array
+    def get_deltas(t):
+        t_df = (np.diff(t))
+        t_tp = type(t_df[0])
+
+        # total number of hours each date interval
+        if  t_tp == np.timedelta64:
+            d = t_df.astype('timedelta64[h]') / np.timedelta64(1,'h')
+            d = d.astype(int)
+
+        else:
+            # lambda vectorized: datetime.timedelta to number of hours 
+            lb_ghs = lambda t: t.days*24
+            np_ghs = np.vectorize(lb_ghs)
+            d = np_ghs(t_df)
+
+        return d
+
+    # generate output time array
+    time_base = xds_data.time.values[:]
+    t0, t1 = date2datenum(time_base[0]), date2datenum(time_base[-1])
+    time_h = generate_datetimes(t0, t1, dtype='datetime64[h]')
+
+    # repeat data in each variable new lower time frame (pad) 
+    ds = get_deltas(time_base)
+    dv = {}
+    for vn in xds_data.keys():
+        b = xds_data[vn].values[:]
+        p = np.append(np.repeat(b[:-1], ds), b[-1])
+        dv[vn] = (('time',), p)
+
+    # return xarray.Dataset
+    xds_out = xr.Dataset(dv, coords={'time': time_h})
+
+    return xds_out
 
 def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
@@ -126,6 +185,7 @@ def xds_limit_dates(xds_list):
             xds_e_dt1 = xds_e.time.values[0]
             xds_e_dt2 = xds_e.time.values[-1]
         else:
+            # TODO: resolucion hourly aqui?
             # parse xds times to python datetime
             xds_e_dt1 = xds2datetime(xds_e.time[0])
             xds_e_dt2 = xds2datetime(xds_e.time[-1])
