@@ -94,7 +94,7 @@ def Generate_Covariate_rng(covar_name, cov_values):
     return covar_rng, interval
 
 
-def Plot_PValues(p_values, term_names, p_export=None):
+def Plot_PValues(p_values, term_names, show=True):
     'Plot ARL/BMUS p-values'
 
     n_wts = p_values.shape[0]
@@ -132,15 +132,11 @@ def Plot_PValues(p_values, term_names, p_export=None):
     # add grid
     ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
 
-    # show / export
-    if not p_export:
-        plt.show()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
-
-def Plot_Params(params, term_names, p_export=None):
+def Plot_Params(params, term_names, show=True):
     'Plot ARL/BMUS params'
 
     n_wts = params.shape[0]
@@ -174,13 +170,9 @@ def Plot_Params(params, term_names, p_export=None):
     # add grid
     ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 
 # TODO: following functions are not finished / tested
@@ -234,7 +226,7 @@ def Plot_Covariate(bmus_values, covar_values,
         fig.savefig(p_export, dpi=_fdpi)
         plt.close()
 
-def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
+def Plot_Terms(terms_matrix, terms_dates, terms_names, show=True):
     'Plot terms used for ALR fitting'
 
     # number of terms
@@ -267,13 +259,9 @@ def Plot_Terms(terms_matrix, terms_dates, terms_names, p_export=None):
     fig.text(0.04, 0.5, 'value (-)', va='center', rotation='vertical',
              fontweight='bold')
 
-    # show / export
-    if not p_export:
-        plt.show()
-
-    else:
-        fig.savefig(p_export, dpi=_fdpi)
-        plt.close()
+    # show and return figure
+    if show: plt.show()
+    return fig
 
 def Plot_Compare_Covariate(num_clusters,
                            bmus_values_sim, bmus_dates_sim,
