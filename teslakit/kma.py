@@ -9,7 +9,7 @@ import numpy as np
 import xarray as xr
 from scipy import stats
 from scipy.spatial import distance_matrix
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MiniBatchKMeans
 from sklearn import linear_model
 
 
@@ -317,7 +317,12 @@ def KMA_regression_guided(
     count_iter = 0
     while keep_iter:
         # n_init: number of times KMeans runs with different centroids seeds
-        kma = KMeans(n_clusters=num_clusters, n_init=100).fit(data_a)
+        #kma = KMeans(n_clusters=num_clusters, n_init=100).fit(data_a)
+        kma = KMeans(n_clusters=num_clusters, init='random',n_init=30, max_iter=5000, n_jobs=-1).fit(data_a)
+
+        # TODO: try this one
+        #kma = MiniBatchKMeans(n_clusters=num_clusters, n_init=100,
+        #                      max_iter=5000).fit(data_a)
 
         # check minimun group_size
         group_keys, group_size = np.unique(kma.labels_, return_counts=True)
@@ -335,11 +340,10 @@ def KMA_regression_guided(
             count_iter += 1
 
             # log kma iteration
-            print('KMA iteration info:')
             for rr in group_k_s:
-                print('  cluster: {0}, size: {1}'.format(rr[0], rr[1]))
-            print('Try again: ', keep_iter)
-            print('Total attemps: ', count_iter)
+                if rr[1] < min_group_size:
+                    print('  c: {0} - s: {1}'.format(rr[0], rr[1]))
+            print('total attemps: ', count_iter)
             print()
 
     # groups
