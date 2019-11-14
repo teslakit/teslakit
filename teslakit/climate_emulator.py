@@ -34,6 +34,7 @@ from .plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
 
 # TODO: CREAR LOG
 # TODO: introducir switch log on / log off para ejecuciones silenciosas
+# TODO: optimizar simulacion waves
 
 class Climate_Emulator(object):
     'KMA - DWTs Climate Emulator'
@@ -587,7 +588,7 @@ class Climate_Emulator(object):
 
         return xds_par_samp
 
-    def Simulate_Waves(self, xds_DWT, dict_WT_TCs_wvs):
+    def Simulate_Waves(self, xds_DWT, dict_WT_TCs_wvs, do_filter=True):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -624,7 +625,8 @@ class Climate_Emulator(object):
             # generate waves
             wvs_sim = self.GenerateWaves(
                 bmus, n_clusters, chrom, chrom_probs, sigma, xds_WVS_MS,
-                xds_GEV_Par_Sampled, dict_WT_TCs_wvs, dwt, dwt_time_sim
+                xds_GEV_Par_Sampled, dict_WT_TCs_wvs, dwt, dwt_time_sim,
+                do_filter=do_filter,
             )
             ls_wvs_sim.append(wvs_sim)
 
@@ -712,7 +714,8 @@ class Climate_Emulator(object):
         return ppf_VV
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
-                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time):
+                      xds_WVS_MS, xds_GEV_Par_Sampled, TC_WVS, DWT, DWT_time,
+                      do_filter=True):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -759,7 +762,7 @@ class Climate_Emulator(object):
         sims_out = np.zeros((len(DWT_sim), 9))
         c = 0
         while c < len(DWT_sim):
-            WT = DWT_sim[c]
+            WT = int(DWT_sim[c])
             iwt = WT - 1
 
             # KMA Weather Types waves generation
@@ -823,7 +826,7 @@ class Climate_Emulator(object):
             else:
 
                 # Get TC-WT waves fams data 
-                tws = TC_WVS['{0}'.format(WT)]
+                tws = TC_WVS['{0}'.format(WT-n_clusters-1)]
 
                 # select random state
                 ri = randint(len(tws.time))
@@ -832,26 +835,27 @@ class Climate_Emulator(object):
                 sim_row = np.stack([tws[vn].values[ri] for vn in wvs_fams_vars])
 
             # Filters
+            if do_filter:
 
-            # all 0 chromosomes
-            if all(c == 0 for c in crm):
-                continue
+                # all 0 chromosomes
+                if all(c == 0 for c in crm):
+                    continue
 
-            # nan / negative values
-            if np.isnan(sim_row).any() or len(np.where(sim_row<0)[0])!=0:
-                continue
+                # nan / negative values
+                if np.isnan(sim_row).any() or len(np.where(sim_row<0)[0])!=0:
+                    continue
 
-            # Hs and Tp
-            hs_s = sim_row[0::3][crm==1]
-            tp_s = sim_row[1::3][crm==1]
-            if any(v <= hs_min for v in hs_s) or any(v >= hs_max for v in hs_s) \
-               or any(v <= tp_min for v in tp_s) or any(v >= tp_max for v in tp_s):
-                continue
+                # Hs and Tp
+                hs_s = sim_row[0::3][crm==1]
+                tp_s = sim_row[1::3][crm==1]
+                if any(v <= hs_min for v in hs_s) or any(v >= hs_max for v in hs_s) \
+                   or any(v <= tp_min for v in tp_s) or any(v >= tp_max for v in tp_s):
+                    continue
 
-            # wave stepness 
-            ws_s = hs_s / (1.56 * tp_s**2 )
-            if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
-                continue
+                # wave stepness 
+                ws_s = hs_s / (1.56 * tp_s**2 )
+                if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
+                    continue
 
             # store simulation
             sim_row[sim_row==0] = np.nan  # nan data at crom 0 
@@ -929,7 +933,7 @@ class Climate_Emulator(object):
         sims_out = np.zeros((len(DWT_sim), 3))
         c = 0
         while c < len(DWT_sim):
-            WT = DWT_sim[c]
+            WT = int(DWT_sim[c])
             iwt = WT - 1
 
             # KMA Weather Types tcs generation
