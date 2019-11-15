@@ -104,10 +104,10 @@ def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
                 p2 = npdt64todatetime(time_KMA[h[-1]]).replace(hour=23)
 
                 # get waves conditions for hydrograph
-                xds_W = xds_WAVES.sel(time=slice(p1, p2))
-                hs_W = xds_W.hs.values[:]
-                tp_W = xds_W.tp.values[:]
-                dir_W = xds_W.dir.values[:]
+                xds_W = xds_WAVES.sel(time = slice(p1, p2))
+                hs_W = xds_W.Hs.values[:]
+                tp_W = xds_W.Tp.values[:]
+                dir_W = xds_W.Dir.values[:]
 
                 # calculate TWL max and normalize
                 twl_temp = 0.1*(hs_W**0.5)*tp_W
