@@ -274,37 +274,12 @@ class Database(object):
     def Load_WAVES_partitions_nc(self):
         return xr.open_dataset(self.paths.site.WAVES.partitions_p1)
 
-    def Load_WAVES_fams(self):
-        return xr.open_dataset(self.paths.site.WAVES.families)
+    def Save_WAVES_hist(self, xds):
+        clean_files([self.paths.site.WAVES.hist])
+        xds.to_netcdf(self.paths.site.WAVES.hist, 'w')
 
-    def Load_WAVES_fams_noTCs(self):
-        return xr.open_dataset(self.paths.site.WAVES.families_notcs)
-
-    def Save_WAVES_fams(self, xds_fams):
-        xds_fams.to_netcdf(self.paths.site.WAVES.families, 'w')
-
-    def Save_WAVES_ptsfams_noTCs(self, xds_pts, xds_fams):
-        xds_pts.to_netcdf(self.paths.site.WAVES.partitions_notcs, 'w')
-        xds_fams.to_netcdf(self.paths.site.WAVES.families_notcs, 'w')
-
-    def Save_WAVES_fams_TCs_categ(self, d_fams):
-
-        p_fams = self.paths.site.WAVES.families_tcs_categ
-
-        if not op.isdir(p_fams): os.makedirs(p_fams)
-        for k in d_fams.keys():
-            p_s = op.join(p_fams, 'waves_fams_cat{0}.nc'.format(k))
-            d_fams[k].to_netcdf(p_s, 'w')
-
-    def Load_WAVES_fams_TCs_categ(self):
-
-        p_fams = self.paths.site.WAVES.families_tcs_categ
-
-        d_WT_TCs_wvs = {}
-        for k in range(6):
-            p_s = op.join(p_fams, 'waves_fams_cat{0}.nc'.format(k))
-            d_WT_TCs_wvs['{0}'.format(k)] = xr.open_dataset(p_s)
-        return d_WT_TCs_wvs
+    def Load_WAVES_hist(self):
+        return xr.open_dataset(self.paths.site.WAVES.hist)
 
     # ESTELA
 
@@ -314,8 +289,8 @@ class Database(object):
     def Load_ESTELA_data(self):
         return ReadEstelaMat(self.paths.site.ESTELA.estelamat)
 
-    def Load_ESTELA_waves(self):
-        return ReadGowMat(self.paths.site.ESTELA.gowpoint)
+    #def Load_ESTELA_waves(self):
+    #    return ReadGowMat(self.paths.site.ESTELA.gowpoint)
 
     def Load_ESTELA_waves_np(self):
         npzfile = np.load(self.paths.site.ESTELA.gowpoint)
@@ -343,9 +318,6 @@ class Database(object):
 
     def Load_ESTELA_DWT_sim(self):
         return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
-
-    def Load_ESTELA_DWT_sim_h(self):
-        return xr.open_dataset(self.paths.site.ESTELA.sim_dwt_h)
 
     # HYDROGRAMS
 
