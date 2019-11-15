@@ -318,7 +318,7 @@ def KMA_regression_guided(
     while keep_iter:
         # n_init: number of times KMeans runs with different centroids seeds
         #kma = KMeans(n_clusters=num_clusters, n_init=100).fit(data_a)
-        kma = KMeans(n_clusters=num_clusters, init='random',n_init=30, max_iter=5000, n_jobs=-1).fit(data_a)
+        kma = KMeans(n_clusters=num_clusters, init='random',n_init=10, max_iter=5000, n_jobs=-1).fit(data_a)
 
         # TODO: try this one
         #kma = MiniBatchKMeans(n_clusters=num_clusters, n_init=100,
