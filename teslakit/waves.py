@@ -67,12 +67,17 @@ def GetDistribution(xds_wps, swell_sectors):
     )
 
     # prepare output array
-    xds_parts = xr.Dataset({
-        'sea_Hs':('time',sea_Hs),
-        'sea_Tp':('time',sea_Tp),
-        'sea_Dir':('time',sea_Dir)
-    },
-        coords = {'time':time}
+    xds_fams = xr.Dataset(
+        {
+            'Hs': ('time', xds_wps.hs.values[:]),
+            'Tp': ('time', xds_wps.tp.values[:]),
+            'Dir': ('time', xds_wps.dir.values[:]),
+
+            'sea_Hs': ('time', sea_Hs),
+            'sea_Tp': ('time', sea_Tp),
+            'sea_Dir': ('time', sea_Dir),
+        },
+        coords = {'time': time}
     )
 
     # solve sectors
@@ -125,12 +130,12 @@ def GetDistribution(xds_wps, swell_sectors):
         swell_Dir[p_fix] = np.nan
 
         # append data to partitons dataset
-        xds_parts['swell_{0}_Hs'.format(c)] = ('time', swell_Hs)
-        xds_parts['swell_{0}_Tp'.format(c)] = ('time', swell_Tp)
-        xds_parts['swell_{0}_Dir'.format(c)] = ('time', swell_Dir)
+        xds_fams['swell_{0}_Hs'.format(c)] = ('time', swell_Hs)
+        xds_fams['swell_{0}_Tp'.format(c)] = ('time', swell_Tp)
+        xds_fams['swell_{0}_Dir'.format(c)] = ('time', swell_Dir)
         c+=1
 
-    return xds_parts
+    return xds_fams
 
 def GetDistribution_ws(xds_wps, swell_sectors):
     '''
