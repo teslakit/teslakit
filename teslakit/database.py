@@ -381,10 +381,28 @@ class Database(object):
 
     # COMPLETE DATA 
 
-    def Load_SIM_hourly(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0):
-        'Load all simulated data (hourly): AWTs, DWTs, MJO, MMSL, AT'
+    def Load_SIM_Covariates(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0,
+                            regenerate=False):
+        '''
+        Load all simulated covariates (hourly): AWTs, DWTs, MJO, MMSL, AT
+
+        regenerate  - forces hourly dataset regeneration
+        '''
 
         # TODO ignorar los archivos que no existan / elegirlos en args
+
+        pf = self.paths.site.SIMULATION.covariates_hourly
+
+        if not op.isfile(pf) or regenerate:
+            xds = self.Generate_SIM_Covariates(n_sim_awt, n_sim_mjo,n_sim_dwt)
+            StoreBugXdset(xds, pf)
+
+        else:
+            xds = xr.open_dataset(pf)
+
+        return xds
+
+    def Generate_SIM_Covariates(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0):
 
         # load data
         AWT = self.Load_SST_AWT_sim()
@@ -427,6 +445,12 @@ class Database(object):
         )
 
         return xds
+
+    def Save_SIM_Complete(self, xds):
+        StoreBugXdset(xds, self.paths.site.SIMULATION.complete_hourly)
+
+    def Load_SIM_Complete(self):
+        return xr.open_dataset(self.paths.site.SIMULATION.complete_hourly)
 
     # SPECIAL PLOTS
 
