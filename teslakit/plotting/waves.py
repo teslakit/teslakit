@@ -229,7 +229,7 @@ def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim,
             vf = wvs_fams_hist['{0}_{1}'.format(nf, nv)].values[:]
             vs = wvs_fams_sim['{0}_{1}'.format(nf, nv)].values[:]
 
-            # remove nans
+            # remove nans (chromosomes off)
             vf = vf[~np.isnan(vf)]
             vs = vs[~np.isnan(vs)]
 
