@@ -586,13 +586,14 @@ class Climate_Emulator(object):
 
         return xds_par_samp
 
-    def Simulate_Waves(self, xds_DWT, n_sims=1, do_filter=True):
+    def Simulate_Waves(self, xds_DWT, n_sims=1,
+                       filters={'hs':True, 'tp':True, 'ws':False}):
         '''
         Climate Emulator DWTs waves simulation
 
         xds_DWT          - xarray.Dataset, vars: evbmus_sims (time,)
         n_sims           - number of simulations to compute
-        do_filter        - filter waves by hs, tp, and wave setpness
+        filters          - filter simulated waves by hs, tp, and/or wave setpness
         '''
 
         # max. storm waves and KMA
@@ -626,7 +627,7 @@ class Climate_Emulator(object):
             wvs_sim = self.GenerateWaves(
                 bmus, n_clusters, chrom, chrom_probs, sigma, xds_WVS_MS,
                 xds_WVS_TCs, xds_GEV_Par_Sampled, dwt_bmus_sim, dwt_time_sim,
-                do_filter=do_filter,
+                filters=filters,
             )
             ls_wvs_sim.append(wvs_sim)
 
@@ -721,7 +722,7 @@ class Climate_Emulator(object):
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
                       xds_WVS_MS, xds_WVS_TCs, xds_GEV_Par_Sampled, DWT, DWT_time,
-                      do_filter=True):
+                      filters={'hs':True, 'tp':True, 'ws':False}):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -731,6 +732,7 @@ class Climate_Emulator(object):
         sigma                - pearson correlation for each WT
         xds_GEV_Par_Sampled  - GEV/GUMBELL parameters sampled for simulation
         DWT                  - np.array with DWT bmus sim series (dims: time,)
+        filters              - filter simulated waves by hs, tp, and/or wave setpness
 
         Returns xarray.Dataset with simulated storm data
             vars:
@@ -841,26 +843,32 @@ class Climate_Emulator(object):
                 # generate sim_row with sorted waves families variables
                 sim_row = np.stack([tws[vn].values[ri] for vn in wvs_fams_vars])
 
+            # Filters
+
             # all 0 chromosomes
             #if all(c == 0 for c in crm):
             #    continue
 
             # nan / negative values
-            # TODO: estudiar si dejarlo
             if np.isnan(sim_row).any() or len(np.where(sim_row<0)[0])!=0:
                 continue
 
-            # Wave filters
-            if do_filter:
-
-                # Hs and Tp
+            # wave hs
+            if filters['hs']:
                 hs_s = sim_row[0::3][crm==1]
-                tp_s = sim_row[1::3][crm==1]
-                if any(v <= hs_min for v in hs_s) or any(v >= hs_max for v in hs_s) \
-                   or any(v <= tp_min for v in tp_s) or any(v >= tp_max for v in tp_s):
+                if any(v <= hs_min for v in hs_s) or any(v >= hs_max for v in hs_s):
                     continue
 
-                # wave stepness 
+            # wave tp
+            if filters['tp']:
+                tp_s = sim_row[1::3][crm==1]
+                if any(v <= tp_min for v in tp_s) or any(v >= tp_max for v in tp_s):
+                    continue
+
+            # wave stepness 
+            if filters['ws']:
+                hs_s = sim_row[0::3][crm==1]
+                tp_s = sim_row[1::3][crm==1]
                 ws_s = hs_s / (1.56 * tp_s**2 )
                 if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
                     continue
