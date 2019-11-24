@@ -587,7 +587,7 @@ class Climate_Emulator(object):
         return xds_par_samp
 
     def Simulate_Waves(self, xds_DWT, n_sims=1,
-                       filters={'hs':True, 'tp':True, 'ws':False}):
+                       filters={'hs':False, 'tp':False, 'ws':False}):
         '''
         Climate Emulator DWTs waves simulation
 
@@ -722,7 +722,7 @@ class Climate_Emulator(object):
 
     def GenerateWaves(self, bmus, n_clusters, chrom, chrom_probs, sigma,
                       xds_WVS_MS, xds_WVS_TCs, xds_GEV_Par_Sampled, DWT, DWT_time,
-                      filters={'hs':True, 'tp':True, 'ws':False}):
+                      filters={'hs':False, 'tp':False, 'ws':False}):
         '''
         Climate Emulator DWTs waves simulation
 
