@@ -6,7 +6,8 @@ import xarray as xr
 from datetime import datetime, timedelta
 
 # tk
-from .util.time_operations import get_years_months_days, npdt64todatetime
+from .util.time_operations import get_years_months_days, npdt64todatetime, \
+fast_reindex_hourly
 
 # hide numpy warnings
 np.warnings.filterwarnings('ignore')
@@ -248,47 +249,12 @@ def GetDistribution_ws(xds_wps, swell_sectors):
 def AWL(hs, tp):
     'Returns Atmospheric Water Level'
 
-    return 0.043*(hs*1.56*(tp/1.00)**2)**(0.5)
+    return 0.043*(hs*1.56*(tp/1.25)**2)**(0.5)
 
 def TWL(awl, ss, at, mmsl):
     'Returns Total Water Level'
 
     return awl + ss + at + mmsl
-
-def AnnualMaxima(xds_data, var_name):
-    '''
-    Calculate annual maxima for "var_name" (time index not monotonic)
-    requires xarray.Dataset with var_name (time)
-
-    returns xarray.Dataset with selection of annual maxima
-    '''
-
-    # get TWL and times
-    ts = xds_data.time.values[:]
-    vs = xds_data[var_name].values[:]
-
-    # years array
-    ys, _, _ = get_years_months_days(ts)  # aux. avoid time type problems 
-    us = np.unique(ys)
-
-    # iterate over years
-    p_amax = []
-    for y in us:
-
-        # find year max TWL position
-        y_vs = vs[np.where(y==ys)]
-        y_time = ts[np.where(y==ys)]
-        p_mt = np.where(y_vs == np.max(y_vs))[0][0]
-
-        yt_mt = y_time[p_mt]
-        p_mt = np.where(ts == yt_mt)[0][0]
-
-        p_amax.append(p_mt)
-
-    # Select annual maxima
-    xds_AMAX = xds_data.isel(time=p_amax)
-
-    return xds_AMAX
 
 def Aggregate_WavesFamilies(wvs_fams):
     '''
@@ -439,7 +405,7 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
     hourly_ss, _ = CalcHydro(ss, s_cs_h, tau_h, mu)
 
     # resample waves data to hourly (pad Tp and Dir)
-    xds_wvs_h = xds_wvs.resample(time='1H').pad()
+    xds_wvs_h = fast_reindex_hourly(xds_wvs)
 
     # add Hs and SS 
     xds_wvs_h['Hs'] =(('time',), hourly_Hs)
