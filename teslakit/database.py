@@ -181,13 +181,13 @@ class Database(object):
         return d_PCs_fit, d_PCs_rnd
 
     def Load_SST_AWT_sim(self):
-        return xr.open_dataset(self.paths.site.SST.awt_sim)
+        return xr.open_dataset(self.paths.site.SST.awt_sim, decode_times=True)
 
     def Load_SST_PCs_sim_d(self):
-        return xr.open_dataset(self.paths.site.SST.pcs_sim_d)
+        return xr.open_dataset(self.paths.site.SST.pcs_sim_d, decode_times=True)
 
     def Load_SST_PCs_sim_m(self):
-        return xr.open_dataset(self.paths.site.SST.pcs_sim_m)
+        return xr.open_dataset(self.paths.site.SST.pcs_sim_m, decode_times=True)
 
     # MJO
 
@@ -198,7 +198,7 @@ class Database(object):
         StoreBugXdset(xds, self.paths.site.MJO.sim)
 
     def Load_MJO_sim(self):
-        return xr.open_dataset(self.paths.site.MJO.sim)
+        return xr.open_dataset(self.paths.site.MJO.sim, decode_times=True)
 
     # TCs
 
@@ -317,7 +317,8 @@ class Database(object):
         StoreBugXdset(xds, self.paths.site.ESTELA.sim_dwt)
 
     def Load_ESTELA_DWT_sim(self):
-        return xr.open_dataset(self.paths.site.ESTELA.sim_dwt)
+        return xr.open_dataset(
+            self.paths.site.ESTELA.sim_dwt, decode_times=True)
 
     # HYDROGRAMS
 
@@ -354,7 +355,7 @@ class Database(object):
         StoreBugXdset(xds, self.paths.site.TIDE.sim_astro)
 
     def Load_TIDE_sim_astro(self):
-        xds = xr.open_dataset(self.paths.site.TIDE.sim_astro)
+        xds = xr.open_dataset(self.paths.site.TIDE.sim_astro, decode_times=True)
 
         # manual fix problems with hourly time
         d1 = xds.time.values[0]
@@ -368,7 +369,7 @@ class Database(object):
         StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
 
     def Load_TIDE_sim_mmsl(self):
-        xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl)
+        xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl, decode_times=True)
         return xds
 
     def Load_TIDE_mareografo(self):
@@ -389,8 +390,6 @@ class Database(object):
         regenerate  - forces hourly dataset regeneration
         '''
 
-        # TODO ignorar los archivos que no existan / elegirlos en args
-
         pf = self.paths.site.SIMULATION.covariates_hourly
 
         if not op.isfile(pf) or regenerate:
@@ -398,7 +397,7 @@ class Database(object):
             StoreBugXdset(xds, pf)
 
         else:
-            xds = xr.open_dataset(pf)
+            xds = xr.open_dataset(pf, decode_times=True)
 
         return xds
 
@@ -450,13 +449,15 @@ class Database(object):
         StoreBugXdset(xds, self.paths.site.SIMULATION.waves_hourly)
 
     def Load_SIM_Waves(self):
-        return xr.open_dataset(self.paths.site.SIMULATION.waves_hourly)
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.waves_hourly, decode_times=True)
 
     def Save_SIM_Complete(self, xds):
         StoreBugXdset(xds, self.paths.site.SIMULATION.complete_hourly)
 
     def Load_SIM_Complete(self):
-        return xr.open_dataset(self.paths.site.SIMULATION.complete_hourly)
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.complete_hourly, decode_times=True)
 
     # SPECIAL PLOTS
 
