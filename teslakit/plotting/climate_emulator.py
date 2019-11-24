@@ -50,10 +50,11 @@ def axplot_series(ax, vv, ls, lc, lab):
     'axes plot bmus series using colors'
 
     # plot series
-    ax.plot(vv.time, vv, linestyle=ls, linewidth=0.5, color=lc)
+    ax.plot(range(len(vv.time)), vv, linestyle=ls, linewidth=0.5, color=lc)
 
     # customize axes
-    ax.set_xlim(vv.time.values[0], vv.time.values[-1])
+    #ax.set_xlim(vv.time.values[0], vv.time.values[-1])
+    ax.set_xlim(0, len(vv.time))
     ax.set_xticks([])
     ax.yaxis.tick_right()
     ax.tick_params(axis='both', which='both', labelsize=7)
