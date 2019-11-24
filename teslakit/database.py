@@ -446,6 +446,12 @@ class Database(object):
 
         return xds
 
+    def Save_SIM_Waves(self, xds):
+        StoreBugXdset(xds, self.paths.site.SIMULATION.waves_hourly)
+
+    def Load_SIM_Waves(self):
+        return xr.open_dataset(self.paths.site.SIMULATION.waves_hourly)
+
     def Save_SIM_Complete(self, xds):
         StoreBugXdset(xds, self.paths.site.SIMULATION.complete_hourly)
 
