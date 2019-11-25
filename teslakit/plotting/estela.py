@@ -104,8 +104,17 @@ def axplot_DWT(ax, dwt, vmin, vmax, wt_num, land=None, wt_color=None):
         landc[land==1]=np.nan
         ax.pcolormesh(
             np.flipud(landc),
-            cmap=colors.ListedColormap([wt_color]), shading='gouraud',
+            cmap=colors.ListedColormap(['silver']), shading='gouraud',
         )
+
+    # axis color
+    plt.setp(ax.spines.values(), color=wt_color)
+    plt.setp(
+        [ax.get_xticklines(), ax.get_yticklines()],
+        color=wt_color,
+    )
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(2.5)
 
     # wt text
     ax.text(0.87, 0.85, wt_num, transform=ax.transAxes, fontweight='bold')
@@ -134,6 +143,10 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, show=True):
 
     n_plot: number of EOFs plotted
     '''
+
+    # TODO: fix data_pos, fails only after pred.Load()?
+    print(xds_PCA)
+
 
     # PCA data
     variance = xds_PCA['variance'].values[:]
@@ -296,7 +309,7 @@ def Plot_DWTs_Mean_Anom(xds_KMA, xds_var, kind='mean', mask_land=None,
     # plot figure
     fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
 
-    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.0, hspace=0.0)
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.1, hspace=0.1)
     gr, gc = 0, 0
 
     for ic in range(n_clusters):
