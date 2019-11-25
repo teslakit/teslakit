@@ -293,23 +293,23 @@ def Aggregate_WavesFamilies(wvs_fams):
     p_max_hs = np.nanargmax(vv_Hs, axis=1)
 
     # Tp from families (Hs max pos)
-    TP = np.array([r[i] for r,i in zip(vv_Tp, p_max_hs)])
+    #TP = np.array([r[i] for r,i in zip(vv_Tp, p_max_hs)])
 
     # Dir from families (Hs max pos)
-    DIR = np.array([r[i] for r,i in zip(vv_Dir, p_max_hs)])
+    #DIR = np.array([r[i] for r,i in zip(vv_Dir, p_max_hs)])
 
     # TP from families 
-    #tmp1 = np.power(vv_Hs,2)
-    #tmp2 = np.divide(np.power(vv_Hs,2), np.power(vv_Tp,2))
-    #TP = np.sqrt(np.nansum(tmp1, axis=1) / np.nansum(tmp2, axis=1))
+    tmp1 = np.power(vv_Hs,2)
+    tmp2 = np.divide(np.power(vv_Hs,2), np.power(vv_Tp,2))
+    TP = np.sqrt(np.nansum(tmp1, axis=1) / np.nansum(tmp2, axis=1))
 
     # Dir from families
-    #tmp3 = np.arctan2(
-    #    np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
-    #    np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
-    #)
-    #tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
-    #DIR = tmp3 * 180/np.pi
+    tmp3 = np.arctan2(
+        np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
+        np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
+    )
+    tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
+    DIR = tmp3 * 180/np.pi
 
     # return xarray.Dataset
     xds_AGGR = xr.Dataset(
