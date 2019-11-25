@@ -26,7 +26,7 @@ def tqdm(*args, **kwargs):
 
 # tk
 from .statistical import Empirical_ICDF
-from .waves import AWL, Aggregate_WavesFamilies
+from .waves import AWL
 from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from .io.aux_nc import StoreBugXdset
 
