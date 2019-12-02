@@ -24,6 +24,8 @@ from .util.time_operations import xds_reindex_daily, xds_reindex_monthly, \
 xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
 generate_datetimes
 
+# TODO: change all historical data to standarized .nc files
+# TODO use this xds['time'] = [d2d(x) for x in xds.time.values[:]]
 
 def clean_files(l_files):
     for f in l_files:
@@ -365,8 +367,15 @@ class Database(object):
 
         return xds
 
+    def Save_TIDE_hist_mmsl(self, xds):
+        xds.to_netcdf(self.paths.site.TIDE.hist_mmsl)
+
     def Save_TIDE_sim_mmsl(self, xds):
         StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
+
+    def Load_TIDE_hist_mmsl(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.hist_mmsl)
+        return xds
 
     def Load_TIDE_sim_mmsl(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl, decode_times=True)
@@ -382,10 +391,86 @@ class Database(object):
 
     # COMPLETE DATA 
 
+    def Load_HIST_Complete(self):
+        '''
+        Load all historical variables (hourly/3hourly):
+            AWTs, DWTs, MJO, MMSL, AT, Hs, Tp, Dir, SS
+        '''
+        # load data
+        AWT = self.Load_SST_KMA()
+        MSL = self.Load_TIDE_hist_mmsl() # mmsl (mm)
+        MJO = self.Load_MJO_hist()
+        DWT = self.Load_ESTELA_KMA()  # bmus + 1
+        ATD_h = self.Load_TIDE_hist_astro()
+        WVS = self.Load_WAVES_hist()
+
+        # data format
+        AWT = xr.Dataset(
+            {
+                'bmus': AWT.bmus,
+            },
+            coords = {'time': AWT.time}
+        )
+        DWT = xr.Dataset(
+            {
+                'bmus': (('time',), DWT.bmus + 1),
+            },
+            coords = {'time': DWT.time.values[:]}
+        )
+
+        # get MJO categories 
+        from .mjo import MJO_Categories
+        mjo_cs, _ = MJO_Categories(MJO['rmm1'], MJO['rmm2'], MJO['phase'])
+        MJO['bmus'] = (('time',), mjo_cs)
+
+        # TODO ?
+        # Hs, Tp, Dir from Aggregate_WavesFamilies
+        #from .waves import Aggregate_WavesFamilies
+        #WVS = Aggregate_WavesFamilies(WVS)
+
+        # TODO SS?
+
+        # reindex data to hourly (pad)
+        AWT_h = fast_reindex_hourly(AWT)
+        MSL_h = MSL.resample(time='1h').pad()
+        MJO_h = fast_reindex_hourly(MJO)
+        DWT_h = fast_reindex_hourly(DWT)
+        WVS_h = fast_reindex_hourly(WVS)
+
+        # common dates limits
+        d1, d2 = xds_limit_dates(
+            [AWT_h, ATD_h, MSL_h, MJO_h, DWT_h, ATD_h, WVS_h]
+        )
+        AWT_h = AWT_h.sel(time = slice(d1,d2))
+        MSL_h = MSL_h.sel(time = slice(d1,d2))
+        MJO_h = MJO_h.sel(time = slice(d1,d2))
+        DWT_h = DWT_h.sel(time = slice(d1,d2))
+        ATD_h = ATD_h.sel(time = slice(d1,d2))
+        WVS_h = WVS_h.sel(time = slice(d1,d2))
+
+        # copy to new dataset
+        times = AWT_h.time.values[:]
+        xds = xr.Dataset(
+            {
+                'AWT': (('time',), AWT_h.bmus.values[:].astype(int)),
+                'MJO': (('time',), MJO_h.bmus.values[:].astype(int)),
+                'DWT': (('time',), DWT_h.bmus.values[:].astype(int)),
+                'MMSL': (('time',), MSL_h.mmsl.values[:] / 1000), # mm to m
+                'AT': (('time',), ATD_h.tide.values[:]),
+                'Hs': (('time',), WVS_h.Hs.values[:]),
+                'Tp': (('time',), WVS_h.Tp.values[:]),
+                'Dir': (('time',), WVS_h.Dir.values[:]),
+            },
+            coords = {'time': times}
+        )
+
+        return xds
+
     def Load_SIM_Covariates(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0,
                             regenerate=False):
         '''
-        Load all simulated covariates (hourly): AWTs, DWTs, MJO, MMSL, AT
+        Load all simulated covariates (hourly):
+            AWTs, DWTs, MJO, MMSL, AT
 
         regenerate  - forces hourly dataset regeneration
         '''
