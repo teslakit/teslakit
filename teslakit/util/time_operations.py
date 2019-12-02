@@ -61,7 +61,14 @@ def generate_datetimes(t0, t1, dtype='datetime64[h]'):
     lb_dfts = lambda t: datetime.utcfromtimestamp(t)
     np_dfts = np.vectorize(lb_dfts)
 
-    tg = np.arange(t0, t1 + timedelta(hours=1), dtype=dtype)
+    # mount times array
+    dtd = {
+        'datetime64[h]': timedelta(hours=1),
+        'datetime64[D]': timedelta(days=1),
+    }
+    tdd = dtd[dtype]
+
+    tg = np.arange(t0, t1 + tdd, dtype=dtype)
     tg = (tg - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
     tg = np_dfts(tg)
 
@@ -227,6 +234,7 @@ def date2datenum(d):
     'Returns date d (any format) in datetime'
 
     # TODO: new type switch for xarray.core numpy.datetime64
+    # TODO: rename to date2datetime
 
     if isinstance(d, datetime):
         return d
@@ -249,7 +257,6 @@ def get_years_months_days(time):
     '''
 
     t0 = time[0]
-
     if isinstance(t0, (date, datetime, DatetimeGregorian)):
         ys = np.asarray([x.year for x in time])
         ms = np.asarray([x.month for x in time])
