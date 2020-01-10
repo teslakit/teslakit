@@ -5,9 +5,11 @@ import numpy as np
 import xarray as xr
 
 
-def Calculate_MMSL(xds_tide, year_ini, year_end):
+def Calculate_MMSL(xda_tide, year_ini, year_end):
     '''
     Calculate monthly mean sea level
+
+    xda_tide  - xarray.DataArray (time,)
     '''
 
     lout_mean = []
@@ -19,9 +21,9 @@ def Calculate_MMSL(xds_tide, year_ini, year_end):
             d1 = np.datetime64('{0:04d}-{1:02d}'.format(yy,mm))
             d2 = d1 + np.timedelta64(1, 'M')
 
-            tide_sel_m = xds_tide.where(
-                (xds_tide.time >= d1) & (xds_tide.time <= d2),
-                drop = True).tide[:-2]
+            tide_sel_m = xda_tide.where(
+                (xda_tide.time >= d1) & (xda_tide.time <= d2),
+                drop = True)[:-2]
             time_sel = tide_sel_m.time.values
 
             if len(time_sel) >= 300:
