@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib import path
 
 # tk 
-from .pca import CalcPCA_EstelaPred
+from .pca import PCA_EstelaPred
 from .kma import KMA_regression_guided
 from .kma import SimpleMultivariateRegressionModel as SMRM
 from .intradaily import Calculate_Hydrographs
@@ -216,7 +216,7 @@ class Predictor(object):
             self.data, var_name, xds_estela)
 
         # Calculate PCA
-        self.PCA = CalcPCA_EstelaPred(
+        self.PCA = PCA_EstelaPred(
             xds_estela_pred, var_name)
 
         # save data
@@ -272,11 +272,13 @@ class Predictor(object):
         '''
 
         n_clusters = len(self.KMA.n_clusters.values[:])
-        kma_dates = self.PCA.pred_time.values[:]
+        kma_dates = self.KMA.time.values[:]
         bmus_storms = self.KMA.sorted_bmus.copy()  # deep copy
 
+        # TODO: revisar seleccion storms por fecha redondeada
         for sd, sc in zip(storm_dates, storm_categories):
-            pos_date = np.where(kma_dates==sd)[0]
+            sdr =  np.array(sd, dtype='datetime64[D]')  # round to day
+            pos_date = np.where(kma_dates==sdr)[0]
             if pos_date:
                 bmus_storms[pos_date[0]] = n_clusters + sc
 
