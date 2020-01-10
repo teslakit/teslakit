@@ -1,13 +1,15 @@
 variable    units   dimensions      date_ini    date_end
 
-SST         ºC      lon,lat,time    1854        2017
+SST         ºC      lon,lat,time        1854        2017
 
-WaterLevel  m       time            1975        2014
-predicted   m       time            1996        2017
+WaterLevel  m       time                1975        2014
+predicted   m       time                1996        2017
 
-mjo         -       time            1979        2018
-phase       -       time            1979        2018
-rmm1        -       time            1979        2018
-rmm2        -       time            1979        2018
+mjo         -       time                1979        2018
+phase       -       time                1979        2018
+rmm1        -       time                1979        2018
+rmm2        -       time                1979        2018
+
+pressure    mb      storm(lon,lat,time) -       -
 
 
