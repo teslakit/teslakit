@@ -53,57 +53,58 @@ def running_mean(x, N, mode_str='mean'):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[nn:] - cumsum[:-nn]) / float(nn)
 
-def RunnningMean_Monthly(xdset, var_name, window=5):
+def RunnningMean_Monthly(xds, var_name, window=5):
     '''
     Calculate running average grouped by months
 
-    xdset: (longitude, latitude, time) variables: var_name
+    xds:
+        (longitude, latitude, time) variables: var_name
 
-    returns xdset with new variable "var_name_runavg"
+    returns xds with new variable "var_name_runavg"
     '''
 
-    tempdata_runavg = np.empty(xdset[var_name].shape)
+    tempdata_runavg = np.empty(xds[var_name].shape)
 
-    for lon in xdset.longitude.values:
-       for lat in xdset.latitude.values:
+    for lon in xds.longitude.values:
+       for lat in xds.latitude.values:
           for mn in range(1, 13):
 
              # indexes
-             ix_lon = np.where(xdset.longitude == lon)
-             ix_lat = np.where(xdset.latitude == lat)
-             ix_mnt = np.where(xdset['time.month'] == mn)
+             ix_lon = np.where(xds.longitude == lon)
+             ix_lat = np.where(xds.latitude == lat)
+             ix_mnt = np.where(xds['time.month'] == mn)
 
              # point running average
-             time_mnt = xdset.time[ix_mnt]
-             data_pnt = xdset[var_name].loc[lon, lat, time_mnt]
+             time_mnt = xds.time[ix_mnt]
+             data_pnt = xds[var_name].loc[lon, lat, time_mnt]
 
              tempdata_runavg[ix_lon[0], ix_lat[0], ix_mnt[0]] = running_mean(
                  data_pnt.values, window)
 
     # store running average
-    xdset['{0}_runavg'.format(var_name)]= (
+    xds['{0}_runavg'.format(var_name)]= (
         ('longitude', 'latitude', 'time'),
         tempdata_runavg)
 
-    return xdset
+    return xds
 
-def PCA_LatitudeAverage(xdset, var_name, y1, y2, m1, m2):
+def PCA_LatitudeAverage(xds, var_name, y1, y2, m1, m2):
     '''
     Principal component analysis
     method: remove monthly running mean and latitude average
 
-    xdset:
+    xds:
         (longitude, latitude, time), pred_name | pred_name_runavg
 
     returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
     '''
 
     # calculate monthly running mean
-    xdset = RunnningMean_Monthly(xdset, var_name)
+    xds = RunnningMean_Monthly(xds, var_name)
 
     # predictor variable and variable_runnavg from dataset
-    var_val = xdset[var_name]
-    var_val_ra = xdset['{0}_runavg'.format(var_name)]
+    var_val = xds[var_name]
+    var_val_ra = xds['{0}_runavg'.format(var_name)]
 
     # use datetime for indexing
     dt1 = datetime(y1, m1, 1)
@@ -142,7 +143,7 @@ def PCA_LatitudeAverage(xdset, var_name, y1, y2, m1, m2):
     ipca = PCA(n_components=var_anom_demean.shape[0])
     PCs = ipca.fit_transform(var_anom_demean)
 
-    pred_lon = xdset.longitude.values[:]
+    pred_lon = xds.longitude.values[:]
 
     return xr.Dataset(
         {
@@ -163,20 +164,20 @@ def PCA_LatitudeAverage(xdset, var_name, y1, y2, m1, m2):
         }
     )
 
-def CalcPCA_EstelaPred(xdset, pred_name):
+def PCA_EstelaPred(xds, pred_name):
     '''
     Principal component analysis
-    Custom for estela predictor
+    method: custom for estela predictor
 
-    xdset:
+    xds:
         (time, latitude, longitude), pred_name_comp | pred_name_gradient_comp
 
     returns a xarray.Dataset containing PCA data: PCs, EOFs, variance
     '''
 
     # estela predictor and estela gradient predictor
-    pred_est_var = xdset['{0}_comp'.format(pred_name)]
-    pred_est_grad = xdset['{0}_gradient_comp'.format(pred_name)]
+    pred_est_var = xds['{0}_comp'.format(pred_name)]
+    pred_est_grad = xds['{0}_gradient_comp'.format(pred_name)]
 
     # use data inside timeframe
     dp_var = pred_est_var.values
@@ -223,9 +224,9 @@ def CalcPCA_EstelaPred(xdset, pred_name):
             'pred_mean': (('n_features',), pred_mean),
             'pred_std': (('n_features',), pred_std),
 
-            'pred_lon': (('n_lon',), xdset.longitude.values[:]),
-            'pred_lat': (('n_lat',), xdset.latitude.values[:]),
-            'pred_time': (('time',), xdset.time.values[:]),
+            'pred_lon': (('n_lon',), xds.longitude.values[:]),
+            'pred_lat': (('n_lat',), xds.latitude.values[:]),
+            'pred_time': (('time',), xds.time.values[:]),
             'pred_data_pos':(('n_points',), data_pos)
         },
 
