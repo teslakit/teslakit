@@ -263,6 +263,8 @@ class Database(object):
         return xr.open_dataset(self.paths.site.TCs.noaa)
 
     def Save_TCs_r1_hist(self, xds_tcs, xds_params):
+        xds_params = self.fill_metadata(xds_params, set_source=True)
+
         clean_files(
             [self.paths.site.TCs.hist_r1,
              self.paths.site.TCs.hist_r1_params]
@@ -272,6 +274,8 @@ class Database(object):
         xds_params.to_netcdf(self.paths.site.TCs.hist_r1_params, 'w')
 
     def Save_TCs_r2_hist(self, xds_tcs, xds_params):
+        xds_params = self.fill_metadata(xds_params, set_source=True)
+
         clean_files(
             [self.paths.site.TCs.hist_r2,
              self.paths.site.TCs.hist_r2_params]
@@ -288,15 +292,27 @@ class Database(object):
                 xr.open_dataset(self.paths.site.TCs.hist_r2_params)
 
     def Save_TCs_r1_sim_params(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.sim_r1_params])
         xds.to_netcdf(self.paths.site.TCs.sim_r1_params, 'w')
 
     def Save_TCs_r2_sim_params(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.sim_r2_params])
         xds.to_netcdf(self.paths.site.TCs.sim_r2_params, 'w')
 
     def Save_TCs_r1_mda_params(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.mda_r1_params])
         xds.to_netcdf(self.paths.site.TCs.mda_r1_params, 'w')
 
     def Save_TCs_r2_mda_params(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.mda_r2_params])
         xds.to_netcdf(self.paths.site.TCs.mda_r2_params, 'w')
 
     def Load_TCs_r2_mda_params(self):
@@ -309,6 +325,9 @@ class Database(object):
         return ReadTCsSimulations(self.paths.site.TCs.mda_r2_simulations)
 
     def Save_TCs_sim_r2_rbf_output(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.sim_r2_rbf_output])
         xds.to_netcdf(self.paths.site.TCs.sim_r2_rbf_output, 'w')
 
     def Load_TCs_sim_r2_rbf_output(self):
@@ -318,6 +337,9 @@ class Database(object):
         return ReadNakajoMats(self.paths.site.TCs.nakajo_mats)
 
     def Save_TCs_probs_synth(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TCs.probs_synth])
         xds.to_netcdf(self.paths.site.TCs.probs_synth, 'w')
 
     def Load_TCs_probs_synth(self):
