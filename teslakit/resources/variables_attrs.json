@@ -1,0 +1,51 @@
+{
+    "longitude": 
+    {
+        "units": "degrees",
+        "short_name": "lon",
+        "long_name": "longitude"
+    },
+
+    "latitude": 
+    {
+        "units": "degrees",
+        "short_name": "lat",
+        "long_name": "latitude"
+    },
+
+    "Hs": 
+    {
+        "units": "meters",
+        "short_name": "hs",
+        "long_name": "significant wave height"
+    },
+
+    "WaterLevel": 
+    {
+        "units": "meters",
+        "short_name": "wl",
+        "long_name": "water level"
+    },
+
+    "mmsl": 
+    {
+        "units": "meters",
+        "short_name": "mmsl",
+        "long_name": "monthly mean sea level"
+    },
+
+    "astro": 
+    {
+        "units": "meters",
+        "short_name": "astro",
+        "long_name": "astronomical tide"
+    },
+
+    "SST": 
+    {
+        "units": "celsius degrees",
+        "short_name": "sst",
+        "long_name": "sea surface temperature"
+    }
+}
+
