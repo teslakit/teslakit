@@ -46,6 +46,76 @@
         "units": "celsius degrees",
         "short_name": "sst",
         "long_name": "sea surface temperature"
+    },
+
+    "mjo": 
+    {
+        "units": "",
+        "short_name": "mjo",
+        "long_name": "Madden-Julian Oscilation"
+    },
+
+    "rmm1": 
+    {
+        "units": "",
+        "short_name": "rmm1",
+        "long_name": "Madden-Julian Oscilation RMM1"
+    },
+
+    "rmm2": 
+    {
+        "units": "",
+        "short_name": "rmm2",
+        "long_name": "Madden-Julian Oscilation RMM2"
+    },
+
+    "phase": 
+    {
+        "units": "",
+        "short_name": "phase",
+        "long_name": "Madden-Julian Oscilation PHASE"
+    },
+
+    "pressure_min": 
+    {
+        "units": "mb",
+        "short_name": "prs_min",
+        "long_name": "storm track minimum central pressure"
+    },
+
+    "pressure_mean": 
+    {
+        "units": "mb",
+        "short_name": "prs_mean",
+        "long_name": "storm track mean central pressure"
+    },
+
+    "velocity_mean": 
+    {
+        "units": "km/h",
+        "short_name": "vmean",
+        "long_name": "storm track mean velocity"
+    },
+
+    "gamma": 
+    {
+        "units": "º",
+        "short_name": "gamma",
+        "long_name": "storm track parametrized: gamma"
+    },
+
+    "delta": 
+    {
+        "units": "º",
+        "short_name": "delta",
+        "long_name": "storm track parametrized: delta"
+    },
+
+    "category": 
+    {
+        "units": "",
+        "short_name": "cat",
+        "long_name": "storm category"
     }
 }
 
