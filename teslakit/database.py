@@ -7,6 +7,7 @@ import os.path as op
 import configparser
 from shutil import copyfile
 import pickle
+import json
 from datetime import timedelta
 
 # pip
@@ -15,6 +16,7 @@ import xarray as xr
 import numpy as np
 
 # teslakit
+from .__init__ import __version__, __author__
 from .io.getinfo import description
 from .io.aux_nc import StoreBugXdset
 from .io.matlab import ReadTCsSimulations, ReadMatfile, ReadNakajoMats, \
@@ -24,14 +26,18 @@ from .util.time_operations import xds_reindex_daily, xds_reindex_monthly, \
 xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
 generate_datetimes
 
+
 # TODO: change all historical data to standarized .nc files
 # TODO use this xds['time'] = [d2d(x) for x in xds.time.values[:]]
 
+
 def clean_files(l_files):
+    'remove files at list'
     for f in l_files:
         if op.isfile(f): os.remove(f)
 
 class atdict(dict):
+    'modified dictionary that works using ".key" '
     __getattr__= dict.__getitem__
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
@@ -131,15 +137,49 @@ class Database(object):
 
     # database i/o
 
+    # variables attrs (resources)
+    def fill_metadata(self, xds, set_source=False):
+        '''
+        for each variable in xarray.Dataset xds, attributes will be set
+        using resources/variables_attrs.json
+
+        set_source - True for adding package source and institution metadata
+        '''
+
+        # read attributes dictionary
+        p_vats = op.join(self.paths.p_resources, 'variables_attrs.json')
+        with open(p_vats) as jf:
+            d_vats = json.load(jf)
+
+        # update dataset variables (names, units, descriptions)
+        for vn in xds.variables:
+            if vn in d_vats.keys():
+               xds[vn].attrs = d_vats[vn]
+
+        # set global attributes (source, institution)
+        if set_source:
+            xds.attrs['source'] = 'teslakit_v{0}'.format(__version__)
+            #xds.attrs['institution'] = '{0}'.format(__author__)
+
+        return xds
+
     # SST
 
     def Load_SST(self):
-        return xr.open_dataset(self.paths.site.SST.hist_pacific)
+        xds = xr.open_dataset(self.paths.site.SST.hist_pacific)
+        xds = self.fill_metadata(xds)
+        return xds
 
     def Save_SST_PCA(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.SST.pca])
         xds.to_netcdf(self.paths.site.SST.pca, 'w')
 
     def Save_SST_KMA(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.SST.kma])
         xds.to_netcdf(self.paths.site.SST.kma, 'w')
 
     def Save_SST_PCs_fit_rnd(self, d_PCs_fit, d_PCs_rnd):
@@ -151,9 +191,19 @@ class Database(object):
             pickle.dump(d_PCs_rnd, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def Save_SST_AWT_sim(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.SST.awt_sim])
         StoreBugXdset(xds, self.paths.site.SST.awt_sim)
 
     def Save_SST_PCs_sim(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([
+            self.paths.site.SST.pcs_sim,
+            self.paths.site.SST.pcs_sim_d,
+            self.paths.site.SST.pcs_sim_m,
+        ])
 
         # store yearly data
         StoreBugXdset(xds, self.paths.site.SST.pcs_sim)
@@ -348,12 +398,26 @@ class Database(object):
 
     # TIDE
 
+    def Load_TIDE_hist(self):
+        xds_ml = xr.open_dataset(self.paths.site.TIDE.mareografo_nc)
+        xds_at = xr.open_dataset(self.paths.site.TIDE.hist_astro)
+
+        xds_ml = self.fill_metadata(xds_ml)
+        xds_at = self.fill_metadata(xds_at)
+
+        return xds_ml, xds_at
+
+    # TODO: un unico load tide
+
     def Load_TIDE_hist_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.hist_astro)
-        xds.rename({'observed':'level', 'predicted':'tide'}, inplace=True)
+        xds = xds.rename({'observed':'level', 'predicted':'tide'})
         return xds
 
     def Save_TIDE_sim_astro(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TIDE.sim_astro])
         StoreBugXdset(xds, self.paths.site.TIDE.sim_astro)
 
     def Load_TIDE_sim_astro(self):
@@ -368,9 +432,15 @@ class Database(object):
         return xds
 
     def Save_TIDE_hist_mmsl(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TIDE.hist_mmsl])
         xds.to_netcdf(self.paths.site.TIDE.hist_mmsl)
 
     def Save_TIDE_sim_mmsl(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.TIDE.sim_mmsl])
         StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
 
     def Load_TIDE_hist_mmsl(self):
@@ -381,13 +451,6 @@ class Database(object):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl, decode_times=True)
         return xds
 
-    def Load_TIDE_mareografo(self):
-        xds = xr.open_dataset(self.paths.site.TIDE.mareografo_nc)
-
-        # fix data
-        xds.rename({'WaterLevel':'tide'}, inplace=True)
-        xds['tide'] = xds['tide'] * 1000
-        return xds
 
     # COMPLETE DATA 
 
