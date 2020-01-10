@@ -67,8 +67,16 @@ def StoreBugXdset(xds_data, p_ncfile):
         # variables values
         else:
             vdims = xds_data[vn].dims
+            vatts = xds_data[vn].attrs
+
             vv = root.createVariable(varname=vn,dimensions=vdims, datatype='float32')
             vv[:] = vals
+
+            # variable attributes
+            vv.setncatts(vatts)
+
+    # global attributes
+    root.setncatts(xds_data.attrs)
 
     # close file
     root.close()
