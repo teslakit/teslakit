@@ -244,9 +244,14 @@ class Database(object):
     # MJO
 
     def Load_MJO_hist(self):
-        return xr.open_dataset(self.paths.site.MJO.hist)
+        xds = xr.open_dataset(self.paths.site.MJO.hist)
+        xds = self.fill_metadata(xds)
+        return xds
 
     def Save_MJO_sim(self, xds):
+        xds = self.fill_metadata(xds, set_source=True)
+
+        clean_files([self.paths.site.SST.awt_sim])
         StoreBugXdset(xds, self.paths.site.MJO.sim)
 
     def Load_MJO_sim(self):
@@ -406,13 +411,6 @@ class Database(object):
         xds_at = self.fill_metadata(xds_at)
 
         return xds_ml, xds_at
-
-    # TODO: un unico load tide
-
-    def Load_TIDE_hist_astro(self):
-        xds = xr.open_dataset(self.paths.site.TIDE.hist_astro)
-        xds = xds.rename({'observed':'level', 'predicted':'tide'})
-        return xds
 
     def Save_TIDE_sim_astro(self, xds):
         xds = self.fill_metadata(xds, set_source=True)
