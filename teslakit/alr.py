@@ -37,9 +37,6 @@ from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions
 from .plotting.alr import Plot_Compare_Covariate
 
-# TODO: organize and refactor time types conversions
-# TODO: optimice operations (double save after sim, plot_compare_perpyear..)
-
 class ALR_WRP(object):
     'AutoRegressive Logistic methodology Wrapper'
 
@@ -319,7 +316,6 @@ class ALR_WRP(object):
             y = pd.DataFrame(y, columns=['bmus'])
 
             # TODO: CAPTURAR LA EVOLUCION DE L (maximun-likelihood) 
-
             self.model = sm.MNLogit(y,X).fit(
                 method='lbfgs',
                 maxiter=max_iter,
@@ -327,6 +323,7 @@ class ALR_WRP(object):
                 full_output=True,
                 disp=True,
                 warn_convergence=True,
+                missing='raise',
             )
 
         elif self.model_library == 'sklearn':
@@ -376,6 +373,13 @@ class ALR_WRP(object):
             open(self.p_save_terms_fit, 'rb')
         )
 
+        # load aux data
+        if self.d_terms_settings['covariates'][0]:
+            cov_names = self.d_terms_settings['covariates'][1].cov_names.values
+            self.cov_names = cov_names
+
+        self.mk_order = self.d_terms_settings['mk_order']
+
     def SaveBmus_Fit(self):
         'Saves bmus - fit for future use'
 
@@ -404,7 +408,9 @@ class ALR_WRP(object):
     def LoadBmus_Sim(self):
         'Load bmus - sim'
 
-        return xr.open_dataset(self.p_save_sim_xds)
+        self.xds_bmus_sim =  xr.open_dataset(self.p_save_sim_xds)
+
+        return self.xds_bmus_sim
 
     def Report_Fit(self, terms_fit=False, summary=False, show=True):
         'Report containing model fitting info'
@@ -458,7 +464,8 @@ class ALR_WRP(object):
         f = Plot_Terms(term_mx, term_ds, term_ns, show=show)
         return f
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
+                 dev_filter=False):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -495,6 +502,17 @@ class ALR_WRP(object):
         # use a d_terms_settigs copy 
         d_terms_settings_sim = self.d_terms_settings.copy()
 
+        # preload some data
+        if xds_covars_sim != None:
+
+            # simulation covariates
+            sim_covars_T = xds_covars_sim.cov_values.values
+            sim_covars_T_mean = sim_covars_T.mean(axis=0)
+            sim_covars_T_std = sim_covars_T.std(axis=0)
+
+        # filter usage counter
+        c_fs = 0
+
         # start simulations
         print("\nLaunching {0} simulations...\n".format(num_sims))
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
@@ -513,26 +531,20 @@ class ALR_WRP(object):
                 # handle simulation covars
                 if d_terms_settings_sim['covariates'][0]:
 
-                    # simulation covariates
-                    sim_covars_T = xds_covars_sim.cov_values.values
-
                     # normalize step covars
                     sim_covars_evbmus = sim_covars_T[i : i + mk_order +1]
-                    sim_cov_norm = (
-                        sim_covars_evbmus - sim_covars_T.mean(axis=0)
-                    ) / sim_covars_T.std(axis=0)
+                    sim_cov_norm = (sim_covars_evbmus - sim_covars_T_mean
+                                    ) / sim_covars_T_std
 
                     # mount step xr.dataset for sim covariates
                     xds_cov_sim_step = xr.Dataset(
                         {
                             'cov_norm': (('time','cov_names'), sim_cov_norm),
                         },
-                        coords = {
-                            'cov_names': self.cov_names,
-                        }
+                        coords = {'cov_names': self.cov_names}
                     )
 
-                    d_terms_settings_sim['covariates']=(True, xds_cov_sim_step)
+                    d_terms_settings_sim['covariates'] = (True, xds_cov_sim_step)
 
                 # generate time step ALR terms
                 terms_i, _ = self.GenerateALRTerms(
@@ -541,18 +553,29 @@ class ALR_WRP(object):
                     time_yfrac[i : i + mk_order + 1],
                     self.cluster_size, time2yfrac=False)
 
-
                 # Event sequence simulation  (sklearn)
                 X = np.concatenate(list(terms_i.values()), axis=1)
                 prob = pred_prob_fun(X)  # statsmodels // sklearn functions
+
+                # TODO last WT bad values filter
+                # this is a patch. Locate and solve root error needed.
+                filter_max_last_prob = 0.1
+                if prob[-1,-1] > filter_max_last_prob and dev_filter:
+                    ddd = prob[-1,-1] - filter_max_last_prob
+                    prob[-1,-1] = filter_max_last_prob
+                    prob[-1,:-1] = prob[-1,:-1] + ddd/len(prob[-1,:-1])
+                    c_fs+=1
+
                 probTrans = np.cumsum(prob[-1,:])
-                evbmus = np.append(evbmus, np.where(probTrans>np.random.rand())[0][0]+1)
+                nrnd = np.random.rand()
+                evbmus = np.append(evbmus, np.where(probTrans>nrnd)[0][0]+1)
 
                 # update progress bar 
                 pbar.update(1)
 
             evbmus_sims[:,n] = evbmus
 
+            # close progress bar
             pbar.close()
 
             # Probabilities in the nsims simulations
@@ -562,6 +585,10 @@ class ALR_WRP(object):
                     evbmus_prob[i, j] = len(np.argwhere(evbmus_sims[i,:]==j+1))/float(num_sims)
 
         print()  # white line after all progress bars
+        if dev_filter:
+            p_fs = c_fs*1.0/(len(time_yfrac) - mk_order)
+            print('dev filter: {0} ({1:.6f}%)'.format(c_fs, p_fs))
+
         evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
         # return ALR simulation data in a xr.Dataset
@@ -575,6 +602,7 @@ class ALR_WRP(object):
                 'time' : time_sim,
             },
         )
+
 
         # save output
         StoreBugXdset(xds_out, self.p_save_sim_xds)
@@ -609,6 +637,8 @@ class ALR_WRP(object):
         if isinstance(bmus_dates_hist[0], np.datetime64):
             bmus_dates_hist = [npdt2dt(t) for t in bmus_dates_hist]
 
+        # output figs
+        l_figs = []
 
         # Plot Perpetual Year (daily) - bmus wt
         fig_PP = Plot_Compare_PerpYear(
@@ -618,9 +648,9 @@ class ALR_WRP(object):
             n_sim = num_sims, month_ini=py_month_ini,
             show = show,
         )
+        l_figs.append(fig_PP)
 
         # Plot WTs Transition (probability change / scatter Fit vs. Sim) 
-        l_figs = []
         for s in range(num_sims):
 
             # plot each simulation 
@@ -640,7 +670,7 @@ class ALR_WRP(object):
         #    p_rep_PY = op.join(p_save, 'PerpetualYear.png')
         #    p_rep_VL = op.join(p_save, 'Transitions.png')
 
-        return
+        return l_figs
 
         # TODO: Plot Perpetual Year (monthly)
         # TODO: load covariates if needed for ploting
