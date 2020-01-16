@@ -13,14 +13,63 @@
         "long_name": "latitude"
     },
 
-    "Hs": 
+    "hs": 
     {
         "units": "meters",
         "short_name": "hs",
         "long_name": "significant wave height"
     },
 
-    "WaterLevel": 
+    "tp": 
+    {
+        "units": "s",
+        "short_name": "tp",
+        "long_name": "peak wave period"
+    },
+
+    "ss": 
+    {
+        "units": "meters",
+        "short_name": "ss",
+        "long_name": "storm surge"
+    },
+
+    "twl": 
+    {
+        "units": "meters",
+        "short_name": "twl",
+        "long_name": "total water level"
+    },
+
+    "dir": 
+    {
+        "units": "degrees",
+        "short_name": "dir",
+        "long_name": "waves swell direction"
+    },
+
+    "spr": 
+    {
+        "units": "degrees",
+        "short_name": "spr",
+        "long_name": "directional spread"
+    },
+
+    "mu": 
+    {
+        "units": "-",
+        "short_name": "mu",
+        "long_name": "-"
+    },
+
+    "tau": 
+    {
+        "units": "-",
+        "short_name": "tau",
+        "long_name": "-"
+    },
+
+    "waterlevel": 
     {
         "units": "meters",
         "short_name": "wl",
@@ -41,7 +90,7 @@
         "long_name": "astronomical tide"
     },
 
-    "SST": 
+    "sst": 
     {
         "units": "celsius degrees",
         "short_name": "sst",
