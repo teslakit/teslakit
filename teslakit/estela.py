@@ -273,9 +273,8 @@ class Predictor(object):
 
         n_clusters = len(self.KMA.n_clusters.values[:])
         kma_dates = self.KMA.time.values[:]
-        bmus_storms = self.KMA.sorted_bmus.copy()  # deep copy
+        bmus_storms = self.KMA.sorted_bmus.values[:]  # copy numpy.array
 
-        # TODO: revisar seleccion storms por fecha redondeada
         for sd, sc in zip(storm_dates, storm_categories):
             sdr =  np.array(sd, dtype='datetime64[D]')  # round to day
             pos_date = np.where(kma_dates==sdr)[0]
@@ -328,7 +327,7 @@ class Predictor(object):
 
         return fig
 
-    def Plot_DWTs_Probs(self, show=True):
+    def Plot_DWTs_Probs(self, show=True, field='sorted_bmus', n_clusters=None):
         '''
         Plot DWTs bmus probabilities
             - histogram for ocurrences
@@ -338,9 +337,10 @@ class Predictor(object):
         '''
 
         # Plot DWTs mean using var_data
-        bmus = self.KMA['sorted_bmus'].values[:] + 1 # index to DWT id
+        bmus = self.KMA[field].values[:] + 1 # index to DWT id
         bmus_time = self.KMA['time'].values[:]
-        n_clusters = len(self.KMA.n_clusters.values[:])
+        if not n_clusters:
+            n_clusters = len(self.KMA.n_clusters.values[:])
 
         fig = Plot_DWTs_Probs(bmus, bmus_time, n_clusters, show=show)
 
