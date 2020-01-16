@@ -310,7 +310,7 @@ def Plot_AWTs_Dates(bmus, dates, n_clusters, show=True):
 
 def Plot_AWTs_EOFs(PCs, EOFs, variance, time, lon, n_plot, show=True):
     '''
-    Plot annual EOFs for 3D predictors
+    Plot annual EOFs for PCA_LatitudeAverage predictor
 
     PCs, EOFs, variance, time, lon - from PCA_LatitudeAverage()
     n_plot                         - number of EOFs plotted
