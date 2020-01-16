@@ -36,6 +36,7 @@ def clean_files(l_files):
     for f in l_files:
         if op.isfile(f): os.remove(f)
 
+
 class atdict(dict):
     'modified dictionary that works using ".key" '
     __getattr__= dict.__getitem__
@@ -69,6 +70,8 @@ class Database(object):
     def MakeNewSite(self, site_name):
         'Makes all directories and .ini files needed for a new teslakit project site'
 
+        # TODO REVISAR / UPDATEAR
+
         self.site_name = site_name
         p_site = op.join(self.paths.p_sites, site_name)
 
@@ -100,6 +103,8 @@ class Database(object):
 
     def CheckInputFiles(self):
         'Checks teslakit required input files availability'
+
+        # TODO REVISAR / UPDATEAR
 
         # files/folder to check ()
         conf = [
@@ -153,8 +158,8 @@ class Database(object):
 
         # update dataset variables (names, units, descriptions)
         for vn in xds.variables:
-            if vn in d_vats.keys():
-               xds[vn].attrs = d_vats[vn]
+            if vn.lower() in d_vats.keys():
+               xds[vn].attrs = d_vats[vn.lower()]
 
         # set global attributes (source, institution)
         if set_source:
@@ -162,6 +167,27 @@ class Database(object):
             #xds.attrs['institution'] = '{0}'.format(__author__)
 
         return xds
+
+    def save_nc(self, xds, p_save, safe_time=False):
+        '''
+        (SECURE) exports xarray.Dataset to netcdf file format.
+
+         - fills dataset with teslakit variables and source metadata
+         - avoids overwritting problems
+         - set safe_time=True if dataset contains dates beyond 2262
+        '''
+
+        # add teslakit metadata to xarray.Dataset
+        xds = self.fill_metadata(xds, set_source=True)
+
+        # remove previous file to avoid problems
+        clean_files([p_save])
+
+        # export .nc
+        if safe_time:
+            StoreBugXdset(xds, p_save)  # time dimension safe
+        else:
+            xds.to_netcdf(p_save, 'w')
 
     # SST
 
@@ -171,16 +197,10 @@ class Database(object):
         return xds
 
     def Save_SST_PCA(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.SST.pca])
-        xds.to_netcdf(self.paths.site.SST.pca, 'w')
+        self.save_nc(xds, self.paths.site.SST.pca)
 
     def Save_SST_KMA(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.SST.kma])
-        xds.to_netcdf(self.paths.site.SST.kma, 'w')
+        self.save_nc(xds, self.paths.site.SST.kma)
 
     def Save_SST_PCs_fit_rnd(self, d_PCs_fit, d_PCs_rnd):
 
@@ -191,30 +211,20 @@ class Database(object):
             pickle.dump(d_PCs_rnd, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def Save_SST_AWT_sim(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.SST.awt_sim])
-        StoreBugXdset(xds, self.paths.site.SST.awt_sim)
+        self.save_nc(xds, self.paths.site.SST.awt_sim, safe_time=True)
 
     def Save_SST_PCs_sim(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([
-            self.paths.site.SST.pcs_sim,
-            self.paths.site.SST.pcs_sim_d,
-            self.paths.site.SST.pcs_sim_m,
-        ])
 
         # store yearly data
-        StoreBugXdset(xds, self.paths.site.SST.pcs_sim)
+        self.save_nc(xds, self.paths.site.SST.pcs_sim, safe_time=True)
 
         # resample to daily and store
         xds_d = xds_reindex_daily(xds)
-        StoreBugXdset(xds_d, self.paths.site.SST.pcs_sim_d)
+        self.save_nc(xds_d, self.paths.site.SST.pcs_sim_d, safe_time=True)
 
         # resample to monthly and store
         xds_m = xds_reindex_monthly(xds)
-        StoreBugXdset(xds_m, self.paths.site.SST.pcs_sim_m)
+        self.save_nc(xds_m, self.paths.site.SST.pcs_sim_m, safe_time=True)
 
     def Load_SST_PCA(self):
         return xr.open_dataset(self.paths.site.SST.pca)
@@ -249,10 +259,7 @@ class Database(object):
         return xds
 
     def Save_MJO_sim(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.SST.awt_sim])
-        StoreBugXdset(xds, self.paths.site.MJO.sim)
+        self.save_nc(xds, self.paths.site.MJO.sim, safe_time=True)
 
     def Load_MJO_sim(self):
         return xr.open_dataset(self.paths.site.MJO.sim, decode_times=True)
@@ -263,25 +270,12 @@ class Database(object):
         return xr.open_dataset(self.paths.site.TCs.noaa)
 
     def Save_TCs_r1_hist(self, xds_tcs, xds_params):
-        xds_params = self.fill_metadata(xds_params, set_source=True)
-
-        clean_files(
-            [self.paths.site.TCs.hist_r1,
-             self.paths.site.TCs.hist_r1_params]
-        )
-
-        xds_tcs.to_netcdf(self.paths.site.TCs.hist_r1, 'w')
-        xds_params.to_netcdf(self.paths.site.TCs.hist_r1_params, 'w')
+        self.save_nc(xds_tcs, self.paths.site.TCs.hist_r1)
+        self.save_nc(xds_params, self.paths.site.TCs.hist_r1_params)
 
     def Save_TCs_r2_hist(self, xds_tcs, xds_params):
-        xds_params = self.fill_metadata(xds_params, set_source=True)
-
-        clean_files(
-            [self.paths.site.TCs.hist_r2,
-             self.paths.site.TCs.hist_r2_params]
-        )
-        xds_tcs.to_netcdf(self.paths.site.TCs.hist_r2, 'w')
-        xds_params.to_netcdf(self.paths.site.TCs.hist_r2_params, 'w')
+        self.save_nc(xds_tcs, self.paths.site.TCs.hist_r2)
+        self.save_nc(xds_params, self.paths.site.TCs.hist_r2_params)
 
     def Load_TCs_r1_hist(self):
         return xr.open_dataset(self.paths.site.TCs.hist_r1), \
@@ -292,28 +286,16 @@ class Database(object):
                 xr.open_dataset(self.paths.site.TCs.hist_r2_params)
 
     def Save_TCs_r1_sim_params(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.sim_r1_params])
-        xds.to_netcdf(self.paths.site.TCs.sim_r1_params, 'w')
+        self.save_nc(xds, self.paths.site.TCs.sim_r1_params)
 
     def Save_TCs_r2_sim_params(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.sim_r2_params])
-        xds.to_netcdf(self.paths.site.TCs.sim_r2_params, 'w')
+        self.save_nc(xds, self.paths.site.TCs.sim_r2_params)
 
     def Save_TCs_r1_mda_params(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.mda_r1_params])
-        xds.to_netcdf(self.paths.site.TCs.mda_r1_params, 'w')
+        self.save_nc(xds, self.paths.site.TCs.mda_r1_params)
 
     def Save_TCs_r2_mda_params(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.mda_r2_params])
-        xds.to_netcdf(self.paths.site.TCs.mda_r2_params, 'w')
+        self.save_nc(xds, self.paths.site.TCs.mda_r2_params)
 
     def Load_TCs_r2_mda_params(self):
         return xr.open_dataset(self.paths.site.TCs.mda_r2_params)
@@ -325,10 +307,7 @@ class Database(object):
         return ReadTCsSimulations(self.paths.site.TCs.mda_r2_simulations)
 
     def Save_TCs_sim_r2_rbf_output(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.sim_r2_rbf_output])
-        xds.to_netcdf(self.paths.site.TCs.sim_r2_rbf_output, 'w')
+        self.save_nc(xds, self.paths.site.TCs.sim_r2_rbf_output)
 
     def Load_TCs_sim_r2_rbf_output(self):
         return xr.open_dataset(self.paths.site.TCs.sim_r2_rbf_output)
@@ -337,10 +316,7 @@ class Database(object):
         return ReadNakajoMats(self.paths.site.TCs.nakajo_mats)
 
     def Save_TCs_probs_synth(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TCs.probs_synth])
-        xds.to_netcdf(self.paths.site.TCs.probs_synth, 'w')
+        self.save_nc(xds, self.paths.site.TCs.probs_synth)
 
     def Load_TCs_probs_synth(self):
         return xr.open_dataset(self.paths.site.TCs.probs_synth)
@@ -348,14 +324,15 @@ class Database(object):
     # WAVES
 
     def Load_WAVES_partitions(self):
-        return ReadGowMat(self.paths.site.WAVES.partitions_p1)
+        xds = ReadGowMat(self.paths.site.WAVES.partitions_p1)
+        xds = self.fill_metadata(xds)
+        return xds
 
     def Load_WAVES_partitions_nc(self):
         return xr.open_dataset(self.paths.site.WAVES.partitions_p1)
 
     def Save_WAVES_hist(self, xds):
-        clean_files([self.paths.site.WAVES.hist])
-        xds.to_netcdf(self.paths.site.WAVES.hist, 'w')
+        self.save_nc(xds, self.paths.site.WAVES.hist)
 
     def Load_WAVES_hist(self):
         return xr.open_dataset(self.paths.site.WAVES.hist)
@@ -368,22 +345,20 @@ class Database(object):
     def Load_ESTELA_data(self):
         return ReadEstelaMat(self.paths.site.ESTELA.estelamat)
 
-    #def Load_ESTELA_waves(self):
-    #    return ReadGowMat(self.paths.site.ESTELA.gowpoint)
-
-    def Load_ESTELA_waves_np(self):
-        npzfile = np.load(self.paths.site.ESTELA.gowpoint)
-        xr1 = xr.Dataset(
-            {
-                'Hs': (['time'], npzfile['Hs']),
-                'Tp': (['time'], npzfile['Tp']),
-                'Tm': (['time'], npzfile['Tm02']),
-                'Dir': (['time'], npzfile['Dir']),
-                'dspr': (['time'], npzfile['dspr'])
-            },
-            coords = {'time': npzfile['time']}
-        )
-        return  xr1
+    # TODO: remove?
+    #def Load_ESTELA_waves_np(self):
+    #    npzfile = np.load(self.paths.site.ESTELA.gowpoint)
+    #    xr1 = xr.Dataset(
+    #        {
+    #            'Hs': (['time'], npzfile['Hs']),
+    #            'Tp': (['time'], npzfile['Tp']),
+    #            'Tm': (['time'], npzfile['Tm02']),
+    #            'Dir': (['time'], npzfile['Dir']),
+    #            'dspr': (['time'], npzfile['dspr'])
+    #        },
+    #        coords = {'time': npzfile['time']}
+    #    )
+    #    return  xr1
 
     def Load_ESTELA_SLP(self):
         return xr.open_dataset(self.paths.site.ESTELA.slp)
@@ -393,7 +368,7 @@ class Database(object):
         return xr.open_dataset(p_est_kma)
 
     def Save_ESTELA_DWT_sim(self, xds):
-        StoreBugXdset(xds, self.paths.site.ESTELA.sim_dwt)
+        self.save_nc(xds, self.paths.site.ESTELA.sim_dwt, True)
 
     def Load_ESTELA_DWT_sim(self):
         return xr.open_dataset(
@@ -404,13 +379,11 @@ class Database(object):
     def Save_MU_TAU_hydrograms(self, l_xds):
 
         p_mutau = self.paths.site.ESTELA.hydrog_mutau
-
         if not op.isdir(p_mutau): os.makedirs(p_mutau)
+
         for x in l_xds:
             n_store = 'MUTAU_WT{0:02}.nc'.format(x.WT)
-
-            clean_files([op.join(p_mutau, n_store)])
-            x.to_netcdf(op.join(p_mutau, n_store), 'w')
+            self.save_nc(x, op.join(p_mutau, n_store))
 
     def Load_MU_TAU_hydrograms(self):
 
@@ -435,10 +408,7 @@ class Database(object):
         return xds_ml, xds_at
 
     def Save_TIDE_sim_astro(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TIDE.sim_astro])
-        StoreBugXdset(xds, self.paths.site.TIDE.sim_astro)
+        self.save_nc(xds, self.paths.site.TIDE.sim_astro, True)
 
     def Load_TIDE_sim_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_astro, decode_times=True)
@@ -452,16 +422,10 @@ class Database(object):
         return xds
 
     def Save_TIDE_hist_mmsl(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TIDE.hist_mmsl])
-        xds.to_netcdf(self.paths.site.TIDE.hist_mmsl)
+        self.save_nc(xds, self.paths.site.TIDE.hist_mmsl)
 
     def Save_TIDE_sim_mmsl(self, xds):
-        xds = self.fill_metadata(xds, set_source=True)
-
-        clean_files([self.paths.site.TIDE.sim_mmsl])
-        StoreBugXdset(xds, self.paths.site.TIDE.sim_mmsl)
+        self.save_nc(xds, self.paths.site.TIDE.sim_mmsl, True)
 
     def Load_TIDE_hist_mmsl(self):
         xds = xr.open_dataset(self.paths.site.TIDE.hist_mmsl)
@@ -473,6 +437,7 @@ class Database(object):
 
 
     # COMPLETE DATA 
+    # TODO: continuar repaso
 
     def Load_HIST_Complete(self):
         '''
