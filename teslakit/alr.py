@@ -464,8 +464,7 @@ class ALR_WRP(object):
         f = Plot_Terms(term_mx, term_ds, term_ns, show=show)
         return f
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
-                 dev_filter=False):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
         'Launch ARL model simulations'
 
         # switch library probabilities predictor function 
@@ -556,16 +555,6 @@ class ALR_WRP(object):
                 # Event sequence simulation  (sklearn)
                 X = np.concatenate(list(terms_i.values()), axis=1)
                 prob = pred_prob_fun(X)  # statsmodels // sklearn functions
-
-                # TODO last WT bad values filter
-                # this is a patch. Locate and solve root error needed.
-                filter_max_last_prob = 0.1
-                if prob[-1,-1] > filter_max_last_prob and dev_filter:
-                    ddd = prob[-1,-1] - filter_max_last_prob
-                    prob[-1,-1] = filter_max_last_prob
-                    prob[-1,:-1] = prob[-1,:-1] + ddd/len(prob[-1,:-1])
-                    c_fs+=1
-
                 probTrans = np.cumsum(prob[-1,:])
                 nrnd = np.random.rand()
                 evbmus = np.append(evbmus, np.where(probTrans>nrnd)[0][0]+1)
@@ -578,24 +567,22 @@ class ALR_WRP(object):
             # close progress bar
             pbar.close()
 
+            # TODO ?
             # Probabilities in the nsims simulations
-            evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
-            for i in range(evbmus_sims.shape[0]):
-                for j in range(self.cluster_size):
-                    evbmus_prob[i, j] = len(np.argwhere(evbmus_sims[i,:]==j+1))/float(num_sims)
+            #evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
+            #for i in range(evbmus_sims.shape[0]):
+            #    for j in range(self.cluster_size):
+            #        evbmus_prob[i, j] = len(np.argwhere(evbmus_sims[i,:]==j+1))/float(num_sims)
 
         print()  # white line after all progress bars
-        if dev_filter:
-            p_fs = c_fs*1.0/(len(time_yfrac) - mk_order)
-            print('dev filter: {0} ({1:.6f}%)'.format(c_fs, p_fs))
 
-        evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
+        #evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
         # return ALR simulation data in a xr.Dataset
         xds_out = xr.Dataset(
             {
                 'evbmus_sims': (('time', 'n_sim'), evbmus_sims.astype(int)),
-                'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
+                #'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
             },
 
             coords = {
