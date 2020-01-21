@@ -112,8 +112,10 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
         geo_dist = np.asarray(geo_dist)
 
         # find storm inside circle and calculate parameters
-        ix_in = np.where(geo_dist < r)[0][:]
-        if ix_in.any():
+        if (geo_dist < r).any():
+
+            # storm inside circle
+            ix_in = np.where(geo_dist < r)[0][:]
 
             # storm translation velocity
             geo_dist_ss = []
@@ -185,6 +187,7 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
             time_closest = time_s_in[p_dm][0]  # time closest to point 
 
             # filter storms 
+            # TODO: storms with only one track point inside radius. solve?
             if np.isnan(np.array(prs_s_in)).any() or \
                (np.array(prs_s_in) <= 860).any() or \
                gamma == 0.0:
