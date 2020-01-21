@@ -212,6 +212,7 @@ class Predictor(object):
         'Principal components analysis using estela predictor'
 
         # generate estela predictor
+        # TODO STORE DYNAMIC ESTELA PREDICTOR (too big..)
         xds_estela_pred = dynamic_estela_predictor(
             self.data, var_name, xds_estela)
 
@@ -273,7 +274,7 @@ class Predictor(object):
 
         n_clusters = len(self.KMA.n_clusters.values[:])
         kma_dates = self.KMA.time.values[:]
-        bmus_storms = self.KMA.sorted_bmus.values[:]  # copy numpy.array
+        bmus_storms = np.copy(self.KMA.sorted_bmus.values[:])  # copy numpy.array
 
         for sd, sc in zip(storm_dates, storm_categories):
             sdr =  np.array(sd, dtype='datetime64[D]')  # round to day
