@@ -96,8 +96,9 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
 
     for i_storm in range(n_storms):
 
-        # fix longitude <0 data 
+        # fix longitude <0 data and skip "one point" tracks
         lon_storm = lon[i_storm]
+        if not isinstance(lon_storm, np.ndarray): continue
         lon_storm[lon_storm<0] = lon_storm[lon_storm<0] + 360
 
         # stack storm longitude, latitude
