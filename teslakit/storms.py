@@ -96,9 +96,13 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
 
     for i_storm in range(n_storms):
 
+        # fix longitude <0 data 
+        lon_storm = lon[i_storm]
+        lon_storm[lon_storm<0] = lon_storm[lon_storm<0] + 360
+
         # stack storm longitude, latitude
         lonlat_s = np.column_stack(
-            (lon[i_storm], lat[i_storm])
+            (lon_storm, lat[i_storm])
         )
 
         # index for removing nans
@@ -247,15 +251,15 @@ def GetStormCategory(pres_min):
 
     pres_lims = [920, 944, 964, 979, 1000]
 
-    if pres_min < pres_lims[0]:
+    if pres_min <= pres_lims[0]:
         return 5
-    elif pres_min < pres_lims[1]:
+    elif pres_min <= pres_lims[1]:
         return 4
-    elif pres_min < pres_lims[2]:
+    elif pres_min <= pres_lims[2]:
         return 3
-    elif pres_min < pres_lims[3]:
+    elif pres_min <= pres_lims[3]:
         return 2
-    elif pres_min < pres_lims[4]:
+    elif pres_min <= pres_lims[4]:
         return 1
     else:
         return 0
