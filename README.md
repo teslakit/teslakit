@@ -2,7 +2,6 @@
 
 Teslakit is a Python3 library for statistical calculations and methodologies for handling global climate data.
 
-				  	**Currently on development**
 
 ## Main contents
 
