@@ -48,25 +48,6 @@ Then install teslakit
 python setup.py install
 ```
 
-### Installing into Anaconda environment 
-
-Navigate to the base root of [teslakit](./)
-
-Create a conda environment from environment.yml file
-
-```
-conda env create -f environment.yml
-```
-
-Then activate "teslakit" conda environment
-
-```
-cond activate teslakit
-
-# to check that the environment is installed
-conda env list
-```
-
 ### Installing optional modules
 
 Basemap module is used in some Teslakit figures.
@@ -87,7 +68,12 @@ launch jupyter notebook
 jupyter notebook
 ```
 
-start with [00_Set_Database.ipynb](notebooks/nb_KWAJALEIN/00_Set_Database.ipynb)
+Current development test site notebooks can be found at [ROI](notebooks/nb_ROI/)
+
+
+Input data adquisition is currently not integrated in teslakit.
+
+Test site input data list can be found at: [00_Set_Database.ipynb](notebooks/nb_ROI/00_Set_Database.ipynb)
 
 
 ## Contributors
