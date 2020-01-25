@@ -526,8 +526,8 @@ class Database(object):
         pf = self.paths.site.SIMULATION.covariates_hourly
 
         if not op.isfile(pf) or regenerate:
-            xds = self.Generate_SIM_Covariates(n_sim_awt, n_sim_mjo,n_sim_dwt)
-            StoreBugXdset(xds, pf)
+            xds = self.Generate_SIM_Covariates(n_sim_awt, n_sim_mjo, n_sim_dwt)
+            self.save_nc(xds, pf, safe_time=True)
 
         else:
             xds = xr.open_dataset(pf, decode_times=True)
@@ -571,7 +571,7 @@ class Database(object):
                 'MJO': (('time',), MJO_h.evbmus_sims.values[:].astype(int)),
                 'DWT': (('time',), DWT_h.evbmus_sims.values[:].astype(int)),
                 'MMSL': (('time',), MSL_h.mmsl.values[:]),
-                'AT': (('time',), ATD_h.tide.values[:]),
+                'AT': (('time',), ATD_h.astro.values[:]),
             },
             coords = {'time': times}
         )
@@ -579,14 +579,16 @@ class Database(object):
         return xds
 
     def Save_SIM_Waves(self, xds):
-        StoreBugXdset(xds, self.paths.site.SIMULATION.waves_hourly)
+        self.save_nc(xds, self.paths.site.SIMULATION.waves_hourly,
+                     safe_time=True)
 
     def Load_SIM_Waves(self):
         return xr.open_dataset(
             self.paths.site.SIMULATION.waves_hourly, decode_times=True)
 
     def Save_SIM_Complete(self, xds):
-        StoreBugXdset(xds, self.paths.site.SIMULATION.complete_hourly)
+        self.save_nc(xds, self.paths.site.SIMULATION.complete_hourly,
+                     safe_time=True)
 
     def Load_SIM_Complete(self):
         return xr.open_dataset(
