@@ -1,7 +1,6 @@
 appnope==0.1.0
 attrs==19.1.0
 backcall==0.1.0
-basemap==1.2.1
 bleach==3.1.0
 cftime==1.0.4.2
 cycler==0.10.0
@@ -62,7 +61,6 @@ testpath==0.4.2
 tornado==6.0.3
 tqdm==4.41.1
 traitlets==4.3.2
-ttide===0.3-exp
 wcwidth==0.1.7
 webencodings==0.5.1
 widgetsnbextension==3.5.1
