@@ -312,9 +312,19 @@ def Plot_Compare_Transitions(num_clusters, bmus_values_hist, bmus_values_sim,
     '''
     Plot many probabilities transition comparisons between 2 bmus series
 
-    bmus_values_hist, bmus_values_sim - bmus series to compare
+    bmus_values_hist, bmus_values_sim (series x n_sim) - bmus series to compare
     num_clusters  - total number of clusters at series
     '''
+
+    # if n_sim > 1 lets safe-join simulated bmus for probs calcs.
+    n_sim = bmus_values_sim.shape[1]
+    if n_sim > 1:
+        # add nan splitter and then flatten
+        bmus_values_sim = np.append(
+            bmus_values_sim, np.zeros((1, n_sim))*np.nan,
+            axis = 0,
+        )
+        bmus_values_sim = bmus_values_sim.flatten('F')
 
     # get cluster colors
     wt_colors = GetClusterColors(num_clusters)

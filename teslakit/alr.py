@@ -602,6 +602,7 @@ class ALR_WRP(object):
 
         py_month_ini  - start month for PerpetualYear bmus comparison
         '''
+        # TODO: add arg n_sim = None (for plotting only one sim output)
 
         # load fit and sim bmus
         xds_ALR_fit = self.LoadBmus_Fit()
@@ -637,16 +638,14 @@ class ALR_WRP(object):
         )
         l_figs.append(fig_PP)
 
-        # Plot WTs Transition (probability change / scatter Fit vs. Sim) 
-        for s in range(num_sims):
+        # Plot WTs Transition (probability change / scatter Fit vs. ACCUMULATED Sim) 
+        sttl = 'Cluster Probabilities Transitions: All Simulations'
+        fig_CT = Plot_Compare_Transitions(
+            cluster_size, bmus_values_hist, bmus_values_sim,
+            sttl = sttl, show = show,
+        )
+        l_figs.append(fig_CT)
 
-            # plot each simulation 
-            sttl = 'Cluster Probabilities Transitions. Simulation {0}'.format(s)
-            fig = Plot_Compare_Transitions(
-                cluster_size, bmus_values_hist, bmus_values_sim[:,s],
-                sttl = sttl, show = show,
-            )
-            l_figs.append(fig)
 
         # TODO export handling (if show=False)    
         #p_save = self.p_report_sim
