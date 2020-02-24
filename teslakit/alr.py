@@ -501,14 +501,6 @@ class ALR_WRP(object):
         # use a d_terms_settigs copy 
         d_terms_settings_sim = self.d_terms_settings.copy()
 
-        # preload some data
-        if xds_covars_sim != None:
-
-            # simulation covariates
-            sim_covars_T = xds_covars_sim.cov_values.values
-            sim_covars_T_mean = sim_covars_T.mean(axis=0)
-            sim_covars_T_std = sim_covars_T.std(axis=0)
-
         # filter usage counter
         c_fs = 0
 
@@ -517,11 +509,25 @@ class ALR_WRP(object):
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
 
+            # preload some data (simulation covariates)
+            cvtxt = ''
+            if xds_covars_sim != None:
+
+                # check if n_sim dimension in xds_covars_sim
+                if 'n_sim' in xds_covars_sim.dims:
+                    sim_covars_T = xds_covars_sim.isel(n_sim=n).cov_values.values
+                    cvtxt = ' (Covs. {0:03d})'.format(n+1)
+                else:
+                    sim_covars_T = xds_covars_sim.cov_values.values
+
+                sim_covars_T_mean = sim_covars_T.mean(axis=0)
+                sim_covars_T_std = sim_covars_T.std(axis=0)
+
             # progress bar 
             pbar = tqdm(
                 total=len(time_yfrac)-mk_order,
                 file=sys.stdout,
-                desc = 'Sim. Num. {0:03d}'.format(n+1)
+                desc = 'Sim. Num. {0:03d}{1}'.format(n+1, cvtxt)
             )
 
             evbmus = evbmus_values[1:mk_order+1]
