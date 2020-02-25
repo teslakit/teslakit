@@ -76,10 +76,11 @@ class Climate_Emulator(object):
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
 
-        # output simulation storage paths
-        self.p_sim_wvs_notcs = op.join(self.p_base, 'SIM_WAVES_noTCs.nc')
-        self.p_sim_wvs_tcs   = op.join(self.p_base, 'SIM_WAVES_TCs.nc')
-        self.p_sim_tcs       = op.join(self.p_base, 'SIM_TCs.nc')  # simulated TCs
+        # output simulation storage paths (folders)
+        self.p_sims = op.join(self.p_base, 'Simulations')          # folder
+        self.p_sim_wvs_notcs = op.join(self.p_sims, 'WAVES_noTCs')
+        self.p_sim_wvs_tcs   = op.join(self.p_sims, 'WAVES_TCs')
+        self.p_sim_tcs       = op.join(self.p_sims, 'TCs')
 
     def ConfigVariables(self, config):
         '''
@@ -199,6 +200,20 @@ class Climate_Emulator(object):
             open(self.p_config, 'wb')
         )
 
+    def SaveSim(self, WVS_sim, TCs_sim, WVS_upd, n_sim):
+        'Store waves and TCs simulation'
+
+        # storage data and folders
+        d_fs = [WVS_sim, TCs_sim, WVS_upd]
+        p_fs = [self.p_sim_wvs_notcs, self.p_sim_tcs, self.p_sim_wvs_tcs]
+
+        # store each simulation at different nc file 
+        for d, p in zip(d_fs, p_fs):
+            if not op.isdir(p): os.makedirs(p)
+
+            nm = '{0:08d}.nc'.format(n_sim)  # sim code
+            StoreBugXdset(d, op.join(p, nm))
+
     def Load(self):
         'Loads fitted climate emulator data'
 
@@ -217,21 +232,26 @@ class Climate_Emulator(object):
             open(self.p_config, 'rb')
         )
 
-    def LoadSim(self):
+    def LoadSim(self, n_sim=0):
         'Load waves and TCs simulations'
 
-        WVS_sims, TCs_sims, WVS_upd = None, None, None
+        WVS_sim, TCs_sim, WVS_upd = None, None, None
 
-        if op.isfile(self.p_sim_wvs_notcs):
-            WVS_sims = xr.open_dataset(self.p_sim_wvs_notcs)
+        nm = '{0:08d}.nc'.format(n_sim)  # sim code
+        p_WVS_sim = op.join(self.p_sim_wvs_notcs, nm)
+        p_TCS_sim = op.join(self.p_sim_tcs, nm)
+        p_WVS_upd = op.join(self.p_sim_wvs_tcs, nm)
 
-        if op.isfile(self.p_sim_tcs):
-            TCs_sims = xr.open_dataset(self.p_sim_tcs)
+        if op.isfile(p_WVS_sim):
+            WVS_sim = xr.open_dataset(p_WVS_sim)
 
-        if op.isfile(self.p_sim_wvs_tcs):
-            WVS_upd = xr.open_dataset(self.p_sim_wvs_tcs)
+        if op.isfile(p_TCS_sim):
+            TCs_sim = xr.open_dataset(p_TCS_sim)
 
-        return WVS_sims, TCs_sims, WVS_upd
+        if op.isfile(p_WVS_upd):
+            WVS_upd = xr.open_dataset(p_WVS_upd)
+
+        return WVS_sim, TCs_sim, WVS_upd
 
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'
@@ -634,17 +654,15 @@ class Climate_Emulator(object):
         # concatenate simulations 
         WVS_sims = xr.concat(ls_wvs_sim, 'n_sim')
 
-        # store simulations
-        StoreBugXdset(WVS_sims, self.p_sim_wvs_notcs)
-
         return WVS_sims
 
-    def Simulate_TCs(self, xds_DWT, xds_TCs_params,
+    def Simulate_TCs(self, xds_DWT, WVS_sims, xds_TCs_params,
                      xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT):
         '''
         Climate Emulator DWTs TCs simulation
 
         xds_DWT             - xarray.Dataset, vars: evbmus_sims (time,)
+        WVS_sim             - xarray.Dataset, output from Simulate_Waves()
 
         xds_TCs_params      - xr.Dataset. vars(storm): pressure_min
         xds_TCs_simulation  - xr.Dataset. vars(storm): mu, hs, ss, tp, dir
@@ -659,9 +677,6 @@ class Climate_Emulator(object):
         dwt_bmus_sim = xds_DWT.evbmus_sims.values[:]
         dwt_time_sim = xds_DWT.time.values[:]
         n_clusters = len(xds_KMA_MS.n_clusters)
-
-        # load waves simulation, will be modified
-        WVS_sims = xr.open_dataset(self.p_sim_wvs_notcs)
 
         # iterate waves simulations 
         ls_tcs_sim = []
@@ -681,10 +696,6 @@ class Climate_Emulator(object):
         # concatenate simulations 
         TCs_sim = xr.concat(ls_tcs_sim, 'n_sim')
         WVS_upd = xr.concat(ls_wvs_upd, 'n_sim')
-
-        # store simulations
-        StoreBugXdset(TCs_sim, self.p_sim_tcs)
-        StoreBugXdset(WVS_upd, self.p_sim_wvs_tcs)
 
         return TCs_sim, WVS_upd
 
