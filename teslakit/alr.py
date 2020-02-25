@@ -465,7 +465,16 @@ class ALR_WRP(object):
         return f
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
-        'Launch ARL model simulations'
+        '''
+        Launch ARL model simulations
+
+        num_sims           - number of simulations to compute
+        time_sim           - time array to solve
+
+        xds_covars_sim     - xr.Dataset (time,), cov_values
+            Covariates used at simulation, compatible with "n_sim" dimension
+            ("n_sim" dimension (optional) will be iterated with each simulation)
+        '''
 
         # switch library probabilities predictor function 
         if self.model_library == 'statsmodels':
