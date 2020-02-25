@@ -1,6 +1,8 @@
 # TESLA-KIT 
 
 Teslakit is a Python3 library for statistical calculations and methodologies for handling global climate data.
+The stochastic climate emulator proposed is built on the recognition that coastal conditions are the result of meteorological forcing, 
+and that synoptic-scale meteorology is in turn a consequence of large-scale quasi-steady atmospheric and oceanic patterns (e.g., Hannachi & Legras, 1995)
 
 
 ## Main contents
