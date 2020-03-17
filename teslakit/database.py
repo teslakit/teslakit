@@ -12,8 +12,9 @@ from datetime import timedelta
 
 # pip
 from prettytable import PrettyTable
-import xarray as xr
 import numpy as np
+import pandas as pd
+import xarray as xr
 
 # teslakit
 from .__init__ import __version__, __author__
@@ -696,6 +697,94 @@ class Database(object):
         xds_MJO = xds_MJO.sel(time=slice(dc[0], dc[-1]))
 
         return xds_MJO, xds_DWT
+
+    # NEARSHORE: COMPLETE DATASETS (RBF DATASETS)
+
+    def Save_NEARSHORE_FULL_sea(self, pd_waves):
+        'Stores sea waves full dataset. Used at RBF Reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset)
+
+    def Load_NEARSHORE_FULL_sea(self):
+        'Load sea waves full dataset'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset)
+
+    def Save_NEARSHORE_FULL_swell(self, pd_waves):
+        'Stores swells waves full dataset. Used at RBF Reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset)
+
+    def Load_NEARSHORE_FULL_swell(self):
+        'Load swells waves full datasets'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset)
+
+    # NEARSHORE: MDA CLASSIFICATION (RBF SUBSET)
+
+    def Save_NEARSHORE_MDA_sea(self, pd_waves):
+        'Stores sea waves subset (from mda selection)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_subset)
+
+    def Load_NEARSHORE_MDA_sea(self):
+        'Load sea waves subset (from mda selection)'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_subset)
+
+    def Save_NEARSHORE_MDA_swell(self, pd_waves):
+        'Stores swell waves subset (from mda selection)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_subset)
+
+    def Load_NEARSHORE_MDA_swell(self):
+        'Load swell waves subset (from mda selection)'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_subset)
+
+    # NEARSHORE: POINT PROPAGATION (RBF TARGET)
+
+    def Save_NEARSHORE_TARGET_sea(self, pd_waves):
+        'Stores sea waves target (from swan propagation)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_target)
+
+    def Load_NEARSHORE_TARGET_sea(self):
+        'Load sea waves target (from swan propagation)'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_target)
+
+    def Save_NEARSHORE_TARGET_swell(self, pd_waves):
+        'Stores swell waves target (from swan propagation)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_target)
+
+    def Load_NEARSHORE_TARGET_swell(self):
+        'Load swell waves target (from swan propagation)'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_target)
+
+    # NEARSHORE: RBF RECONSTRUCTION
+
+    def Save_NEARSHORE_RECONSTRUCTION_sea(self, pd_waves):
+        'Stores sea waves RBF reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon)
+
+    def Load_NEARSHORE_RECONSTRUCTION_sea(self):
+        'Load sea waves RBF reconstruction'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon)
+
+    def Save_NEARSHORE_RECONSTRUCTION_swell(self, pd_waves):
+        'Stores swell waves RBF reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon)
+
+    def Load_NEARSHORE_RECONSTRUCTION_swell(self):
+        'Load swell waves RBF reconstruction'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon)
 
 class PathControl(object):
     'auxiliar object for handling teslakit files paths'
