@@ -17,10 +17,11 @@ sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 # teslakit
 from teslakit.database import Database
 from teslakit.climate_emulator import Climate_Emulator
-from teslakit.waves import AnnualMaxima
+from teslakit.waves import Aggregate_WavesFamilies, \
+Intradaily_Hydrograph, AWL
 
 from teslakit.plotting.waves import Plot_Waves_Histogram_FitSim
-from teslakit.plotting.output import Plot_Output
+from teslakit.plotting.climate_emulator import Plot_Simulation
 from teslakit.plotting.extremes import Plot_ReturnPeriodValidation
 
 
@@ -33,39 +34,41 @@ db = Database(p_data)
 db.SetSite('KWAJALEIN')
 
 # climate emulator
-CE = Climate_Emulator(db.paths.site.EXTREMES.climate_emulator)
+pe = db.paths.site.EXTREMES.climate_emulator
+CE = Climate_Emulator(pe)
 CE.Load()
 
-# test path
-p_test = op.join(p_data, 'tests', 'ClimateEmulator', 'plot_output')
-
 
 # -------------------------
-# load waves famileis fit-sim 
-#xds_wvs_fit = xr.open_dataset(op.join(p_test, 'waves_fit.nc'))
-#xds_wvs_sim = xr.open_dataset(op.join(p_test, 'waves_sim.nc'))
+# load waves historical and simulated 
 
-#Plot_Waves_Histogram_FitSim(xds_wvs_fit, xds_wvs_sim)
+WVS_fit = CE.WVS_MS
+WVS_sim, TCs_sim, WVS_upd = CE.LoadSim()
 
 
-# -------------------------
-# load climate emulator full output 
-SIM = xr.open_dataset(op.join(p_test, 'waves_output.nc'))
-
-#Plot_Output(SIM)
+# Plot waves historical vs simulated histograms by family and variable
+Plot_Waves_Histogram_FitSim(WVS_fit, WVS_upd)
 
 
 # -------------------------
 # plot annual maxima return period
-nv = 'AWL'
+nv = 'Hs'
 
 # historical annual maxima
-hist_A = AnnualMaxima(CE.WVS_MS, nv)
+hist_A = CE.WVS_MS[nv].groupby('time.year').max(dim='time')
+print(hist_A)
+print()
 
-# load climate emulator annual maxima
-sim_A = AnnualMaxima(SIM, nv)
+# simulation annual maxima 
+sim_A = SIM_WAVES_h[nv].groupby('time.year').max(dim='time')
+print(sim_A)
+
+
+# TODO: test fast
+sim_A.to_netcdf('tenp_sim_A.nc')
+hist_A.to_netcdf('tenp_hist_A.nc')
 
 # Plot Return Period graph
-Plot_ReturnPeriodValidation(hist_A, sim_A, nv)
+Plot_ReturnPeriodValidation(hist_A, sim_A)
 
 
