@@ -978,6 +978,7 @@ class Climate_Emulator(object):
                 # get probability of category change for this WT
                 prob_t = np.append(prob_TCs[:, iwt-n_clusters], 1)
 
+                # generate random r2 category
                 ri = rand()
                 si = np.where(prob_t >= ri)[0][0]
 
@@ -992,6 +993,8 @@ class Climate_Emulator(object):
                     ss_s = 0
 
                 else:
+
+                    # locate TCs with category "si"
                     s_pmin = TCs_params.pressure_min.values[:]
                     p1, p2 = {
                         0:(1000, np.nanmax(s_pmin)+1),
@@ -1005,7 +1008,10 @@ class Climate_Emulator(object):
                     psi = np.where((s_pmin > p1) & (s_pmin <= p2))[0]
 
                     if psi.any():
-                        ri = randint(len(psi))
+
+                        # get a random TC from psi indexes
+                        ri = choice(psi)
+
                         mu_s = TCs_simulation.mu.values[ri]
                         ss_s = TCs_simulation.ss.values[ri]
                         tau_s = 0.5
