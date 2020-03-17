@@ -75,10 +75,10 @@ def DeNormalize(data_norm, ix_scalar, ix_directional, minis, maxis):
 
 def Normalized_Distance(M, D, ix_scalar, ix_directional):
     '''
-    Normalized distance
+    Normalized distance between rows in M and D
 
-    M -
-    D -
+    M - numpy array
+    D - numpy array
     ix_scalar - scalar columns indexes
     ix_directional - directional columns indexes
     '''
@@ -96,6 +96,29 @@ def Normalized_Distance(M, D, ix_scalar, ix_directional):
 
     dist = np.sum(dif**2,1)
     return dist
+
+def nearest_indexes(data_q, data, ix_scalar, ix_directional):
+    '''
+    for each row in data_q, find nearest point in data and store index.
+
+    Returns array of indexes of each nearest point to all entries in data_q
+    '''
+
+    # normalize scalar and directional data 
+    data_norm, minis, maxis = Normalize(data, ix_scalar, ix_directional)
+    data_q_norm, _, _ = Normalize(
+        data_q, ix_scalar, ix_directional,
+        minis=minis, maxis=maxis
+    )
+
+    # compute distances, store nearest distance index
+    ix_near = np.zeros(data_q_norm.shape[0]).astype(int)
+    for c, dq in enumerate(data_q_norm):
+        ddq = np.repeat([dq], data_norm.shape[0], axis=0)
+        D = Normalized_Distance(data_norm, ddq, ix_scalar, ix_directional)
+        ix_near[c] = np.argmin(D)
+
+    return ix_near
 
 def MaxDiss_Simplified_NoThreshold(data, num_centers, ix_scalar, ix_directional):
     '''
