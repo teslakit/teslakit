@@ -81,8 +81,6 @@ def fast_reindex_hourly(xds_data):
     xds_data - xarray.Dataset with time coordinate
     '''
 
-    # TODO: add daily option
-
     # def aux function for getting timedeltas as int array
     def get_deltas(t):
         t_df = (np.diff(t))
@@ -119,6 +117,58 @@ def fast_reindex_hourly(xds_data):
 
     return xds_out
 
+def fast_reindex_hourly_nsim(xds_data):
+    '''
+    Fast and secure method to reindex (pad) xarray.Dataset to hourly data
+
+    xds_data - xarray.Dataset with time, n_sim coordinates
+    '''
+
+    # def aux function for getting timedeltas as int array
+    def get_deltas(t):
+        t_df = (np.diff(t))
+        t_tp = type(t_df[0])
+
+        # total number of hours each date interval
+        if  t_tp == np.timedelta64:
+            d = t_df.astype('timedelta64[h]') / np.timedelta64(1,'h')
+            d = d.astype(int)
+
+        else:
+            # lambda vectorized: datetime.timedelta to number of hours 
+            lb_ghs = lambda t: t.days*24
+            np_ghs = np.vectorize(lb_ghs)
+            d = np_ghs(t_df)
+
+        return d
+
+    # generate output time array
+    time_base = xds_data.time.values[:]
+    t0, t1 = date2datenum(time_base[0]), date2datenum(time_base[-1])
+    time_h = generate_datetimes(t0, t1, dtype='datetime64[h]')
+
+    # repeat data in each variable new lower time frame (pad) 
+    ds = get_deltas(time_base)
+
+    # iterate n_sim dimension
+    l_sim = []
+    for s in xds_data.n_sim:
+        xds_d = xds_data.sel(n_sim=s)
+
+        # fast reindex
+        dv = {}
+        for vn in xds_d.keys():
+            b = xds_d[vn].values[:]
+            p = np.append(np.repeat(b[:-1], ds), b[-1])
+            dv[vn] = (('time',), p)
+        # return xarray.Dataset
+        xds_rd = xr.Dataset(dv, coords={'time': time_h})
+        l_sim.append(xds_rd)
+
+    # concat simulations
+    xds_out = xr.concat(l_sim, 'n_sim')
+
+    return xds_out
 def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
     Reindex xarray.Dataset to daily data between optional limits
