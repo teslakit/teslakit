@@ -305,8 +305,8 @@ def Aggregate_WavesFamilies(wvs_fams):
 
     # Dir from families
     tmp3 = np.arctan2(
-        np.sum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
-        np.sum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
+        np.nansum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
+        np.nansum(np.power(vv_Hs,2) * vv_Tp * np.cos(vv_Dir * np.pi/180), axis=1)
     )
     tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
     DIR = tmp3 * 180/np.pi
