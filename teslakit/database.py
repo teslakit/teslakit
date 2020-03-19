@@ -25,7 +25,9 @@ ReadGowMat, ReadCoastMat, ReadEstelaMat
 
 from .util.time_operations import xds_reindex_daily, xds_reindex_monthly, \
 xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
-generate_datetimes
+fast_reindex_hourly_nsim, generate_datetimes
+
+from .mjo import MJO_Categories
 
 
 # TODO: change all historical data to standarized .nc files
@@ -408,6 +410,12 @@ class Database(object):
 
         return xds_ml, xds_at
 
+    def Load_TIDE_hist_astro(self):
+        xds_at = xr.open_dataset(self.paths.site.TIDE.hist_astro)
+        xds_at = self.fill_metadata(xds_at)
+
+        return  xds_at
+
     def Save_TIDE_sim_astro(self, xds):
         self.save_nc(xds, self.paths.site.TIDE.sim_astro, True)
 
@@ -437,10 +445,113 @@ class Database(object):
         return xds
 
 
-    # COMPLETE DATA 
-    # TODO: continuar repaso
+    # COMPLETE OFFSHORE OUTPUT 
 
-    def Load_HIST_Complete(self):
+    def Save_CE_AllSims(self, pd_all_sims):
+        pd_all_sims.to_pickle(self.paths.site.SIMULATION.waves_allsims)
+
+    def Load_CE_AllSims(self ):
+        return pd.read_pickle(self.paths.site.SIMULATION.waves_allsims)
+
+    def Save_SIM_Waves_hourly(self, xds):
+        self.save_nc(xds, self.paths.site.SIMULATION.waves_hourly,
+                     safe_time=True)
+
+    def Load_SIM_Waves_hourly(self):
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.waves_hourly, decode_times=True)
+
+    def Save_SIM_Covariates_hourly(self, xds):
+        self.save_nc(xds, self.paths.site.SIMULATION.covariates_hourly,
+                     safe_time=True)
+
+    def Load_SIM_Covariates_hourly(self):
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.covariates_hourly, decode_times=True)
+
+    def Load_SIM_Covariates_hourly(self, regenerate=False, total_sims=None):
+        '''
+        Load all simulated covariates (hourly):
+            AWTs, DWTs, MJO, MMSL, AT
+
+        regenerate  - forces hourly dataset regeneration
+        '''
+
+        pf = self.paths.site.SIMULATION.covariates_hourly
+
+        if not op.isfile(pf) or regenerate:
+            xds = self.Generate_SIM_Covariates(total_sims=total_sims)
+
+            if op.isfile(pf): os.remove(pf)
+            self.save_nc(xds, pf, safe_time=True)
+
+        else:
+            xds = xr.open_dataset(pf, decode_times=True)
+
+        return xds
+
+    def Generate_SIM_Covariates(self, total_sims=None):
+
+        # load data
+        AWT = self.Load_SST_AWT_sim()
+        MSL = self.Load_TIDE_sim_mmsl()
+        MJO = self.Load_MJO_sim()
+        DWT = self.Load_ESTELA_DWT_sim()
+        ATD_h = self.Load_TIDE_sim_astro()  # hourly data, 1 sim
+
+        # optional select total sims
+        if total_sims != None:
+            AWT = AWT.isel(n_sim=slice(0, total_sims))
+            MSL = MSL.isel(n_sim=slice(0, total_sims))
+            MJO = MJO.isel(n_sim=slice(0, total_sims))
+            DWT = DWT.isel(n_sim=slice(0, total_sims))
+
+        # reindex data to hourly (pad)
+        AWT_h = fast_reindex_hourly_nsim(AWT)
+        MSL_h = fast_reindex_hourly_nsim(MSL)
+        MJO_h = fast_reindex_hourly_nsim(MJO)
+        DWT_h = fast_reindex_hourly_nsim(DWT)
+
+        # common dates limits
+        d1, d2 = xds_limit_dates([AWT_h, ATD_h, MSL_h, MJO_h, DWT_h, ATD_h])
+        AWT_h = AWT_h.sel(time = slice(d1,d2))
+        MSL_h = MSL_h.sel(time = slice(d1,d2))
+        MJO_h = MJO_h.sel(time = slice(d1,d2))
+        DWT_h = DWT_h.sel(time = slice(d1,d2))
+        ATD_h = ATD_h.sel(time = slice(d1,d2))
+
+        # copy to new dataset
+        times = AWT_h.time.values[:]
+        xds = xr.Dataset(
+            {
+                'AWT': (('n_sim','time'), AWT_h.evbmus_sims.values[:].astype(int)),
+                'MJO': (('n_sim','time'), MJO_h.evbmus_sims.values[:].astype(int)),
+                'DWT': (('n_sim','time'), DWT_h.evbmus_sims.values[:].astype(int)),
+                'MMSL': (('n_sim','time'), MSL_h.mmsl.values[:]),
+                'AT': (('time',), ATD_h.astro.values[:]),
+            },
+            coords = {'time': times}
+        )
+
+        return xds
+
+    def Save_SIM_Complete_hourly(self, xds):
+        self.save_nc(xds, self.paths.site.SIMULATION.complete_hourly,
+                     safe_time=True)
+
+    def Load_SIM_Complete_hourly(self):
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.complete_hourly, decode_times=True)
+
+    def Save_SIM_Complete_daily(self, xds):
+        self.save_nc(xds, self.paths.site.SIMULATION.complete_daily,
+                     safe_time=True)
+
+    def Load_SIM_Complete_daily(self):
+        return xr.open_dataset(
+            self.paths.site.SIMULATION.complete_daily, decode_times=True)
+
+    def Generate_HIST_Complete(self):
         '''
         Load all historical variables (hourly/3hourly):
             AWTs, DWTs, MJO, MMSL, AT, Hs, Tp, Dir, SS
@@ -468,7 +579,6 @@ class Database(object):
         )
 
         # get MJO categories 
-        from .mjo import MJO_Categories
         mjo_cs, _ = MJO_Categories(MJO['rmm1'], MJO['rmm2'], MJO['phase'])
         MJO['bmus'] = (('time',), mjo_cs)
 
@@ -505,7 +615,7 @@ class Database(object):
                 'MJO': (('time',), MJO_h.bmus.values[:].astype(int)),
                 'DWT': (('time',), DWT_h.bmus.values[:].astype(int)),
                 'MMSL': (('time',), MSL_h.mmsl.values[:] / 1000), # mm to m
-                'AT': (('time',), ATD_h.tide.values[:]),
+                'AT': (('time',), ATD_h.predicted.values[:]),
                 'Hs': (('time',), WVS_h.Hs.values[:]),
                 'Tp': (('time',), WVS_h.Tp.values[:]),
                 'Dir': (('time',), WVS_h.Dir.values[:]),
@@ -515,85 +625,13 @@ class Database(object):
 
         return xds
 
-    def Load_SIM_Covariates(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0,
-                            regenerate=False):
-        '''
-        Load all simulated covariates (hourly):
-            AWTs, DWTs, MJO, MMSL, AT
-
-        regenerate  - forces hourly dataset regeneration
-        '''
-
-        pf = self.paths.site.SIMULATION.covariates_hourly
-
-        if not op.isfile(pf) or regenerate:
-            xds = self.Generate_SIM_Covariates(n_sim_awt, n_sim_mjo, n_sim_dwt)
-            self.save_nc(xds, pf, safe_time=True)
-
-        else:
-            xds = xr.open_dataset(pf, decode_times=True)
-
-        return xds
-
-    def Generate_SIM_Covariates(self, n_sim_awt=0, n_sim_mjo=0, n_sim_dwt=0):
-
-        # load data
-        AWT = self.Load_SST_AWT_sim()
-        MSL = self.Load_TIDE_sim_mmsl()
-        MJO = self.Load_MJO_sim()
-        DWT = self.Load_ESTELA_DWT_sim()
-        ATD_h = self.Load_TIDE_sim_astro()  # hourly data, 1 sim
-
-        # select n_sim
-        AWT = AWT.isel(n_sim=n_sim_awt)
-        MSL = MSL.isel(n_sim=n_sim_awt)
-        MJO = MJO.isel(n_sim=n_sim_mjo)
-        DWT = DWT.isel(n_sim=n_sim_dwt)
-
-        # reindex data to hourly (pad)
-        AWT_h = fast_reindex_hourly(AWT)
-        MSL_h = fast_reindex_hourly(MSL)
-        MJO_h = fast_reindex_hourly(MJO)
-        DWT_h = fast_reindex_hourly(DWT)
-
-        # common dates limits
-        d1, d2 = xds_limit_dates([AWT_h, ATD_h, MSL_h, MJO_h, DWT_h, ATD_h])
-        AWT_h = AWT_h.sel(time = slice(d1,d2))
-        MSL_h = MSL_h.sel(time = slice(d1,d2))
-        MJO_h = MJO_h.sel(time = slice(d1,d2))
-        DWT_h = DWT_h.sel(time = slice(d1,d2))
-        ATD_h = ATD_h.sel(time = slice(d1,d2))
-
-        # copy to new dataset
-        times = AWT_h.time.values[:]
-        xds = xr.Dataset(
-            {
-                'AWT': (('time',), AWT_h.evbmus_sims.values[:].astype(int)),
-                'MJO': (('time',), MJO_h.evbmus_sims.values[:].astype(int)),
-                'DWT': (('time',), DWT_h.evbmus_sims.values[:].astype(int)),
-                'MMSL': (('time',), MSL_h.mmsl.values[:]),
-                'AT': (('time',), ATD_h.astro.values[:]),
-            },
-            coords = {'time': times}
-        )
-
-        return xds
-
-    def Save_SIM_Waves(self, xds):
-        self.save_nc(xds, self.paths.site.SIMULATION.waves_hourly,
+    def Save_HIST_Complete_hourly(self, xds):
+        self.save_nc(xds, self.paths.site.HISTORICAL.complete_hourly,
                      safe_time=True)
 
-    def Load_SIM_Waves(self):
+    def Load_HIST_Complete_hourly(self):
         return xr.open_dataset(
-            self.paths.site.SIMULATION.waves_hourly, decode_times=True)
-
-    def Save_SIM_Complete(self, xds):
-        self.save_nc(xds, self.paths.site.SIMULATION.complete_hourly,
-                     safe_time=True)
-
-    def Load_SIM_Complete(self):
-        return xr.open_dataset(
-            self.paths.site.SIMULATION.complete_hourly, decode_times=True)
+            self.paths.site.HISTORICAL.complete_hourly, decode_times=True)
 
     # SPECIAL PLOTS
 
@@ -700,25 +738,45 @@ class Database(object):
 
     # NEARSHORE: COMPLETE DATASETS (RBF DATASETS)
 
-    def Save_NEARSHORE_FULL_sea(self, pd_waves):
-        'Stores sea waves full dataset. Used at RBF Reconstruction'
+    def Save_NEARSHORE_HIST_sea(self, pd_waves):
+        'Stores sea waves full historical dataset. (offshore)'
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset)
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset_hist)
 
-    def Load_NEARSHORE_FULL_sea(self):
-        'Load sea waves full dataset'
+    def Load_NEARSHORE_HIST_sea(self):
+        'Load sea waves full historical dataset'
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset)
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset_hist)
 
-    def Save_NEARSHORE_FULL_swell(self, pd_waves):
-        'Stores swells waves full dataset. Used at RBF Reconstruction'
+    def Save_NEARSHORE_HIST_swell(self, pd_waves):
+        'Stores swells waves full historical dataset. (offshore)'
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset)
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset_hist)
 
-    def Load_NEARSHORE_FULL_swell(self):
-        'Load swells waves full datasets'
+    def Load_NEARSHORE_HIST_swell(self):
+        'Load swells waves full historical datasets'
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset)
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset_hist)
+
+    def Save_NEARSHORE_SIM_sea(self, pd_waves):
+        'Stores sea waves full simulated dataset. (offshore)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset_sim)
+
+    def Load_NEARSHORE_SIM_sea(self):
+        'Load sea waves full simulated dataset'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset_sim)
+
+    def Save_NEARSHORE_SIM_swell(self, pd_waves):
+        'Stores swells waves full simulated dataset. (offshore)'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset_sim)
+
+    def Load_NEARSHORE_SIM_swell(self):
+        'Load swells waves full simulated datasets'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset_sim)
 
     # NEARSHORE: MDA CLASSIFICATION (RBF SUBSET)
 
@@ -766,25 +824,46 @@ class Database(object):
 
     # NEARSHORE: RBF RECONSTRUCTION
 
-    def Save_NEARSHORE_RECONSTRUCTION_sea(self, pd_waves):
+    def Save_NEARSHORE_RECONSTRUCTION_HIST_sea(self, pd_waves):
         'Stores sea waves RBF reconstruction'
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon)
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon_hist)
 
-    def Load_NEARSHORE_RECONSTRUCTION_sea(self):
+    def Load_NEARSHORE_RECONSTRUCTION_HIST_sea(self):
         'Load sea waves RBF reconstruction'
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon)
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon_hist)
 
-    def Save_NEARSHORE_RECONSTRUCTION_swell(self, pd_waves):
+    def Save_NEARSHORE_RECONSTRUCTION_HIST_swell(self, pd_waves):
         'Stores swell waves RBF reconstruction'
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon)
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon_hist)
 
-    def Load_NEARSHORE_RECONSTRUCTION_swell(self):
+    def Load_NEARSHORE_RECONSTRUCTION_HIST_swell(self):
         'Load swell waves RBF reconstruction'
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon)
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_hist)
+
+    def Save_NEARSHORE_RECONSTRUCTION_SIM_sea(self, pd_waves):
+        'Stores sea waves RBF reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon_sim)
+
+    def Load_NEARSHORE_RECONSTRUCTION_SIM_sea(self):
+        'Load sea waves RBF reconstruction'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon_sim)
+
+    def Save_NEARSHORE_RECONSTRUCTION_SIM_swell(self, pd_waves):
+        'Stores swell waves RBF reconstruction'
+
+        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
+
+    def Load_NEARSHORE_RECONSTRUCTION_SIM_swell(self):
+        'Load swell waves RBF reconstruction'
+
+        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
+
 
 class PathControl(object):
     'auxiliar object for handling teslakit files paths'
