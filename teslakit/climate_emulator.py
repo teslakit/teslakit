@@ -7,9 +7,11 @@ import os.path as op
 import time
 import pickle
 from itertools import permutations
+import glob
 
 # pip
 import numpy as np
+import pandas as pd
 import xarray as xr
 from scipy.special import ndtri  # norm inv
 from scipy.stats import  genextreme, gumbel_l, spearmanr, norm
@@ -252,6 +254,39 @@ class Climate_Emulator(object):
             WVS_upd = xr.open_dataset(p_WVS_upd)
 
         return WVS_sim, TCs_sim, WVS_upd
+
+    def LoadSim_All(self, n_sim_ce=0):
+        '''
+        Load all waves and TCs (1 DWT -> 1 output) simulations.
+
+        Each max. storm simulation has a different time dimension,
+        returns a pandas.DataFrame with added columns 'time' and 'n_sim'
+
+        output will merge WVS_upd and TCs_sim data variables
+
+        a unique n_sim_ce (inner climate emulator simulation) has to be chosen.
+        '''
+
+        # count available waves simulations
+        n_sims_DWTs = len(glob.glob(op.join(self.p_sim_wvs_tcs,'*.nc' )))
+
+        # iterate over simulations
+        l_sims = []
+        for n in range(n_sims_DWTs):
+            _, TCs_sim, WVS_upd = self.LoadSim(n_sim = n)
+
+            pd_sim = xr.merge(
+                [WVS_upd.isel(n_sim = n_sim_ce), TCs_sim.isel(n_sim = n_sim_ce)]
+            ).to_dataframe()
+            pd_sim['n_sim'] = n  # store simulation index with data
+            pd_sim['time'] = pd_sim.index  # store dates as a variable
+
+            l_sims.append(pd_sim)
+
+        # join all waves simulations
+        all_sims = pd.concat(l_sims, ignore_index=True)
+
+        return all_sims
 
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'
