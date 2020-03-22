@@ -87,7 +87,7 @@ Also, test site needed input files can be downloaded from [OneDrive](https://uni
 (Input data adquisition is currently not integrated in teslakit)
 
 
-Once ROI data is downloaded and unpacked, a input data check can be done at: [00_Set_Database.ipynb](notebooks/nb_ROI/01_Offshore/00_Set_Database.ipynb)
+Once ROI data is downloaded and unpacked, a input data check can be done at: [00_Set_Database.ipynb](notebooks/ROI/01_Offshore/00_Set_Database.ipynb)
 
 
 ## Contributors
