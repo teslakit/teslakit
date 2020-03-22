@@ -88,7 +88,7 @@ class Database(object):
             return
 
         # copy site.ini template
-        for fn in ['site.ini']:  #, 'parameters.ini']:
+        for fn in ['site.ini']:
             copyfile(op.join(self.paths.p_resources, fn), op.join(p_site, fn))
 
         # create site subfolders
@@ -118,6 +118,8 @@ class Database(object):
             ('ESTELA', ['coastmat', 'estelamat', 'gowpoint', 'slp'],
              [op.isfile, op.isfile, op.isfile, op.isfile]),
             ('TIDE', ['mareografo_nc', 'hist_astro'], [op.isfile, op.isfile]),
+            ('HYCREWW', ['rbf_coef'], [op.isdir]),
+            ('NEARSHORE', ['swan_projects'], [op.isdir]),
         ]
 
         # get status
@@ -633,6 +635,14 @@ class Database(object):
         return xr.open_dataset(
             self.paths.site.HISTORICAL.complete_hourly, decode_times=True)
 
+    def Save_HIST_Complete_daily(self, xds):
+        self.save_nc(xds, self.paths.site.HISTORICAL.complete_daily,
+                     safe_time=True)
+
+    def Load_HIST_Complete_daily(self):
+        return xr.open_dataset(
+            self.paths.site.HISTORICAL.complete_daily, decode_times=True)
+
     # SPECIAL PLOTS
 
     def Load_AWTs_DWTs_Plots_sim(self, n_sim=0):
@@ -863,6 +873,45 @@ class Database(object):
         'Load swell waves RBF reconstruction'
 
         return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
+
+    # HYCREWW
+
+    def Load_HYCREWW(self):
+        'Load RBF coefficients and hycreww sims. max and min values'
+
+        p_h = self.paths.site.HYCREWW.rbf_coef  # RBF_coefficients folder
+
+        # load max and min limits
+        p_max = op.join(p_h, 'Max_from_simulations.mat')
+        p_min = op.join(p_h, 'Min_from_simulations.mat')
+        vs = ['level', 'hs', 'tp', 'rslope', 'bslope', 'rwidth', 'cf']
+
+        smax = ReadMatfile(p_max)['maximum']
+        smin = ReadMatfile(p_min)['minimum']
+        dl = np.column_stack([smin, smax])
+
+        var_lims = {}
+        for c, vn in enumerate(vs):
+            var_lims[vn] = dl[c]
+        var_lims['hs_lo2'] = [0.005, 0.05]
+
+        # RBF coefficients (for 15 cases)
+        code = 'Coeffs_Runup_Xbeach_test'
+        n_cases = 15
+
+        RBF_coeffs = []
+        for i in range(n_cases):
+            cf = ReadMatfile(op.join(p_h, '{0}{1}.mat'.format(code,i+1)))
+
+            rbf = {
+                'constant': cf['coeffsave']['RBFConstant'],
+                'coeff': cf['coeffsave']['rbfcoeff'],
+                'nodes': cf['coeffsave']['x'],
+            }
+
+            RBF_coeffs.append(rbf)
+
+        return var_lims, RBF_coeffs
 
 
 class PathControl(object):
