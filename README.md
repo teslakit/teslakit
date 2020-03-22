@@ -41,13 +41,23 @@ source venv/bin/activate
 Now install teslakit requirements
 
 ```
-pip install -r requirements.txt
+pip install -r requirements/requirements.txt
 ```
 
 Then install teslakit
 
 ```
 python setup.py install
+```
+
+### Installing aditional modules
+
+mw\_deltares is a custom developed python toolbox used to wrap SWAN numerical model
+
+install the python wheel file that is included at resources folder
+
+```
+pip install requirements/mw_deltares-0.1.0-py3-none-any.whl
 ```
 
 ### Installing optional modules
@@ -72,10 +82,12 @@ jupyter notebook
 
 Current development test site notebooks can be found at [ROI](notebooks/nb_ROI/)
 
+Also, test site needed input files can be downloaded from https://TODO.url
 
-Input data adquisition is currently not integrated in teslakit.
+(Input data adquisition is currently not integrated in teslakit)
 
-Test site input data list can be found at: [00_Set_Database.ipynb](notebooks/nb_ROI/00_Set_Database.ipynb)
+
+Once ROI data is downloaded and unpacked, a input data check can be done at: [00_Set_Database.ipynb](notebooks/nb_ROI/00_Set_Database.ipynb)
 
 
 ## Contributors
