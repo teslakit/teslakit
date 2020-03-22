@@ -82,12 +82,12 @@ jupyter notebook
 
 Current development test site notebooks can be found at [ROI](notebooks/nb_ROI/)
 
-Also, test site needed input files can be downloaded from https://TODO.url
+Also, test site needed input files can be downloaded from [OneDrive](https://unican-my.sharepoint.com/:u:/g/personal/ripolln_unican_es/EbV8pLPheXZEpg8I6VCKjF4BscJoReoq5pO5w0358x88Vg?e=ygozCh)
 
 (Input data adquisition is currently not integrated in teslakit)
 
 
-Once ROI data is downloaded and unpacked, a input data check can be done at: [00_Set_Database.ipynb](notebooks/nb_ROI/00_Set_Database.ipynb)
+Once ROI data is downloaded and unpacked, a input data check can be done at: [00_Set_Database.ipynb](notebooks/nb_ROI/01_Offshore/00_Set_Database.ipynb)
 
 
 ## Contributors
