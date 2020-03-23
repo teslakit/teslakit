@@ -553,6 +553,24 @@ class Database(object):
         return xr.open_dataset(
             self.paths.site.SIMULATION.complete_daily, decode_times=True)
 
+    def Save_SIM_Complete_storms(self, l_xds):
+
+        if not op.isdir(self.paths.site.SIMULATION.complete_storms):
+            os.makedirs(self.paths.site.SIMULATION.complete_storms)
+
+        for c, xds in enumerate(l_xds):
+            p_sim = op.join(self.paths.site.SIMULATION.complete_storms, '{0:04d}.nc'.format(c))
+            self.save_nc(xds, p_sim, safe_time=True)
+
+    def Load_SIM_Complete_storms(self, n_sims=0):
+
+        l_sim = []
+        for c in range(n_sims):
+            p_sim = op.join(self.paths.site.SIMULATION.complete_storms, '{0:04d}.nc'.format(c))
+            l_sim.append(xr.open_dataset(p_sim, decode_times=True))
+
+        return l_sim
+
     def Generate_HIST_Complete(self):
         '''
         Load all historical variables (hourly/3hourly):
@@ -642,6 +660,14 @@ class Database(object):
     def Load_HIST_Complete_daily(self):
         return xr.open_dataset(
             self.paths.site.HISTORICAL.complete_daily, decode_times=True)
+
+    def Save_HIST_Complete_storms(self, xds):
+        self.save_nc(xds, self.paths.site.HISTORICAL.complete_storms,
+                     safe_time=True)
+
+    def Load_HIST_Complete_storms(self):
+        return xr.open_dataset(
+            self.paths.site.HISTORICAL.complete_storms, decode_times=True)
 
     # SPECIAL PLOTS
 
@@ -854,6 +880,18 @@ class Database(object):
 
         return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_hist)
 
+    def Save_NEARSHORE_RECONSTRUCTION_HIST_storms(self, xds):
+        'Stores waves RBF reconstruction for historical storms'
+
+        self.save_nc(xds, self.paths.site.NEARSHORE.storms_recon_hist,
+                     safe_time=True)
+
+    def Load_NEARSHORE_RECONSTRUCTION_HIST_storms(self):
+        'Load waves RBF reconstruction for historical storms'
+
+        return xr.open_dataset(
+            self.paths.site.NEARSHORE.storms_recon_hist, decode_times=True)
+
     def Save_NEARSHORE_RECONSTRUCTION_SIM_sea(self, pd_waves):
         'Stores sea waves RBF reconstruction'
 
@@ -873,6 +911,24 @@ class Database(object):
         'Load swell waves RBF reconstruction'
 
         return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
+
+    def Save_NEARSHORE_RECONSTRUCTION_SIM_storms(self, l_xds):
+
+        if not op.isdir(self.paths.site.NEARSHORE.storms_recon_sim):
+            os.makedirs(self.paths.site.NEARSHORE.storms_recon_sim)
+
+        for c, xds in enumerate(l_xds):
+            p_sim = op.join(self.paths.site.NEARSHORE.storms_recon_sim, '{0:04d}.nc'.format(c))
+            self.save_nc(xds, p_sim, safe_time=True)
+
+    def Load_NEARSHORE_RECONSTRUCTION_SIM_storms(self, n_sims=0):
+
+        l_sim = []
+        for c in range(n_sims):
+            p_sim = op.join(self.paths.site.NEARSHORE.storms_recon_sim, '{0:04d}.nc'.format(c))
+            l_sim.append(xr.open_dataset(p_sim, decode_times=True))
+
+        return l_sim
 
     # HYCREWW
 
