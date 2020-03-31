@@ -899,6 +899,11 @@ class Climate_Emulator(object):
             if np.isnan(sim_row).any() or len(np.where(sim_row<0)[0])!=0:
                 continue
 
+            # custom "bad data" filter
+            dir_s = sim_row[2::3][crm==1]
+            if any(v > 360.0 for v in dir_s):
+                continue
+
             # wave hs
             if filters['hs']:
                 hs_s = sim_row[0::3][crm==1]
