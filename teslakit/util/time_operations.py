@@ -262,6 +262,34 @@ def xds_limit_dates(xds_list):
 
     return d1, d2
 
+def xds_further_dates(xds_list):
+    '''
+    returns datetime further date limits between a list of xarray.Dataset
+    '''
+
+    d1 = None
+    d2 = None
+
+    for xds_e in xds_list:
+
+        # TODO: remove this swich and use date2datenum
+        if isinstance(xds_e.time.values[0], datetime):
+            xds_e_dt1 = xds_e.time.values[0]
+            xds_e_dt2 = xds_e.time.values[-1]
+        else:
+            # parse xds times to python datetime
+            xds_e_dt1 = xds2datetime(xds_e.time[0])
+            xds_e_dt2 = xds2datetime(xds_e.time[-1])
+
+        if d1 == None:
+            d1 = xds_e_dt1
+            d2 = xds_e_dt2
+
+        d1 = min(xds_e_dt1, d1)
+        d2 = max(xds_e_dt2, d2)
+
+    return d1, d2
+
 def date2yearfrac(d):
     'Returns date d in fraction of the year'
 
