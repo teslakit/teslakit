@@ -25,9 +25,10 @@ ReadGowMat, ReadCoastMat, ReadEstelaMat
 
 from .util.time_operations import xds_reindex_daily, xds_reindex_monthly, \
 xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
-fast_reindex_hourly_nsim, generate_datetimes
+fast_reindex_hourly_nsim, generate_datetimes, xds_further_dates
 
 from .mjo import MJO_Categories
+from .waves import Aggregate_WavesFamilies
 
 
 # TODO: change all historical data to standarized .nc files
@@ -555,11 +556,12 @@ class Database(object):
 
     def Save_SIM_Complete_storms(self, l_xds):
 
-        if not op.isdir(self.paths.site.SIMULATION.complete_storms):
-            os.makedirs(self.paths.site.SIMULATION.complete_storms)
+        ps = self.paths.site.SIMULATION.complete_storms
+
+        if not op.isdir(ps): os.makedirs(ps)
 
         for c, xds in enumerate(l_xds):
-            p_sim = op.join(self.paths.site.SIMULATION.complete_storms, '{0:04d}.nc'.format(c))
+            p_sim = op.join(ps, '{0:04d}.nc'.format(c))
             self.save_nc(xds, p_sim, safe_time=True)
 
     def Load_SIM_Complete_storms(self, n_sims=0):
@@ -576,6 +578,7 @@ class Database(object):
         Load all historical variables (hourly/3hourly):
             AWTs, DWTs, MJO, MMSL, AT, Hs, Tp, Dir, SS
         '''
+
         # load data
         AWT = self.Load_SST_KMA()
         MSL = self.Load_TIDE_hist_mmsl() # mmsl (mm)
@@ -602,12 +605,10 @@ class Database(object):
         mjo_cs, _ = MJO_Categories(MJO['rmm1'], MJO['rmm2'], MJO['phase'])
         MJO['bmus'] = (('time',), mjo_cs)
 
-        # TODO ?
         # Hs, Tp, Dir from Aggregate_WavesFamilies
-        #from .waves import Aggregate_WavesFamilies
-        #WVS = Aggregate_WavesFamilies(WVS)
-
-        # TODO SS?
+        WVS_a = Aggregate_WavesFamilies(WVS)
+        for vn in ['Hs', 'Tp', 'Dir']:
+            WVS[vn] = WVS_a[vn]
 
         # reindex data to hourly (pad)
         AWT_h = fast_reindex_hourly(AWT)
@@ -616,31 +617,27 @@ class Database(object):
         DWT_h = fast_reindex_hourly(DWT)
         WVS_h = fast_reindex_hourly(WVS)
 
-        # common dates limits
-        d1, d2 = xds_limit_dates(
+        # generate time envelope for output 
+        d1, d2 = xds_further_dates(
             [AWT_h, ATD_h, MSL_h, MJO_h, DWT_h, ATD_h, WVS_h]
         )
-        AWT_h = AWT_h.sel(time = slice(d1,d2))
-        MSL_h = MSL_h.sel(time = slice(d1,d2))
-        MJO_h = MJO_h.sel(time = slice(d1,d2))
-        DWT_h = DWT_h.sel(time = slice(d1,d2))
-        ATD_h = ATD_h.sel(time = slice(d1,d2))
-        WVS_h = WVS_h.sel(time = slice(d1,d2))
+        ten = pd.date_range(d1, d2, freq='H')
 
-        # copy to new dataset
-        times = AWT_h.time.values[:]
-        xds = xr.Dataset(
-            {
-                'AWT': (('time',), AWT_h.bmus.values[:].astype(int)),
-                'MJO': (('time',), MJO_h.bmus.values[:].astype(int)),
-                'DWT': (('time',), DWT_h.bmus.values[:].astype(int)),
-                'MMSL': (('time',), MSL_h.mmsl.values[:] / 1000), # mm to m
-                'AT': (('time',), ATD_h.predicted.values[:]),
-                'Hs': (('time',), WVS_h.Hs.values[:]),
-                'Tp': (('time',), WVS_h.Tp.values[:]),
-                'Dir': (('time',), WVS_h.Dir.values[:]),
-            },
-            coords = {'time': times}
+        # generate empty output dataset 
+        OUT_h = xr.Dataset(coords={'time': ten})
+
+        # prepare data
+        AWT_h = AWT_h.rename({'bmus':'AWT'})
+        MJO_h = MJO_h.drop_vars(['mjo','rmm1','rmm2','phase']).rename({'bmus':'MJO'})
+        MSL_h = MSL_h.drop_vars(['mmsl_median']).rename({'mmsl':'MMSL'})
+        MSL_h['MMSL'] = MSL_h['MMSL'] / 1000.0  # mm to m
+        DWT_h = DWT_h.rename({'bmus':'DWT'})
+        ATD_h = ATD_h.rename({'predicted':'AT'})
+
+        # combine data
+        xds = xr.combine_by_coords(
+            [OUT_h, AWT_h, MJO_h, MSL_h, DWT_h, WVS_h, ATD_h],
+            fill_value = np.nan,
         )
 
         return xds
@@ -914,11 +911,12 @@ class Database(object):
 
     def Save_NEARSHORE_RECONSTRUCTION_SIM_storms(self, l_xds):
 
-        if not op.isdir(self.paths.site.NEARSHORE.storms_recon_sim):
-            os.makedirs(self.paths.site.NEARSHORE.storms_recon_sim)
+        ps = self.paths.site.NEARSHORE.storms_recon_sim
+
+        if not op.isdir(ps): os.makedirs(ps)
 
         for c, xds in enumerate(l_xds):
-            p_sim = op.join(self.paths.site.NEARSHORE.storms_recon_sim, '{0:04d}.nc'.format(c))
+            p_sim = op.join(ps, '{0:04d}.nc'.format(c))
             self.save_nc(xds, p_sim, safe_time=True)
 
     def Load_NEARSHORE_RECONSTRUCTION_SIM_storms(self, n_sims=0):
@@ -927,6 +925,39 @@ class Database(object):
         for c in range(n_sims):
             p_sim = op.join(self.paths.site.NEARSHORE.storms_recon_sim, '{0:04d}.nc'.format(c))
             l_sim.append(xr.open_dataset(p_sim, decode_times=True))
+
+        return l_sim
+
+    def Save_NEARSHORE_RUNUP_HIST(self, pd_df):
+        'Stores historical nearshore runup (hycrew output)'
+
+        #self.save_nc(xds, self.paths.site.NEARSHORE.runup_hist, safe_time=True)
+        pd_df.to_pickle(self.paths.site.NEARSHORE.runup_hist)
+
+    def Load_NEARSHORE_RUNUP_HIST(self):
+        'Load historical nearshore runup (hycrew output)'
+
+        #return xr.open_dataset(self.paths.site.NEARSHORE.runup_hist, decode_times=True)
+        return pd.read_pickle(self.paths.site.NEARSHORE.runup_hist)
+
+    def Save_NEARSHORE_RUNUP_SIM(self, l_pdfs):
+
+        if not op.isdir(self.paths.site.NEARSHORE.runup_sims):
+            os.makedirs(self.paths.site.NEARSHORE.runup_sims)
+
+        for c, pd_df in enumerate(l_pdfs):
+            p_sim = op.join(self.paths.site.NEARSHORE.runup_sims, '{0:04d}.nc'.format(c))
+            #self.save_nc(xds, p_sim, safe_time=True)
+            pd_df.to_pickle(p_sim)
+
+    def Load_NEARSHORE_RUNUP_SIM(self, n_sims=0):
+
+        l_sim = []
+        for c in range(n_sims):
+            p_sim = op.join(self.paths.site.NEARSHORE.runup_sims, '{0:04d}.nc'.format(c))
+            #l_sim.append(xr.open_dataset(p_sim, decode_times=True))
+            l_sim.append(pd.read_pickle(p_sim))
+
 
         return l_sim
 
