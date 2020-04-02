@@ -16,10 +16,10 @@ import matplotlib.colors as mcolors
 from matplotlib.colorbar import ColorbarBase
 
 # teslakit
-from .custom_colors import GetClusterColors
+from teslakit.plotting.custom_colors import GetClusterColors
 
 # import constants
-from .config import _faspect, _fsize, _fdpi
+from teslakit.plotting.config import _faspect, _fsize, _fdpi
 
 
 def axplot_bmus(ax, bmus, num_clusters, lab):
@@ -27,6 +27,10 @@ def axplot_bmus(ax, bmus, num_clusters, lab):
 
     # colors
     wt_colors = GetClusterColors(num_clusters)
+
+    # prepare nans as white 
+    bmus = bmus.fillna(num_clusters+1)
+    wt_colors = np.vstack([wt_colors, [0,0,0]])
 
     # bmus colors
     vp = wt_colors[bmus.astype(int)-1]
@@ -47,25 +51,31 @@ def axplot_bmus(ax, bmus, num_clusters, lab):
     ax.set_ylabel(lab, rotation=0, fontweight='bold', labelpad=35)
 
 def axplot_series(ax, vv, ls, lc, lab):
-    'axes plot bmus series using colors'
+    'axes plot variables series'
+
+    # find start and end index
+    nna = np.where(~np.isnan(vv))[0]
+    x_0, x_1 = nna[0], nna[-1]
 
     # plot series
-    ax.plot(range(len(vv.time)), vv, linestyle=ls, linewidth=0.5, color=lc)
+    ax.plot(nna, vv[nna], linestyle=ls, linewidth=0.5, color=lc)
 
     # customize axes
-    #ax.set_xlim(vv.time.values[0], vv.time.values[-1])
-    ax.set_xlim(0, len(vv.time))
+    ax.set_xlim(0, len(vv))
+
     ax.set_xticks([])
     ax.yaxis.tick_right()
     ax.tick_params(axis='both', which='both', labelsize=7)
     ax.set_ylabel(lab, rotation=0, fontweight='bold', labelpad=35)
 
 
-def Plot_Simulation(xds_out_h, show=True):
+def Plot_Complete(xds, show=True):
     '''
-    Plot all simulated output variables
+    Plot complete data variables inside xds
+
+    xds - xarray.Dataset: AWT, MJO, DWT, Hs, Tp, Dir, SS, AT, MMSL, TWL
     '''
-    # TODO: auto parameters inside xds_out_h
+    # TODO: auto parameters inside xds
 
     # parameters
     n_cs_AWT = 6
@@ -74,40 +84,49 @@ def Plot_Simulation(xds_out_h, show=True):
 
 
     # plot figure
-    fig, axs = plt.subplots(10, 1, figsize=(_faspect*_fsize, _fsize))
+    fig, axs = plt.subplots(
+        10, 1,
+        figsize=(_faspect*_fsize, _fsize),
+    )
 
     # AWT
-    axplot_bmus(axs[0], xds_out_h.AWT, n_cs_AWT, 'AWT')
+    axplot_bmus(axs[0], xds.AWT, n_cs_AWT, 'AWT')
 
     # MJO
-    axplot_bmus(axs[1], xds_out_h.MJO, n_cs_MJO, 'MJO')
+    axplot_bmus(axs[1], xds.MJO, n_cs_MJO, 'MJO')
 
     # DWT
-    axplot_bmus(axs[2], xds_out_h.DWT, n_cs_DWT, 'DWT')
+    axplot_bmus(axs[2], xds.DWT, n_cs_DWT, 'DWT')
 
     # HS
-    axplot_series(axs[3], xds_out_h.Hs, 'solid', 'cyan', 'Hs(m)')
+    axplot_series(axs[3], xds.Hs, 'solid', 'cyan', 'Hs(m)')
 
     # TP
-    axplot_series(axs[4], xds_out_h.Tp, 'solid', 'red', 'Tp(s)')
+    axplot_series(axs[4], xds.Tp, 'solid', 'red', 'Tp(s)')
 
     # DIR
-    axplot_series(axs[5], xds_out_h.Dir, 'dotted', 'black', 'Dir(º)')
+    axplot_series(axs[5], xds.Dir, 'dotted', 'black', 'Dir(º)')
 
+    # TODO: historical storm surge?
     # SS
-    axplot_series(axs[6], xds_out_h.SS, 'solid', 'orange', 'SS(m)')
+    if 'SS' in xds.variables:
+        axplot_series(axs[6], xds.SS, 'solid', 'orange', 'SS(m)')
+    else:
+        axs[6].set_xticks([])
+        axs[6].set_yticks([])
+        axs[6].set_ylabel('SS(m)', rotation=0, fontweight='bold', labelpad=35)
 
     # AT
-    axplot_series(axs[7], xds_out_h.AT, 'solid', 'purple', 'AT(m)')
+    axplot_series(axs[7], xds.AT, 'solid', 'purple', 'AT(m)')
 
     # MMSL
-    axplot_series(axs[8], xds_out_h.MMSL, 'solid', 'green', 'MMSL(m)')
+    axplot_series(axs[8], xds.MMSL, 'solid', 'green', 'MMSL(m)')
 
     # TWL
-    axplot_series(axs[9], xds_out_h.TWL, 'solid', 'blue', 'TWL(m)')
+    axplot_series(axs[9], xds.TWL, 'solid', 'blue', 'TWL(m)')
 
     # suptitle
-    fig.suptitle('Simulation', fontweight='bold', fontsize=12)
+    fig.suptitle('Complete Data', fontweight='bold', fontsize=12)
 
     # reduce first 3 subplots
     gs = gridspec.GridSpec(10, 1, height_ratios = [1,1,1,3,3,3,3,3,3,3])
