@@ -219,13 +219,14 @@ def Plot_SigmaCorrelation(xds_chrom, d_sigma, show=True):
                e_cl = mk_cl
 
             # add circle    
+            al = np.min([1.0, np.absolute(sigma_plot[c_wt, c_c]) / maxcorr])
             ax.add_patch(
                 plt.Circle(
                     cntr,
                     radius = maxsize * np.absolute(sigma_plot[c_wt, c_c]),
                     edgecolor = e_cl,
                     facecolor = mk_cl,
-                    alpha = np.absolute(sigma_plot[c_wt, c_c]) / maxcorr,
+                    alpha = al
                 )
             )
 
@@ -334,11 +335,12 @@ def Plot_ReturnPeriodValidation(xds_hist, xds_sim, show=True):
     v_h = np.sort(xds_hist.values[:])
 
     # GEV fit historical
-    tg_h, vg_h = gev_fit(v_h)
+    #tg_h, vg_h = gev_fit(v_h)
+    tg_h, vg_h = [],[]
 
     # RP calculation, var sorting simulation
-    t_s = t_rp(xds_sim.year.values[:-1])  # remove last year
-    v_s = np.sort(xds_sim.values[:,:-1])  # remove last year
+    t_s = t_rp(xds_sim.year.values[:-1])  # remove last year*
+    v_s = np.sort(xds_sim.values[:,:-1])  # remove last year*
 
     # figure
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize))
@@ -347,6 +349,90 @@ def Plot_ReturnPeriodValidation(xds_hist, xds_sim, show=True):
         axs,
         t_h, v_h, tg_h, vg_h,
         t_s, v_s,
+        xds_sim.name,
+    )
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
+
+
+# TODO: temporal
+
+def axplot_RP_Sims(ax, tups_time_val, var_name):
+    'axes plot return period historical vs simulation'
+
+
+    lbls_cls = [
+        #('Simulation', 'black'),
+        ('Simulation - El Niño', 'red'),
+        ('Simulation - La Niña' , 'blue'),
+    ]
+
+    for (t_s, v_s), (lb, cl) in zip(tups_time_val, lbls_cls):
+
+
+        # simulation maxima - mean
+        mn = np.mean(v_s, axis=0)
+        ax.semilogx(
+            t_s, mn, linestyle= '-', color=cl,
+            linewidth = 2, label = lb,
+            zorder=8,
+        )
+
+        # simulation maxima percentile 95% and 05%
+        p95 = np.percentile(v_s, 95, axis=0,)
+        p05 = np.percentile(v_s, 5, axis=0,)
+
+        ax.semilogx(
+            t_s, p95, linestyle='--', color=cl, alpha=0.05,
+            linewidth = 2, #label = 'Simulation (95% percentile)',
+        )
+
+        ax.semilogx(
+            t_s, p05, linestyle='--', color=cl, alpha=0.05,
+            linewidth = 2, # label = 'Simulation (05% percentile)',
+        )
+        ax.fill_between(
+            t_s, p05, p95, color=cl,alpha=0.05,
+            #label = 'Simulation (05 - 95 percentile)'
+        )
+
+    # customize axs
+    ax.legend(loc='lower right')
+    ax.set_title('Annual Maxima', fontweight='bold')
+    ax.set_xlabel('Return Period (years)')
+    ax.set_ylabel('{0}'.format(var_name))
+    ax.set_xlim(left=10**0, right=np.max(t_s))
+    ax.tick_params(axis='both', which='both', top=True, right=True)
+    ax.grid(which='both')
+
+
+def Plot_ReturnPeriod_Simulations(l_xds_sim, show=True):
+    'Plot Return Period historical - simulation validation'
+
+    # aux func for calculating rp time
+    def t_rp(time_y):
+        ny = len(time_y)
+        return np.array([1/(1-(n/(ny+1))) for n in np.arange(1,ny+1)])
+
+
+    # RP calculation, var sorting simulation
+    tups_time_val = []
+    for xds_sim in l_xds_sim:
+        t_s = t_rp(xds_sim.year.values[:-1])  # remove last year*
+        v_s = np.sort(xds_sim.values[:,:-1])  # remove last year*
+
+        tups_time_val.append((t_s, v_s))
+
+    # figure
+    fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize))
+
+    axplot_RP_Sims(
+        axs,
+        tups_time_val,
         xds_sim.name,
     )
 
