@@ -5,7 +5,7 @@
 import os
 import os.path as op
 
-# python libs
+# pip 
 import numpy as np
 import xarray as xr
 

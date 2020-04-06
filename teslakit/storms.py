@@ -322,11 +322,13 @@ def GetCategoryChangeProbs(xds_r1, xds_r2):
     probs = m_count.astype(float)/m_sum.astype(float)
     probs_cs = np.cumsum(probs, axis=0)
 
+    # TODO: category_change_sum ??
+
     # store output using xarray
     xds_categ_cp = xr.Dataset(
         {
             'category_change_count': (('category','category'), m_count[:-1,:]),
-            'category_change_sum': (('category'), m_count[-1,:]),
+            #'category_change_sum': (('category'), m_count[-1,:]),
             'category_change_probs': (('category','category'), probs[:-1,:]),
             'category_nochange_probs': (('category'), probs[-1,:]),
             'category_change_cumsum': (('category','category'), probs_cs[:-1,:]),

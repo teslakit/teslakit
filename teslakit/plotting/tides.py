@@ -141,7 +141,7 @@ def Plot_Validate_MMSL_tseries(
     axs.legend()
     axs.set_xlim(mmsl_time[0], mmsl_time[-1])
 
-    ttl = 'Monthly Mean Sea Level non-linear model'
+    ttl = 'Monthly Mean Sea Level linear model'
     axs.set_title(ttl, fontweight='bold')
     axs.set_xlabel('time')
     axs.set_ylabel('MMSL (mm)')
@@ -199,7 +199,7 @@ def Plot_MMSL_Prediction(mmsl_time, mmsl_data, show=True):
 
     axs.legend()
     axs.set_xlim(mmsl_time[0], mmsl_time[-1])
-    ttl = 'Monthly Mean Sea Level non-linear model prediction'
+    ttl = 'Monthly Mean Sea Level linear model prediction'
     axs.set_title(ttl, fontweight='bold')
     axs.set_xlabel('time')
     axs.set_ylabel('MMSL (mm)')

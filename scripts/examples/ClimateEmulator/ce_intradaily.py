@@ -25,28 +25,28 @@ from teslakit.waves import Aggregate_WavesFamilies, Intradaily_Hydrograph
 p_data = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 db = Database(p_data)
 
-p_test = op.join(p_data, 'tests', 'ClimateEmulator', 'CE_FitExtremes')
-
-# input
-p_ce = op.join(p_test, 'ce')
+# set site
+db.SetSite('KWAJALEIN')
 
 
 # --------------------------------------
 # Climate Emulator object 
-CE = Climate_Emulator(p_ce)
+CE = Climate_Emulator(db.paths.site.EXTREMES.climate_emulator)
+CE.Load()
 
 # load previously simulated storms (without TCs)
-ls_wvs_upd, ls_tcs_sim = CE.LoadSim(TCs=True)
+WVS_sim, TCs_sim, WVS_upd = CE.LoadSim()
 
-# iterate over simulations
-for xds_wvs_sim, xds_tcs_sim in zip(ls_wvs_upd, ls_tcs_sim):
+# cut data
+#WVS_upd = WVS_upd.sel(time=slice('1700-01-01','1710-01-01'))
+#TCs_sim = TCs_sim.sel(time=slice('1700-01-01','1710-01-01'))
 
-    # Aggregate waves families data 
-    xds_wvs_agr = Aggregate_WavesFamilies(xds_wvs_sim)
+# Aggregate waves families data 
+wvs_agr = Aggregate_WavesFamilies(WVS_upd.sel(n_sim=0))
 
-    # calculate intradaily hydrographs
-    xds_hg = Intradaily_Hydrograph(xds_wvs_agr, xds_tcs_sim)
+# calculate intradaily hydrographs
+hy = Intradaily_Hydrograph(wvs_agr, TCs_sim.sel(n_sim=0))
 
-    print(xds_hg)
-    print()
+print(hy)
+print()
 

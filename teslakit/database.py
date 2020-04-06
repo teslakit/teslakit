@@ -612,6 +612,7 @@ class Database(object):
 
         # reindex data to hourly (pad)
         AWT_h = fast_reindex_hourly(AWT)
+        #MSL_h = fast_reindex_hourly(MSL)
         MSL_h = MSL.resample(time='1h').pad()
         MJO_h = fast_reindex_hourly(MJO)
         DWT_h = fast_reindex_hourly(DWT)

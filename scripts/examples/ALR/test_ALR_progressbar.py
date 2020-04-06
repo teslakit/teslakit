@@ -53,5 +53,3 @@ dates_sim = [d1_sim + timedelta(days=i) for i in range((d2_sim-d1_sim).days+1)]
 xds_alr = ALRW.Simulate(num_sims, dates_sim)
 print(xds_alr)
 print()
-xds2 = xr.open_dataset(op.join(db.paths.site.MJO.alrw, 'xds_output.nc'))
-print(xds2)

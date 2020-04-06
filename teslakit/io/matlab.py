@@ -284,6 +284,8 @@ def ReadTCsSimulations(p_sims, point_file='Punto1.mat'):
         },
         coords = {'storm':np.arange(n_sims)}
     )
+
+    # TODO: fix bug (esta cambiando a mano una posicion)
     # fix CYC files
     lst = p_sims[100]
     p_sims.pop(100)

@@ -433,6 +433,74 @@ def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
     return fig
 
 
+def Plot_Probs_WT_WT_anomaly(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
+                     wt_colors=False, show=True):
+    '''
+    Plot WTs_1 / WTs_2 probabilities
+
+    both categories series should start at 0
+    '''
+
+    # set of daily weather types
+    set_2 = np.arange(n_clusters_2)
+
+    # dailt weather types matrix rows and cols
+    n_rows, n_cols = GetBestRowsCols(n_clusters_2)
+
+    # get cluster colors
+    cs_wt =  GetClusterColors(n_clusters_1)
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize/3))
+    gs = gridspec.GridSpec(1, n_clusters_1, wspace=0.10, hspace=0.15)
+
+    #----------------------
+    wt_set = np.arange(n_clusters_2) + 1
+
+    # best rows cols combination
+    n_rows, n_cols = GetBestRowsCols(n_clusters_2)
+
+    c_T = ClusterProbabilities(series_2, wt_set)
+    C_T_mean = np.reshape(c_T, (n_rows, n_cols))
+    #----------------------
+
+    for ic in range(n_clusters_1):
+
+        # select DWT bmus at current AWT indexes
+        index_1 = np.where(series_1==ic)[0][:]
+        sel_2 = series_2[index_1]
+
+        # get DWT cluster probabilities
+        cps = ClusterProbabilities(sel_2, set_2)
+        C_T = np.reshape(cps, (n_rows, n_cols))
+
+        #-----------
+        C_T = C_T-C_T_mean
+        #-----------
+
+        # axis colors
+        if wt_colors:
+            caxis = cs_wt[ic]
+        else:
+            caxis = 'black'
+
+        # plot axes
+        ax = plt.subplot(gs[0, ic])
+        axplot_WT_Probs(
+            ax, C_T,
+            ttl = 'WT {0}'.format(ic+1),vmin=-0.1,vmax=0.1,
+            cmap = 'seismic', caxis = caxis,
+        )
+        ax.set_aspect('equal')
+
+    # add fig title
+    fig.suptitle(ttl, fontsize=14, fontweight='bold')
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
 # TODO: following functions are not finished / tested
 
 def Plot_PerpYear(bmus_values, bmus_dates, num_clusters, num_sim=1,

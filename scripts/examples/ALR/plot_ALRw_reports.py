@@ -26,11 +26,11 @@ p_data = r'/Users/nico/Projects/TESLA-kit/TeslaKit/data'
 db = Database(p_data)
 
 # set site
-db.SetSite('KWAJALEIN')
+db.SetSite('ROI')
 
 # alr test
-#p_alrw = db.paths.site.SST.alrw
-p_alrw = db.paths.site.MJO.alrw
+p_alrw = db.paths.site.SST.alrw
+#p_alrw = db.paths.site.MJO.alrw
 #p_alrw = db.paths.site.ESTELA.alrw
 
 # ALR wrap
@@ -40,5 +40,5 @@ ALRW = ALR_WRP(p_alrw)
 #ALRW.Report_Fit(terms_fit=True, summary=True)
 
 # show simulation report
-ALRW.Report_Sim(py_month_ini=6)
+ALRW.Report_Sim()
 
