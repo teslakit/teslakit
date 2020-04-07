@@ -264,15 +264,24 @@ def ReadNakajoMats(p_mfiles):
     return xds_out
 
 def ReadTCsSimulations(p_sims, point_file='Punto1.mat'):
-    'Read data from solved TCs simulations. Return xarray.Dataset'
+    '''
+    Read data from solved TCs simulations. Return xarray.Dataset
 
-    p_sims = sorted(
-        [op.join(p_sims, x) for x in os.listdir(p_sims) if
-         op.isdir(op.join(p_sims, x))]
-    )
+    TCs simulations are stored at folders named "CYC_numbercode"
+    '''
+
+    # get all folders at TCs simulations folder
+    f_sims = sorted([x for x in os.listdir(p_sims) if op.isdir(op.join(p_sims, x))])
+
+    # ensure number order
+    ens_order = np.argsort([int(x.split('_')[-1]) for x in f_sims])
+    f_sims_e = [f_sims[x] for x in ens_order]
+
+    # now make full path to CYC folders
+    sims = [op.join(p_sims, x) for x in f_sims_e]
 
     # storm parameters
-    n_sims = len(p_sims)
+    n_sims = len(sims)
     xds_storms_sims = xr.Dataset(
         {
             'hs':(('storm',), np.ones(n_sims) * np.nan),
@@ -285,14 +294,8 @@ def ReadTCsSimulations(p_sims, point_file='Punto1.mat'):
         coords = {'storm':np.arange(n_sims)}
     )
 
-    # TODO: fix bug (esta cambiando a mano una posicion)
-    # fix CYC files
-    lst = p_sims[100]
-    p_sims.pop(100)
-    p_sims.append(lst)
-
     # read file by file
-    for i_s, p_s in enumerate(p_sims):
+    for i_s, p_s in enumerate(sims):
         p_mat = op.join(p_s, point_file)
 
         d_mat = ReadMatfile(p_mat)
