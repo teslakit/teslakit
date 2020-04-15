@@ -8,6 +8,7 @@ import time
 import pickle
 from itertools import permutations
 import glob
+import shutil
 
 # pip
 import numpy as np
@@ -78,7 +79,7 @@ class Climate_Emulator(object):
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
 
-        # output simulation storage paths (folders)
+        # output simulation default storage paths (folders)
         self.p_sims = op.join(self.p_base, 'Simulations')          # folder
         self.p_sim_wvs_notcs = op.join(self.p_sims, 'WAVES_noTCs')
         self.p_sim_wvs_tcs   = op.join(self.p_sims, 'WAVES_TCs')
@@ -287,6 +288,28 @@ class Climate_Emulator(object):
         all_sims = pd.concat(l_sims, ignore_index=True)
 
         return all_sims
+
+    def Set_Simulation_Folder(self, p_sim, copy_WAVES_noTCs=False):
+        '''
+        Modifies climate emulator default simulation path
+
+        p_sim - new simulation path
+        copy_WAVES_noTCs - copies simulated waves (no TCs) from original path
+        '''
+
+        # store base path
+        p_base = self.p_sims
+
+        # update simulation and files paths
+        self.p_sims = p_sim
+        self.p_sim_wvs_notcs = op.join(self.p_sims, 'WAVES_noTCs')
+        self.p_sim_wvs_tcs   = op.join(self.p_sims, 'WAVES_TCs')
+        self.p_sim_tcs       = op.join(self.p_sims, 'TCs')
+
+        # optional copy files
+        if copy_WAVES_noTCs:
+            if op.isdir(self.p_sim_wvs_notcs): shutil.rmtree(self.p_sim_wvs_notcs)
+            shutil.copytree(op.join(p_base, 'WAVES_noTCs'), self.p_sim_wvs_notcs)
 
     def Calc_StormsDates(self, xds_KMA):
         'Returns list of tuples with each storm start and end times'

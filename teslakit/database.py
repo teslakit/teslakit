@@ -450,8 +450,6 @@ class Database(object):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl, decode_times=True)
         return xds
 
-
-
     # COMPLETE OFFSHORE OUTPUT 
 
     def Save_CE_AllSims(self, pd_all_sims):
@@ -1004,6 +1002,27 @@ class Database(object):
             RBF_coeffs.append(rbf)
 
         return var_lims, RBF_coeffs
+
+    # CLIMATE CHANGE
+
+    def Load_RCP85(self):
+        '''
+        Load RCP85 longitude, latitude and ocurrence
+
+        # lon -> (0.5 , 359.5) dlon = 1º
+        # lat -> (-89.5, 89.5) dlat = 1º
+        '''
+
+        # matfile
+        p_mat = self.paths.site.CLIMATE_CHANGE.s4_rcp85
+        mf = ReadMatfile(p_mat)
+
+        # data
+        lon = mf['lon']
+        lat = mf['lat']
+        RCP85ratioHIST_occurrence = mf['RCP85ratioHIST_occurrence']
+
+        return lon, lat, RCP85ratioHIST_occurrence
 
 
 class PathControl(object):
