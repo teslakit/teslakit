@@ -44,8 +44,8 @@ def Plot_RCP_ocurrence(lon_grid, lat_grid, ocurrence, site_lon_index,
     fig, ax = plt.subplots(figsize=(_faspect*_fsize, _fsize))
 
     # Plot global map and location of Site
-    pc = ax.pcolor(lon_grid, lat_grid, ocurrence, cmap='bwr', vmin=-40, vmax=40)
-    ax.plot(lon_site, lat_site, '*k')
+    pc = ax.pcolor(lon_grid, lat_grid, ocurrence, cmap='bwr', vmin=-40, vmax=40, label='')
+    ax.plot(lon_site, lat_site, 'ok',label='Site')
 
     # colorbar
     plt.colorbar(pc, ax=ax)
@@ -54,6 +54,8 @@ def Plot_RCP_ocurrence(lon_grid, lat_grid, ocurrence, site_lon_index,
     ax.set_title(ttl)
     ax.set_xlabel('Longitude (º)')
     ax.set_ylabel('Latitude (º)')
+
+    plt.legend()
 
     # show and return figure
     if show: plt.show()
