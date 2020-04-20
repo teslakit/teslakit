@@ -12,14 +12,15 @@ from ..util.time_operations import date2datenum as d2d
 # import constants
 from .config import _faspect, _fsize, _fdpi
 
-def axplot_histcompare(ax, var_fit, var_sim, color='green', n_bins=40):
+def axplot_histcompare(ax, var_fit, var_sim, color='green', n_bins=40,
+                       label_1='Historical', label_2='Simulation'):
     'axes plot histogram comparison between fit-sim variables'
 
     (_, bins, _) = ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
-            alpha=0.9, color='white', ec='k', label = 'Historical')
+            alpha=0.9, color='white', ec='k', label = label_1)
 
     ax.hist(var_sim, bins=bins, weights=np.ones(len(var_sim)) / len(var_sim),
-            alpha=0.4, color=color, ec='k', label = 'Simulation')
+            alpha=0.4, color=color, ec='k', label = label_2)
 
     # customize axes
     ax.legend(prop={'size':10})
@@ -183,7 +184,7 @@ def Plot_Validate_MMSL_scatter(mmsl_data, mmsl_pred, show=True):
         show = show,
     )
 
-def Plot_MMSL_Prediction(mmsl_time, mmsl_data, show=True):
+def Plot_MMSL_Prediction(mmsl_time, mmsl_data, show=True, label='Simulation'):
     'Plots predicted mmsl data'
 
     # parse time array to datetime
@@ -193,7 +194,7 @@ def Plot_MMSL_Prediction(mmsl_time, mmsl_data, show=True):
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize/2))
     axs.plot(
         mmsl_time, mmsl_data, '-g',
-        linewidth = 0.5, label = 'Simulation'
+        linewidth = 0.5, label = label,
     )
     axs.axhline(linestyle='--', linewidth=0.5, color='k')
 
@@ -208,12 +209,15 @@ def Plot_MMSL_Prediction(mmsl_time, mmsl_data, show=True):
     if show: plt.show()
     return fig
 
-def Plot_MMSL_Histogram(mmsl_fit, mmsl_sim, show=True):
+def Plot_MMSL_Histogram(mmsl_fit, mmsl_sim, show=True,
+                        label_1='Historical', label_2='Simulation'):
     'Plots predicted mmsl data'
 
     # plot figure
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize/2))
-    axplot_histcompare(axs, mmsl_fit, mmsl_sim)
+    axplot_histcompare(
+        axs, mmsl_fit, mmsl_sim, label_1=label_1, label_2=label_2
+    )
 
     axs.set_xlabel('MMSL (mm)')
 

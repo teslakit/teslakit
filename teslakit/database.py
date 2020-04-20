@@ -442,6 +442,10 @@ class Database(object):
     def Save_TIDE_mmsl_params(self, xds):
         self.save_nc(xds, self.paths.site.TIDE.mmsl_model_params, True)
 
+    def Load_TIDE_mmsl_params(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.mmsl_model_params)
+        return xds
+
     def Load_TIDE_hist_mmsl(self):
         xds = xr.open_dataset(self.paths.site.TIDE.hist_mmsl)
         return xds
