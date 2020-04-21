@@ -330,9 +330,17 @@ def Plot_ReturnPeriodValidation(xds_hist, xds_sim, show=True):
 
         return ts, vv
 
+    # clean nans
+    t_r = xds_hist.year.values[:]
+    v_r = xds_hist.values[:]
+
+    ix_nan = np.isnan(v_r)
+    t_r = t_r[~ix_nan]
+    v_r = v_r[~ix_nan]
+
     # RP calculation, var sorting historical
-    t_h = t_rp(xds_hist.year.values[:])
-    v_h = np.sort(xds_hist.values[:])
+    t_h = t_rp(t_r)
+    v_h = np.sort(v_r)
 
     # GEV fit historical
     #tg_h, vg_h = gev_fit(v_h)
