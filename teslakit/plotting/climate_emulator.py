@@ -68,7 +68,6 @@ def axplot_series(ax, vv, ls, lc, lab):
     ax.tick_params(axis='both', which='both', labelsize=7)
     ax.set_ylabel(lab, rotation=0, fontweight='bold', labelpad=35)
 
-
 def Plot_Complete(xds, show=True):
     '''
     Plot complete data variables inside xds
@@ -132,6 +131,62 @@ def Plot_Complete(xds, show=True):
     gs = gridspec.GridSpec(10, 1, height_ratios = [1,1,1,3,3,3,3,3,3,3])
     for i in range(10):
         axs[i].set_position(gs[i].get_position(fig))
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
+def axplot_histcompare(ax, var_fit, var_sim, color='skyblue', n_bins=40,
+                       label_1='Historical', label_2='Simulation', ttl=''):
+    'axes plot histogram comparison between fit-sim variables'
+
+    (_, bins, _) = ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
+            alpha=0.9, color='white', ec='k', label = label_1)
+
+    ax.hist(var_sim, bins=bins, weights=np.ones(len(var_sim)) / len(var_sim),
+            alpha=0.7, color=color, ec='k', label = label_2)
+
+    # customize axes
+    ax.legend(prop={'size':8})
+    ax.set_title(ttl)
+
+def Plot_LevelVariables_Histograms(data_hist, data_sim, show=True):
+    'Plots predicted mmsl data'
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    gs = gridspec.GridSpec(2, 2) #, wspace=0.0, hspace=0.0)
+
+    # Level
+    dh = data_hist['level'].values[:]; dh = dh[~np.isnan(dh)]
+    ds = data_sim['level'].values[:]; ds = ds[~np.isnan(ds)]
+    ax = plt.subplot(gs[0, 0])
+    axplot_histcompare(ax, dh, ds, ttl='Level')
+
+    # AT
+    dh = data_hist['AT'].values[:]; dh = dh[~np.isnan(dh)]
+    ds = data_sim['AT'].values[:]; ds = ds[~np.isnan(ds)]
+    ax = plt.subplot(gs[0, 1])
+    axplot_histcompare(ax, dh, ds, ttl='AT')
+
+    # MMSL
+    dh = data_hist['MMSL'].values[:]; dh = dh[~np.isnan(dh)]
+    ds = data_sim['MMSL'].values[:]; ds = ds[~np.isnan(ds)]
+    ax = plt.subplot(gs[1, 0])
+    axplot_histcompare(ax, dh, ds, ttl='MMSL')
+
+    # TWL
+    dh = data_hist['TWL'].values[:]; dh = dh[~np.isnan(dh)]
+    ds = data_sim['TWL'].values[:]; ds = ds[~np.isnan(ds)]
+    ax = plt.subplot(gs[1, 1])
+    axplot_histcompare(ax, dh, ds, ttl='TWL')
+
+    # fig customization
+    fig.suptitle(
+        'Historical - Simulation Comparison',
+        fontsize=14, fontweight = 'bold',
+    )
 
     # show and return figure
     if show: plt.show()
