@@ -305,7 +305,7 @@ def axplot_RP(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, var_name, sim_percentile=95):
     ax.tick_params(axis='both', which='both', top=True, right=True)
     ax.grid(which='both')
 
-def Plot_ReturnPeriodValidation(xds_hist, xds_sim, sim_percentile=0.95, show=True):
+def Plot_ReturnPeriodValidation(xds_hist, xds_sim, sim_percentile=95, show=True):
     'Plot Return Period historical - simulation validation'
 
     # aux func for calculating rp time
