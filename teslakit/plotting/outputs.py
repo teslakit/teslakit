@@ -23,7 +23,6 @@ from teslakit.plotting.config import _faspect, _fsize, _fdpi
 
 # TODO: Plot_Complete, add xticks at last axs to show years
 
-
 def axplot_bmus(ax, bmus, num_clusters, lab):
     'axes plot bmus series using colors'
 
@@ -52,7 +51,7 @@ def axplot_bmus(ax, bmus, num_clusters, lab):
     ax.set_yticks([])
     ax.set_ylabel(lab, rotation=0, fontweight='bold', labelpad=35)
 
-def axplot_series(ax, vv, ls, lc, lab):  #, xticks=False):
+def axplot_series(ax, vv, ls, lc, lab, xticks=False):
     'axes plot variables series'
 
     # find start and end index
@@ -64,18 +63,10 @@ def axplot_series(ax, vv, ls, lc, lab):  #, xticks=False):
 
     # customize axes
     ax.set_xlim(0, len(vv))
-    ax.set_xticks([])
 
-    # optional xticks
-    #if not xticks:
-    #    ax.set_xticks([])
-    #else:
-    #    # TODO
-    #    yfmt = mdates.DateFormatter('%Y')
-    #    ax.xaxis.set_major_formatter(yfmt)
-    #    ax.tick_params(axis='x', which='major', labelsize=8)
-    #    ax.set_xlabel('Year', {'fontsize':8})
-
+    # TODO add optional xticks option
+    if not xticks:
+        ax.set_xticks([])
 
     ax.yaxis.tick_right()
     ax.tick_params(axis='both', which='both', labelsize=7)
@@ -85,7 +76,7 @@ def Plot_Complete(xds, show=True):
     '''
     Plot complete data variables inside xds
 
-    xds - xarray.Dataset: AWT, MJO, DWT, Hs, Tp, Dir, SS, AT, MMSL, TWL
+    xds - xarray.Dataset: (time) AWT, MJO, DWT, Hs, Tp, Dir, SS, AT, MMSL, TWL
     '''
     # TODO: auto parameters inside xds
 
