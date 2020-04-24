@@ -278,9 +278,10 @@ def axplot_RP(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, var_name, sim_percentile=95):
         zorder=8,
     )
 
-    # simulation maxima percentile 95% and 05%
-    p95 = np.percentile(v_s, sim_percentile, axis=0,)
-    p05 = np.percentile(v_s, 100-sim_percentile, axis=0,)
+    # simulation maxima percentiles
+    out = 100 - sim_percentile
+    p95 = np.percentile(v_s, 100-out/2.0, axis=0,)
+    p05 = np.percentile(v_s, out/2.0, axis=0,)
 
     ax.semilogx(
         t_s, p95, linestyle='-', color='grey',
@@ -293,7 +294,7 @@ def axplot_RP(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, var_name, sim_percentile=95):
     )
     ax.fill_between(
         t_s, p05, p95, color='lightgray',
-        label = 'Simulation (05 - 95 percentile)'
+        label = 'Simulation ({0}% C.I)'.format(sim_percentile)
     )
 
     # customize axs
