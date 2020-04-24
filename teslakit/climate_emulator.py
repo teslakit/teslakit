@@ -154,8 +154,9 @@ class Climate_Emulator(object):
         ms_WVS = WVS.sel(time = ms_AWL.time)
         ms_WVS['AWL'] = ms_AWL.AWL
 
-        # select KMA data at storms max. AWL 
-        ms_KMA = KMA.sel(time = ms_AWL.time)
+        # reindex KMA, then select KMA data at storms max. AWL 
+        KMA_rs = KMA.reindex(time = WVS.time, method='pad')
+        ms_KMA = KMA_rs.sel(time = ms_AWL.time)
 
         # calculate chromosomes and probabilities
         chromosomes = self.Calc_Chromosomes(ms_KMA, ms_WVS)
@@ -321,8 +322,8 @@ class Climate_Emulator(object):
         ds_ch = xds_KMA.time.values[ix_ch]  # dates where WT changes
 
         # list of tuples with (date start, date end) for each storm (WT window)
-        dates_tup_WT = [(ds_ch[c], ds_ch[c+1]-np.timedelta64(1,'D')) for c in range(len(ds_ch)-1)]
-        dates_tup_WT.append((dates_tup_WT[-1][1]+np.timedelta64(1,'D'), xds_KMA.time.values[-1]))
+        dates_tup_WT = [(ds_ch[c], ds_ch[c+1] - np.timedelta64(1,'D')) for c in range(len(ds_ch)-1)]
+        dates_tup_WT.append((dates_tup_WT[-1][1] + np.timedelta64(1,'D'), xds_KMA.time.values[-1]))
 
         return dates_tup_WT
 
@@ -338,7 +339,7 @@ class Climate_Emulator(object):
         for d1, d2 in lt_storm_dates:
 
             # get TWL inside WT window
-            wt_AWL = wvs_AWL.sel(time=slice(d1,d2))[:]
+            wt_AWL = wvs_AWL.sel(time = slice(d1, d2))[:]
 
             # get window maximum TWL date
             wt_AWL_max = wt_AWL.where(wt_AWL==wt_AWL.max(), drop=True).squeeze()
@@ -428,7 +429,7 @@ class Climate_Emulator(object):
                 'chrom': (('n','wave_family',), chrom),
                 'probs': (('WT','n',), probs),
             },
-            coords={
+            coords = {
                 'WT': np.arange(n_clusters)+1,
                 'wave_family': fams_chrom,
             }

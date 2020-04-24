@@ -169,6 +169,7 @@ def fast_reindex_hourly_nsim(xds_data):
     xds_out = xr.concat(l_sim, 'n_sim')
 
     return xds_out
+
 def xds_reindex_daily(xds_data,  dt_lim1=None, dt_lim2=None):
     '''
     Reindex xarray.Dataset to daily data between optional limits

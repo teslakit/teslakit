@@ -456,12 +456,6 @@ class Database(object):
 
     # COMPLETE OFFSHORE OUTPUT 
 
-    def Save_CE_AllSims(self, pd_all_sims):
-        pd_all_sims.to_pickle(self.paths.site.SIMULATION.waves_allsims)
-
-    def Load_CE_AllSims(self ):
-        return pd.read_pickle(self.paths.site.SIMULATION.waves_allsims)
-
     def Save_SIM_Waves_hourly(self, xds):
         self.save_nc(xds, self.paths.site.SIMULATION.waves_hourly,
                      safe_time=True)
@@ -552,14 +546,6 @@ class Database(object):
         return xr.open_dataset(
             self.paths.site.SIMULATION.complete_hourly, decode_times=True)
 
-    def Save_SIM_Complete_daily(self, xds):
-        self.save_nc(xds, self.paths.site.SIMULATION.complete_daily,
-                     safe_time=True)
-
-    def Load_SIM_Complete_daily(self):
-        return xr.open_dataset(
-            self.paths.site.SIMULATION.complete_daily, decode_times=True)
-
     def Save_SIM_Complete_storms(self, l_xds):
 
         ps = self.paths.site.SIMULATION.complete_storms
@@ -586,7 +572,7 @@ class Database(object):
         '''
 
         # load data
-        AWT = self.Load_SST_KMA()
+        AWT = self.Load_SST_KMA()  # bmus + 1
         MSL = self.Load_TIDE_hist_mmsl() # mmsl (mm)
         MJO = self.Load_MJO_hist()
         DWT = self.Load_ESTELA_KMA()  # bmus + 1
@@ -596,13 +582,13 @@ class Database(object):
         # data format
         AWT = xr.Dataset(
             {
-                'bmus': AWT.bmus,
+                'bmus': AWT.bmus + 1,
             },
             coords = {'time': AWT.time}
         )
         DWT = xr.Dataset(
             {
-                'bmus': (('time',), DWT.bmus + 1),
+                'bmus': (('time',), DWT.sorted_bmus_storms + 1),
             },
             coords = {'time': DWT.time.values[:]}
         )
@@ -657,24 +643,9 @@ class Database(object):
         return xr.open_dataset(
             self.paths.site.HISTORICAL.complete_hourly, decode_times=True)
 
-    def Save_HIST_Complete_daily(self, xds):
-        self.save_nc(xds, self.paths.site.HISTORICAL.complete_daily,
-                     safe_time=True)
-
-    def Load_HIST_Complete_daily(self):
-        return xr.open_dataset(
-            self.paths.site.HISTORICAL.complete_daily, decode_times=True)
-
-    def Save_HIST_Complete_storms(self, xds):
-        self.save_nc(xds, self.paths.site.HISTORICAL.complete_storms,
-                     safe_time=True)
-
-    def Load_HIST_Complete_storms(self):
-        return xr.open_dataset(
-            self.paths.site.HISTORICAL.complete_storms, decode_times=True)
-
     # SPECIAL PLOTS
 
+    # TODO: DELETE
     def Load_AWTs_DWTs_Plots_sim(self, n_sim=0):
         'Load data needed for WT-WT Probs plot'
 
