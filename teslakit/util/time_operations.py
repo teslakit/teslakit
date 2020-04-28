@@ -349,3 +349,35 @@ def get_years_months_days(time):
 
     return ys, ms, ds
 
+
+# aux. functions for teslakit hourly output
+
+def repair_times_hourly(xds):
+    'ensures that xarray.Dataset time index is rounded to nearest hour and does not repeat values'
+
+    # round times to hour (only for np.datetime64)
+    if  isinstance(xds.time.values[0], np.datetime64):
+        xds['time'] = xds['time'].dt.round('H')
+
+    # remove duplicates
+    _, ix = np.unique(xds['time'], return_index=True); xds = xds.isel(time=ix)
+
+    return xds
+
+def hours_since(base_date, target_dates):
+    'fast method for locating "target_dates" hours since "base_date"'
+
+    return (target_dates - base_date).astype('timedelta64[h]').astype(int)
+
+def add_max_storms_mask(xds, times_max_storms, name_mask='max_storms'):
+    'fast method for adding a "max_storms" mask to a xarray.Dataset'
+
+    # find max storm indexes and make boolean mask
+    ixs = hours_since(xds.time.values[0], times_max_storms)
+    np_mask = np.zeros(len(xds.time.values), dtype='bool'); np_mask[ixs] = True
+
+    # add mask to dataset
+    xds[name_mask] = (('time'), np_mask)
+
+    return xds
+
