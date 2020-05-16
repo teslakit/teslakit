@@ -338,8 +338,8 @@ class Climate_Emulator(object):
         ms_times = []
         for d1, d2 in lt_storm_dates:
 
-            # get TWL inside WT window
-            wt_AWL = wvs_AWL.sel(time = slice(d1, d2))[:]
+            # get TWL inside WT window (+23h to get last storm day)
+            wt_AWL = wvs_AWL.sel(time = slice(d1, d2 + np.timedelta64(23,'h')))[:]
 
             # get window maximum TWL date
             wt_AWL_max = wt_AWL.where(wt_AWL==wt_AWL.max(), drop=True).squeeze()
