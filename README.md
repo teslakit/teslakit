@@ -68,6 +68,9 @@ It is not needed to run any calculation and installing it is optional
 
 Follow Basemap installation instructions at https://github.com/matplotlib/basemap
 
+```
+pip install git+https://github.com/matplotlib/basemap.git
+```
 
 ## Handling a Teslakit Project 
 - - -
