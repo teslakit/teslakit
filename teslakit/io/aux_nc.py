@@ -18,7 +18,6 @@ def StoreBugXdset(xds_data, p_ncfile):
     '''
     Stores xarray.Dataset to .nc file while avoiding bug with time data (>2262)
     '''
-    # TODO: update pip libs and check if this is needed
 
     # get metadata from xarray.Dataset
     dim_names = xds_data.dims.keys()
@@ -26,7 +25,7 @@ def StoreBugXdset(xds_data, p_ncfile):
 
     # Handle time data  (calendar format)
     calendar = 'standard'
-    units = 'days since 1970-01-01 00:00:00'
+    units = 'hours since 1970-01-01 00:00:00'
 
     # remove previous file
     if op.isfile(p_ncfile):
@@ -46,22 +45,26 @@ def StoreBugXdset(xds_data, p_ncfile):
 
         # dimensions values
         if vn in dim_names:
-            dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float32')
 
             if vn == 'time':  # time dimension values
-                if isinstance(vals[0], date):
+                if isinstance(vals[0], datetime):
+                    pass
+
+                elif isinstance(vals[0], date):
+                    # TODO se pierde la resolucion horaria
                     # parse datetime.date to datetime.datetime
                     vals = [datetime.combine(d, datetime.min.time()) for d in vals]
-                    # TODO: needed? rounds to day...
-                    #vals = vals
 
                 elif isinstance(vals[0], np.datetime64):
                     # parse numpy.datetime64 to datetime.datetime
                     vals = [n2d(d) for d in vals]
 
+                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float64')
                 dv[:] = netCDF4.date2num(vals, units=units, calendar=calendar)
                 dv.units = units
+
             else:
+                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float32')
                 dv[:] = vals
 
         # variables values
