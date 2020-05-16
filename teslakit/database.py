@@ -28,7 +28,6 @@ xds_limit_dates, xds_common_dates_daily, fast_reindex_hourly, \
 fast_reindex_hourly_nsim, generate_datetimes, xds_further_dates
 
 from .mjo import MJO_Categories
-from .waves import Aggregate_WavesFamilies
 
 
 # TODO: change all historical data to standarized .nc files
@@ -577,11 +576,6 @@ class Database(object):
         # get MJO categories 
         mjo_cs, _ = MJO_Categories(MJO['rmm1'], MJO['rmm2'], MJO['phase'])
         MJO['bmus'] = (('time',), mjo_cs)
-
-        # Hs, Tp, Dir from Aggregate_WavesFamilies
-        WVS_a = Aggregate_WavesFamilies(WVS)
-        for vn in ['Hs', 'Tp', 'Dir']:
-            WVS[vn] = WVS_a[vn]
 
         # reindex data to hourly (pad)
         AWT_h = fast_reindex_hourly(AWT)
