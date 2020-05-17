@@ -291,6 +291,9 @@ def Aggregate_WavesFamilies(wvs_fams, a_tp='quadratic'):
     # Hs from families
     HS = np.sqrt(np.nansum(np.power(vv_Hs,2), axis=1))
 
+    # nan positions
+    ix_nan_data = np.where(HS==0)
+
     # Tp
     if a_tp == 'quadratic':
 
@@ -311,6 +314,7 @@ def Aggregate_WavesFamilies(wvs_fams, a_tp='quadratic'):
         # TODO: make it fail
         pass
 
+
     # Dir from families
     tmp3 = np.arctan2(
         np.nansum(np.power(vv_Hs,2) * vv_Tp * np.sin(vv_Dir * np.pi/180), axis=1),
@@ -318,6 +322,11 @@ def Aggregate_WavesFamilies(wvs_fams, a_tp='quadratic'):
     )
     tmp3[tmp3<0] = tmp3[tmp3<0] + 2*np.pi
     DIR = tmp3 * 180/np.pi
+
+    # clear nans
+    HS[ix_nan_data] = np.nan
+    TP[ix_nan_data] = np.nan
+    DIR[ix_nan_data] = np.nan
 
     # TODO: se usa?
     # Dir from families (Hs max pos)
