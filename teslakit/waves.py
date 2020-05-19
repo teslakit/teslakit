@@ -305,7 +305,9 @@ def Aggregate_WavesFamilies(wvs_fams, a_tp='quadratic'):
     elif a_tp == 'max_energy':
 
         # Hs maximun position 
-        p_max_hs = np.nanargmax(vv_Hs, axis=1)
+        vv_Hs_nanzero = vv_Hs.copy()
+        vv_Hs_nanzero[np.isnan(vv_Hs)] = 0
+        p_max_hs = np.nanargmax(vv_Hs_nanzero, axis=1)
 
         # Tp from families (Hs max pos)
         TP = np.array([r[i] for r,i in zip(vv_Tp, p_max_hs)])
