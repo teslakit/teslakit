@@ -370,7 +370,7 @@ def hours_since(base_date, target_dates):
     return (target_dates - base_date).astype('timedelta64[h]').astype(int)
 
 def add_max_storms_mask(xds, times_max_storms, name_mask='max_storms'):
-    'fast method for adding a "max_storms" mask to a xarray.Dataset'
+    'fast method for adding a "max_storms" mask to a hourly xarray.Dataset'
 
     # find max storm indexes and make boolean mask
     ixs = hours_since(xds.time.values[0], times_max_storms)
