@@ -14,6 +14,8 @@ import numpy as np
 from ..util.time_operations import npdt64todatetime as n2d
 
 
+# TODO REFACTOR CON teslakit/database.py
+
 def StoreBugXdset(xds_data, p_ncfile):
     '''
     Stores xarray.Dataset to .nc file while avoiding bug with time data (>2262)
@@ -47,6 +49,7 @@ def StoreBugXdset(xds_data, p_ncfile):
         if vn in dim_names:
 
             if vn == 'time':  # time dimension values
+                # TODO: profile / acelerar
                 if isinstance(vals[0], datetime):
                     pass
 
@@ -59,9 +62,10 @@ def StoreBugXdset(xds_data, p_ncfile):
                     # parse numpy.datetime64 to datetime.datetime
                     vals = [n2d(d) for d in vals]
 
-                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float64')
+                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='int64')
                 dv[:] = netCDF4.date2num(vals, units=units, calendar=calendar)
                 dv.units = units
+                dv.calendar = calendar
 
             else:
                 dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float32')
