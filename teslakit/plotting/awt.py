@@ -54,7 +54,7 @@ def axplot_AWT_2D(ax, var_2D, num_wts, id_wt, color_wt):
     plt.setp([ax.get_xticklines(), ax.get_yticklines()], color=color_wt)
 
 def axplot_AWT_years(ax, dates_wt, bmus_wt, color_wt, xticks_clean=False,
-                     ylab=None):
+                     ylab=None, xlims=None):
     'axes plot AWT dates'
 
     # date axis locator
@@ -85,6 +85,7 @@ def axplot_AWT_years(ax, dates_wt, bmus_wt, color_wt, xticks_clean=False,
         )
 
     # configure axis
+    ax.set_xlim(xlims[0], xlims[1])
     ax.set_yticks([])
     ax.xaxis.set_major_locator(yloc5)
     ax.xaxis.set_minor_locator(yloc1)
@@ -293,6 +294,7 @@ def Plot_AWTs_Dates(bmus, dates, n_clusters, show=True):
         clr = cs_awt[ic]          # cluster color
 
         ylabel = "WT #{0}".format(id_AWT)
+        xlims = [dates[0].astype('datetime64[Y]')-np.timedelta64(3, 'Y'), dates[-1].astype('datetime64[Y]')+np.timedelta64(3, 'Y')]
 
         xaxis_clean=True
         if ic == n_clusters-1:
@@ -301,7 +303,7 @@ def Plot_AWTs_Dates(bmus, dates, n_clusters, show=True):
         # axs plot
         axplot_AWT_years(
             axs[ic], dates_AWT, bmus_AWT,
-            clr, xaxis_clean, ylabel,
+            clr, xaxis_clean, ylabel, xlims
         )
 
     # show and return figure
