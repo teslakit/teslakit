@@ -455,12 +455,10 @@ def Plot_Probs_WT_WT_anomaly(series_1, series_2, n_clusters_1, n_clusters_2, ttl
     gs = gridspec.GridSpec(1, n_clusters_1, wspace=0.10, hspace=0.15)
 
     #----------------------
-    wt_set = np.arange(n_clusters_2) + 1
-
     # best rows cols combination
     n_rows, n_cols = GetBestRowsCols(n_clusters_2)
 
-    c_T = ClusterProbabilities(series_2, wt_set)
+    c_T = ClusterProbabilities(series_2, set_2)
     C_T_mean = np.reshape(c_T, (n_rows, n_cols))
     #----------------------
 
