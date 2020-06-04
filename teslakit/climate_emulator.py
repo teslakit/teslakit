@@ -338,7 +338,7 @@ class Climate_Emulator(object):
         ms_times = []
         for d1, d2 in lt_storm_dates:
 
-            # get TWL inside WT window (+23h to get last storm day)
+            # get TWL inside WT window
             wt_AWL = wvs_AWL.sel(time = slice(d1, d2 + np.timedelta64(23,'h')))[:]
 
             # get window maximum TWL date
@@ -822,11 +822,11 @@ class Climate_Emulator(object):
             ('{0}_{1}'.format(f,vn)) for f in wvs_fams for vn in['Hs', 'Tp', 'Dir']
             ]
 
-
         # simulate one value for each storm 
         dwt_df = np.diff(DWT)
+        dwt_df[-1] = 1  # ensure last day storm
         ix_ch = np.where((dwt_df != 0))[0]+1
-        ix_ch = np.insert(ix_ch, 0,0)
+        ix_ch = np.insert(ix_ch, 0, 0)  # get first day storm
         DWT_sim = DWT[ix_ch]
         DWT_time_sim = DWT_time[ix_ch]
 
@@ -1004,8 +1004,9 @@ class Climate_Emulator(object):
 
         # simulate one value for each storm 
         dwt_df = np.diff(DWT)
+        dwt_df[-1] = 1  # ensure last day storm
         ix_ch = np.where((dwt_df != 0))[0]+1
-        ix_ch = np.insert(ix_ch, 0,0)
+        ix_ch = np.insert(ix_ch, 0, 0)  # get first day storm
         DWT_sim = DWT[ix_ch]
         DWT_time_sim = DWT_time[ix_ch]
 
