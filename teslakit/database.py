@@ -729,149 +729,79 @@ class Database(object):
 
         return xds_MJO, xds_DWT
 
-    # NEARSHORE: COMPLETE DATASETS (RBF DATASETS)
 
-    def Save_NEARSHORE_HIST_sea(self, pd_waves):
-        'Stores sea waves full historical dataset. (offshore)'
+    # NEARSHORE
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset_hist)
+    def Save_HIST_NEARSHORE(self, xds):
+        ps = self.paths.site.HISTORICAL.nearshore
 
-    def Load_NEARSHORE_HIST_sea(self):
-        'Load sea waves full historical dataset'
+        s =  SplitStorage(ps)
+        s.Save(xds)
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset_hist)
+    def Load_HIST_NEARSHORE(self, vns=[], decode_times=False):
+        ps = self.paths.site.HISTORICAL.nearshore
 
-    def Save_NEARSHORE_HIST_swell(self, pd_waves):
-        'Stores swells waves full historical dataset. (offshore)'
+        s =  SplitStorage(ps)
+        return s.Load(vns=vns, decode_times=decode_times)
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset_hist)
+    def Save_SIM_NEARSHORE(self, xds, n_sim):
+        ps = self.paths.site.SIMULATION.nearshore
 
-    def Load_NEARSHORE_HIST_swell(self):
-        'Load swells waves full historical datasets'
+        nm = '{0:08d}'.format(n_sim)  # sim code
+        ps_sim = op.join(ps, nm)
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset_hist)
+        s =  SplitStorage(ps_sim)
+        s.Save(xds, safe_time=True)
 
-    def Save_NEARSHORE_SIM_sea(self, pd_waves):
-        'Stores sea waves full simulated dataset. (offshore)'
+    def Load_SIM_NEARSHORE(self, n_sim, vns=[], decode_times=False):
+        ps = self.paths.site.SIMULATION.nearshore
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_dataset_sim)
+        nm = '{0:08d}'.format(n_sim)  # sim code
+        ps_sim = op.join(ps, nm)
 
-    def Load_NEARSHORE_SIM_sea(self):
-        'Load sea waves full simulated dataset'
+        s =  SplitStorage(ps_sim)
+        return s.Load(vns=vns, decode_times=decode_times)
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_dataset_sim)
+    def Load_SIM_NEARSHORE_all(self, vns=[], decode_times=False):
+        ps = self.paths.site.SIMULATION.nearshore
 
-    def Save_NEARSHORE_SIM_swell(self, pd_waves):
-        'Stores swells waves full simulated dataset. (offshore)'
+        # locate simulations
+        sims = sorted([x for x in os.listdir(ps) if x.isdigit() and op.isdir(op.join(ps, x))])
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_dataset_sim)
+        # read all simulations
+        for c, nm in enumerate(sims):
+            ps_sim = op.join(ps, nm)
+            s = SplitStorage(ps_sim)
 
-    def Load_NEARSHORE_SIM_swell(self):
-        'Load swells waves full simulated datasets'
+            # read time and variables from first file
+            if c==0:
+                ds = s.Load(vns=vns, decode_times=False)
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_dataset_sim)
+                # generate output xarray.Dataset, dims and vars
+                out = xr.Dataset({}, coords={'time': ds.time, 'n_sim':range(len(sims))})
+                for vds in ds.variables:
+                    if vds == 'time': continue
+                    out[vds] = (('time', 'n_sim',), np.nan*np.zeros((len(out.time), len(out.n_sim))))
+                    out[vds].loc[dict(n_sim=c)] = ds[vds]
 
-    # NEARSHORE: MDA CLASSIFICATION (RBF SUBSET)
+            else:
+                ds = s.Load(vns=vns, decode_times=False)
 
-    def Save_NEARSHORE_MDA_sea(self, pd_waves):
-        'Stores sea waves subset (from mda selection)'
+                # fill output xarray.Dataset
+                for vds in ds.variables:
+                    if vds == 'time': continue
+                    out[vds].loc[dict(n_sim=c)] = ds[vds]
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_subset)
+        # optional decode times to cftime 
+        if decode_times:
+            out = xr.decode_cf(out, use_cftime=True)
 
-    def Load_NEARSHORE_MDA_sea(self):
-        'Load sea waves subset (from mda selection)'
+        return out
 
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_subset)
 
-    def Save_NEARSHORE_MDA_swell(self, pd_waves):
-        'Stores swell waves subset (from mda selection)'
+    # RUNUP
+    # TODO SEGUIR REFACTOR AQUI
 
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_subset)
-
-    def Load_NEARSHORE_MDA_swell(self):
-        'Load swell waves subset (from mda selection)'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_subset)
-
-    # NEARSHORE: POINT PROPAGATION (RBF TARGET)
-
-    def Save_NEARSHORE_TARGET_sea(self, pd_waves):
-        'Stores sea waves target (from swan propagation)'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_target)
-
-    def Load_NEARSHORE_TARGET_sea(self):
-        'Load sea waves target (from swan propagation)'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_target)
-
-    def Save_NEARSHORE_TARGET_swell(self, pd_waves):
-        'Stores swell waves target (from swan propagation)'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_target)
-
-    def Load_NEARSHORE_TARGET_swell(self):
-        'Load swell waves target (from swan propagation)'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_target)
-
-    # NEARSHORE: RBF RECONSTRUCTION
-
-    def Save_NEARSHORE_RECONSTRUCTION_HIST_sea(self, pd_waves):
-        'Stores sea waves RBF reconstruction'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon_hist)
-
-    def Load_NEARSHORE_RECONSTRUCTION_HIST_sea(self):
-        'Load sea waves RBF reconstruction'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon_hist)
-
-    def Save_NEARSHORE_RECONSTRUCTION_HIST_swell(self, pd_waves):
-        'Stores swell waves RBF reconstruction'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon_hist)
-
-    def Load_NEARSHORE_RECONSTRUCTION_HIST_swell(self):
-        'Load swell waves RBF reconstruction'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_hist)
-
-    def Save_NEARSHORE_RECONSTRUCTION_HIST_hourly(self, xds):
-        'Stores waves RBF reconstruction for historical storms'
-
-        save_nc(xds, self.paths.site.NEARSHORE.hourly_recon_hist, safe_time=True)
-
-    def Load_NEARSHORE_RECONSTRUCTION_HIST_hourly(self):
-        'Load waves RBF reconstruction for historical storms'
-
-        return xr.open_dataset(self.paths.site.NEARSHORE.hourly_recon_hist, decode_times=True)
-
-    def Save_NEARSHORE_RECONSTRUCTION_SIM_sea(self, pd_waves):
-        'Stores sea waves RBF reconstruction'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.sea_recon_sim)
-
-    def Load_NEARSHORE_RECONSTRUCTION_SIM_sea(self):
-        'Load sea waves RBF reconstruction'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.sea_recon_sim)
-
-    def Save_NEARSHORE_RECONSTRUCTION_SIM_swell(self, pd_waves):
-        'Stores swell waves RBF reconstruction'
-
-        pd_waves.to_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
-
-    def Load_NEARSHORE_RECONSTRUCTION_SIM_swell(self):
-        'Load swell waves RBF reconstruction'
-
-        return pd.read_pickle(self.paths.site.NEARSHORE.swl_recon_sim)
-
-    def Save_NEARSHORE_RECONSTRUCTION_SIM_hourly(self, xds):
-        save_nc(xds, self.paths.site.NEARSHORE.hourly_recon_sim, safe_time=True)
-
-    def Load_NEARSHORE_RECONSTRUCTION_SIM_hourly(self):
-        return xr.open_dataset(self.paths.site.NEARSHORE.hourly_recon_sim, decode_times=True)
 
     def Save_NEARSHORE_RUNUP_HIST(self, pd_df):
         'Stores historical nearshore runup (hycrew output)'
@@ -1119,3 +1049,37 @@ class PathControl(object):
         self.site = atdict(dd)
         self.p_site = p_site
 
+
+class hyswan_db(object):
+    '''
+    database for MDA-SWAN-RBF methodology
+    '''
+
+    def __init__(self, p_base):
+
+        self.p_base = p_base
+        self.paths = {
+            'sea_dataset': op.join(p_base, 'sea_dataset.pickle'),
+            'sea_subset': op.join(p_base, 'sea_subset.pickle'),
+            'sea_target': op.join(p_base, 'sea_target.pickle'),
+
+            'swl_dataset': op.join(p_base, 'swl_dataset.pickle'),
+            'swl_subset': op.join(p_base, 'swl_subset.pickle'),
+            'swl_target': op.join(p_base, 'swl_target.pickle'),
+
+            'swan_projects': op.join(p_base, 'swan_projects'),
+
+        }
+
+    def __str__(self):
+        t=''
+        for k in sorted(self.paths.keys()):
+            t+='{0} - {1}\n'.format(k, self.paths[k])
+        return t
+
+    def Save(self, key, pd_data):
+        if not op.isdir(self.p_base): os.makedirs(self.p_base)
+        pd_data.to_pickle(self.paths[key])
+
+    def Load(self, key):
+        return pd.read_pickle(self.paths[key])
