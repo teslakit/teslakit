@@ -50,15 +50,45 @@ Then install teslakit
 python setup.py install
 ```
 
-### Installing aditional modules
+### Installing SWAN numerical model
 
-mw\_deltares is a custom developed python toolbox used to wrap SWAN numerical model
 
-install the python wheel file that is included at resources folder
+[teslakit/numerical\_models/swan/](./teslakit/numerical_models/swan/) is a custom developed python toolbox used to wrap SWAN numerical model
+
+SWAN numerical model has to be compiled for serial execution and stored at teslakit swan binary [resources](./teslakit/numerical_models/swan/resources/) folder
+
+First download and compile SWAN serial executable
 
 ```
-pip install requirements/mw_deltares-0.1.0-py3-none-any.whl
+  # you may need to install a fortran compiler
+  sudo apt install gfortran
+
+  # download and unpack
+  wget http://swanmodel.sourceforge.net/download/zip/swan4131.tar.gz
+  tar -zxvf swan4131.tar.gz
+
+  # compile numerical model
+  cd swan4131/
+  make config
+  make ser
 ```
+
+Now manually move executable file to [resources/swan\_bin/](./teslakit/numerical_models/swan/resources/swan_bin/) and change file name to "swan\_ser.exe"
+
+Alternatively, set swan executable file using our swan python module
+
+```
+  # Launch a python interpreter
+  $ python
+
+  Python 3.6.9 (default, Apr 18 2020, 01:56:04) 
+  [GCC 8.4.0] on linux
+  Type "help", "copyright", "credits" or "license" for more information.
+  
+  >>> from teslakit.numerical_models import swan
+  >>> swan.set_swan_binary_file('swan.exe')
+```
+
 
 ### Installing optional modules
 

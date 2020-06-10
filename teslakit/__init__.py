@@ -18,6 +18,7 @@ from . import intradaily
 from . import kma
 from . import mda
 from . import mjo
+from . import numerical_models
 from . import pca
 from . import rbf
 from . import statistical
