@@ -1,5 +1,6 @@
 from . import alr
 from . import awt
+from . import buoy
 from . import climate_change
 from . import config
 from . import csiro

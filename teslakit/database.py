@@ -148,11 +148,6 @@ class Database(object):
             p_sf = op.join(self.paths.p_site, sf)
             if not op.isdir(p_sf): os.makedirs(p_sf)
 
-        # create export figs subfolders
-        for k in self.paths.site.export_figs.keys():
-            p_sf = self.paths.site.export_figs[k]
-            if not op.isdir(p_sf): os.makedirs(p_sf)
-
         print('Teslakit Site generated at {0}'.format(p_site))
 
     def CheckInputFiles(self):
@@ -169,8 +164,8 @@ class Database(object):
             ('ESTELA', ['coastmat', 'estelamat', 'gowpoint', 'slp'],
              [op.isfile, op.isfile, op.isfile, op.isfile]),
             ('TIDE', ['mareografo_nc', 'hist_astro'], [op.isfile, op.isfile]),
-            ('HYCREWW', ['rbf_coef'], [op.isdir]),
-            ('NEARSHORE', ['swan_projects'], [op.isdir]),
+            #('HYCREWW', ['rbf_coef'], [op.isdir]),
+            #('NEARSHORE', ['swan_projects'], [op.isdir]),
         ]
 
         # get status
@@ -798,43 +793,48 @@ class Database(object):
 
         return out
 
+    def Load_AWAC_buoy(self):
 
-    # RUNUP
-    # TODO SEGUIR REFACTOR AQUI
+        # buoy path and files
+        p_buoy = self.paths.site.HYSWAN.buoy
+        fs = ['Roi_AWAC_deploy1.mat', 'Roi_AWAC_deploy2.mat', 'Roi_AWAC_deploy3.mat']
 
+        # aux.
+        def Read_AWAC_mat(p_mat):
+            'Read a Roi_AWAC_deploy.mat file'
 
-    def Save_NEARSHORE_RUNUP_HIST(self, pd_df):
-        'Stores historical nearshore runup (hycrew output)'
+            # matlab file
+            mf = ReadMatfile(p_mat)['AWAC']
 
-        #save_nc(xds, self.paths.site.NEARSHORE.runup_hist, safe_time=True)
-        pd_df.to_pickle(self.paths.site.NEARSHORE.runup_hist)
+            # date string format
+            str_format = '%d-%b-%Y %H:%M:%S GMT'
 
-    def Load_NEARSHORE_RUNUP_HIST(self):
-        'Load historical nearshore runup (hycrew output)'
+            # read times and generate array
+            t0 = np.datetime64(datetime.strptime(mf['start_time'], str_format))
+            t1 = np.datetime64(datetime.strptime(mf['end_time'], str_format))
+            dt = np.timedelta64(mf['profile_interval_s'], 's')
 
-        #return xr.open_dataset(self.paths.site.NEARSHORE.runup_hist, decode_times=True)
-        return pd.read_pickle(self.paths.site.NEARSHORE.runup_hist)
+            times = np.arange(t0, t1+dt, dt)
 
-    def Save_NEARSHORE_RUNUP_SIM(self, l_pdfs):
+            # variables
+            return xr.Dataset(
+                {
+                    'Hs': (('time',), mf['hs'][0][:len(times)]),
+                    'Tp': (('time',), mf['tp'][0][:len(times)]),
+                    'Dir': (('time',), mf['dp'][0][:len(times)]),
+                },
+                coords = {'time':times}
+            )
 
-        if not op.isdir(self.paths.site.NEARSHORE.runup_sims):
-            os.makedirs(self.paths.site.NEARSHORE.runup_sims)
+        # read buoy files 
+        lx = []
+        for f in fs:
+            xds = Read_AWAC_mat(op.join(p_buoy, f))
+            lx.append(xds)
+        xout = xr.combine_by_coords(lx)
 
-        for c, pd_df in enumerate(l_pdfs):
-            p_sim = op.join(self.paths.site.NEARSHORE.runup_sims, '{0:04d}.nc'.format(c))
-            #save_nc(xds, p_sim, safe_time=True)
-            pd_df.to_pickle(p_sim)
+        return xout
 
-    def Load_NEARSHORE_RUNUP_SIM(self, n_sims=0):
-
-        l_sim = []
-        for c in range(n_sims):
-            p_sim = op.join(self.paths.site.NEARSHORE.runup_sims, '{0:04d}.nc'.format(c))
-            #l_sim.append(xr.open_dataset(p_sim, decode_times=True))
-            l_sim.append(pd.read_pickle(p_sim))
-
-
-        return l_sim
 
     # HYCREWW
 
@@ -875,6 +875,7 @@ class Database(object):
 
         return var_lims, RBF_coeffs
 
+
     # CLIMATE CHANGE
 
     def Load_RCP85(self):
@@ -896,6 +897,9 @@ class Database(object):
 
         return lon, lat, RCP85ratioHIST_occurrence
 
+
+
+# teslakit database aux. objects
 
 class SplitStorage(object):
     'Handles teslakit hourly data split in multiple netCDF4 files'
@@ -1083,3 +1087,4 @@ class hyswan_db(object):
 
     def Load(self, key):
         return pd.read_pickle(self.paths[key])
+
