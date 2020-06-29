@@ -15,6 +15,7 @@ sys.path.insert(0, op.join(op.dirname(__file__), '..', '..', '..'))
 
 # teslakit
 from teslakit.climate_emulator import Climate_Emulator
+from teslakit.waves import AWL
 
 
 # --------------------------------------
@@ -47,6 +48,9 @@ DWTs_fit = xr.Dataset(
 )
 WVS_fit = WVS.sel(time = slice(DWTs_fit.time[0], DWTs_fit.time[-1]))
 
+# calculate proxy variable: AWL
+WVS_fit['AWL'] = AWL(WVS_fit['Hs'], WVs_fit['Tp'])
+
 print(DWTs_fit)
 print()
 print(WVS_fit)
@@ -72,7 +76,7 @@ config = {
 }
 
 # Fit climate emulator and save 
-CE.FitExtremes(DWTs_fit, WVS_fit, config)
+CE.FitExtremes(DWTs_fit, WVS_fit, config, proxy='AWL')
 
 print('test 1 done.')
 print()
@@ -107,6 +111,8 @@ DWTs_fit = xr.Dataset(
 )
 WVS_fit = WVS.sel(time = slice(DWTs_fit.time[0], DWTs_fit.time[-1]))
 
+# calculate proxy variable: AWL
+WVS_fit['AWL'] = AWL(WVS_fit['Hs'], WVs_fit['Tp'])
 
 # resample extra data
 WDS = WDS.resample(time='1h').pad().sel(time=WVS_fit.time)
@@ -148,7 +154,7 @@ config = {
 }
 
 # Fit climate emulator and save 
-CE.FitExtremes(DWTs_fit, WVS_fit, config)
+CE.FitExtremes(DWTs_fit, WVS_fit, config, proxy = 'AWL')
 
 print('test 2 done.')
 print()
