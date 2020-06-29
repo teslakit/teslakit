@@ -29,7 +29,6 @@ def tqdm(*args, **kwargs):
 
 # tk
 from .statistical import Empirical_ICDF
-from .waves import AWL
 from .extremes import FitGEV_KMA_Frechet, Smooth_GEV_Shape, ACOV
 from .io.aux_nc import StoreBugXdset
 
@@ -166,7 +165,7 @@ class Climate_Emulator(object):
         print('Weibull distribution: {0}'.format(self.vars_WBL))
         print('Do chromosomes combinations: {0}'.format(self.do_chrom))
 
-    def FitExtremes(self, KMA, WVS, config):
+    def FitExtremes(self, KMA, WVS, config, proxy = 'AWL'):
         '''
         GEV extremes fitting.
         Input data (waves vars series and bmus) shares time dimension
@@ -176,13 +175,13 @@ class Climate_Emulator(object):
                                      (time,), fam_V, {fam: sea, swell_1, ... V: Hs, Tp, Dir}
                                      (time,), extra_var1, extra_var2, ...
         config     - configuration dictionary: view self.ConfigVariables()
+        proxy      - variable used to get DWTs max. storms (default AWL).
+                     proxy variable has to be inside WVS xarray.Dataset
         '''
 
         # configure waves fams variables parameters from config dict
         self.ConfigVariables(config)
-
-        # get start and end dates for each storm
-        lt_storm_dates = self.Calc_StormsDates(KMA)
+        print('Max. Storms PROXY: {0}'.format(proxy))
 
         # store TCs WTs waves
         WVS_TCs = WVS.where(~np.isnan(WVS.TC_category), drop=True)
@@ -190,16 +189,19 @@ class Climate_Emulator(object):
         # TODO select waves without TCs ?
         #WVS = WVS.where(np.isnan(WVS.TC_category), drop=True)
 
-        # calculate max. AWL for each storm
-        ms_AWL = self.Calc_StormsMaxTWL(WVS.Hs, WVS.Tp, lt_storm_dates)
+        # get start and end dates for each storm
+        lt_storm_dates = self.Calc_StormsDates(KMA)
 
-        # select waves at storms max. AWL 
-        ms_WVS = WVS.sel(time = ms_AWL.time)
-        ms_WVS['AWL'] = ms_AWL.AWL
+        # calculate max. PROXY variable for each storm
+        ms_PROXY = self.Calc_StormsMaxProxy(WVS[proxy], lt_storm_dates)
 
-        # reindex KMA, then select KMA data at storms max. AWL 
+        # select waves at storms max.
+        ms_WVS = WVS.sel(time = ms_PROXY.time)
+        ms_WVS[proxy] = ms_PROXY
+
+        # reindex KMA, then select KMA data at storms max.
         KMA_rs = KMA.reindex(time = WVS.time, method='pad')
-        ms_KMA = KMA_rs.sel(time = ms_AWL.time)
+        ms_KMA = KMA_rs.sel(time = ms_PROXY.time)
 
         # GEV: Fit each wave family to a GEV distribution (KMA bmus)
         GEV_Par = self.Calc_GEVParams(ms_KMA, ms_WVS)
@@ -308,7 +310,7 @@ class Climate_Emulator(object):
 
         return WVS_sim, TCs_sim, WVS_upd
 
-    def LoadSim_All(self, n_sim_ce=0):
+    def LoadSim_All(self, n_sim_ce=0, TCs=True):
         '''
         Load all waves and TCs (1 DWT -> 1 output) simulations.
 
@@ -318,6 +320,8 @@ class Climate_Emulator(object):
         output will merge WVS_upd and TCs_sim data variables
 
         a unique n_sim_ce (inner climate emulator simulation) has to be chosen.
+
+        TCs - True / False. Load WVS (TCs updated) + TCs / WVS (without TCs) simulations
         '''
 
         # count available waves simulations
@@ -326,11 +330,22 @@ class Climate_Emulator(object):
         # iterate over simulations
         l_sims = []
         for n in range(n_sims_DWTs):
-            _, TCs_sim, WVS_upd = self.LoadSim(n_sim = n)
 
-            pd_sim = xr.merge(
-                [WVS_upd.isel(n_sim = n_sim_ce), TCs_sim.isel(n_sim = n_sim_ce)]
-            ).to_dataframe()
+            if TCs:
+                # Load simulated Waves (TCs updated) and TCs
+                _, TCs_sim, WVS_upd = self.LoadSim(n_sim = n)
+
+                pd_sim = xr.merge(
+                    [WVS_upd.isel(n_sim = n_sim_ce), TCs_sim.isel(n_sim = n_sim_ce)]
+                ).to_dataframe()
+
+            else:
+                # Load simulated Waves (without TCs)
+                WVS_sim, _, _ = self.LoadSim(n_sim = n)
+
+                pd_sim = WVS_sim.isel(n_sim = n_sim_ce).to_dataframe()
+
+            # add columns
             pd_sim['n_sim'] = n  # store simulation index with data
             pd_sim['time'] = pd_sim.index  # store dates as a variable
 
@@ -378,34 +393,25 @@ class Climate_Emulator(object):
 
         return dates_tup_WT
 
-    def Calc_StormsMaxTWL(self, wvs_hs, wvs_tp, lt_storm_dates):
-        'Returns xarray.Dataset with max. AWL value and time'
+    def Calc_StormsMaxProxy(self, wvs_PROXY, lt_storm_dates):
+        'Returns xarray.Dataset with max. PROXY variable value and time'
 
-        # Get AWL from waves partitions data 
-        wvs_AWL = AWL(wvs_hs, wvs_tp)
-
-        # find max TWL inside each storm
-        ms_AWL = []
+        # find max PROXY inside each storm
+        ms_PROXY = []
         ms_times = []
         for d1, d2 in lt_storm_dates:
 
             # get TWL inside WT window
-            # TODO: comprobar +23h
-            wt_AWL = wvs_AWL.sel(time = slice(d1, d2 + np.timedelta64(23,'h')))[:]
+            wt_PROXY = wvs_PROXY.sel(time = slice(d1, d2 + np.timedelta64(23,'h')))[:]
 
             # get window maximum TWL date
-            wt_AWL_max = wt_AWL.where(wt_AWL==wt_AWL.max(), drop=True).squeeze()
+            wt_PROXY_max = wt_PROXY.where(wt_PROXY==wt_PROXY.max(), drop=True).squeeze()
 
             # append data
-            ms_AWL.append(wt_AWL_max.values)
-            ms_times.append(wt_AWL_max.time.values)
+            ms_PROXY.append(wt_PROXY_max.values)
+            ms_times.append(wt_PROXY_max.time.values)
 
-        return xr.Dataset(
-            {
-                'AWL': (('time',), ms_AWL),
-            },
-            coords = {'time': ms_times}
-        )
+        return wvs_PROXY.sel(time=ms_times)
 
     def Calc_GEVParams(self, xds_KMA_MS, xds_WVS_MS):
         '''
@@ -1344,7 +1350,6 @@ class Climate_Emulator(object):
         )
 
         return xds_TCs_sim, xds_WVS_sim_updated
-
 
     def Report_Fit(self, vns_GEV=['Hs'], show=True, plot_chrom=True, plot_sigma=True):
         '''
