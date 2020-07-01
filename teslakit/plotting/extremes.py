@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 # pip
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
+from matplotlib.colors import DivergingNorm
 from scipy.interpolate import interp1d
 from scipy.stats import  gumbel_l, genextreme
 
@@ -18,16 +20,15 @@ from .config import _faspect, _fsize, _fdpi
 
 # TODO: REFACTOR CHROM Y SIGMA
 
-def Plot_GEVParams(xda_gev_var, show=True):
+
+# Climate Emulator: Fit Report
+
+def Plot_GEVParams(xda_gev_var, c_shape='bwr', c_other='hot_r', show=True):
     'Plot GEV params for a GEV parameter variable (sea_Hs, swell_1_Hs, ...)'
 
     name = xda_gev_var.name
     params = xda_gev_var.parameter.values[:]
     ss = int(np.sqrt(len(xda_gev_var.n_cluster)))  # this will fail if cant sqrt
-
-    d_minmax = {
-        'shape': (-0.2, 0.2),
-    }
 
     # plot figure
     fig, axs = plt.subplots(2,2, figsize=(_faspect*_fsize, _fsize))
@@ -40,14 +41,23 @@ def Plot_GEVParams(xda_gev_var, show=True):
         ax = axs[c]
 
         par_values = xda_gev_var.sel(parameter=par).values[:]
+        par_values[par_values==1.0e-10]=0
+
         rr_pv = np.flipud(np.reshape(par_values,(ss,ss)).T)
 
-        if par in d_minmax.keys():
-            cl = d_minmax[par]
-        else:
-            cl = (np.min(par_values), np.max(par_values))
+        if par == 'shape':
+            cl = [np.min(par_values), np.max(par_values)]
+            if cl[0]>=0: cl[0]=-0.000000001
+            if cl[1]<=0: cl[1]=+0.000000001
+            norm = DivergingNorm(vmin=cl[0], vcenter=0, vmax=cl[1])
+            cma = c_shape
 
-        cc=ax.pcolor(rr_pv, cmap='coolwarm_r', clim=cl, edgecolor='k')
+        else:
+            cl = [np.min(par_values), np.max(par_values)]
+            norm = None
+            cma = c_other
+
+        cc = ax.pcolor(rr_pv, cmap=cma, vmin=cl[0], vmax=cl[1], norm=norm, edgecolor='k')
         fig.colorbar(cc, ax=ax)
 
         # add grid and title
@@ -253,6 +263,161 @@ def Plot_Schemaball(xds_data):
     return None
 
 
+# Climate Emulator: Simulaton Report
+
+
+def axplot_compare_annualmax(ax, var_1, trp_1, var_2, trp_2, vn,
+                             label_1='Historical', label_2='Simulation',
+                             color_1='white', color_2='skyblue'):
+    'axes plot histogram comparison between fit-sim variables'
+
+    ax.semilogx(trp_1, var_1, 'ok', color = color_1, label = label_1,
+                markersize = 4, zorder = 9)
+    ax.semilogx(trp_2, var_2, '.-', color = color_2, label = label_2,
+                linewidth = 2, zorder = 8)
+
+    # customize axes
+    ax.set_ylabel(vn)
+    ax.grid(True)
+
+def Plot_FitSim_AnnualMax(data_fit, data_sim, vns, vn_max=None,
+                           color_1='white', color_2='skyblue',
+                           label_1='Historical', label_2 = 'Simulation',
+                           supt=False, show=True):
+    'Plots fit vs sim annual maxima comparison for variables "vns"'
+
+    # aux func for calculating rp time
+    def t_rp(time_y):
+        ny = len(time_y)
+        return np.array([1/(1-(n/(ny+1))) for n in np.arange(1,ny+1)])
+
+    # def. some auxiliar function to select all dataset variables at vn max by groups
+    def grouped_max(ds, vn=None, dim=None):
+        return ds.isel(**{dim: ds[vn].argmax(dim)})
+
+    # grid spec number of rows
+    gs_1 = len(vns)
+
+    # plot figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize*gs_1/2.3))
+
+    # grid spec
+    gs = gridspec.GridSpec(gs_1, 1)  #, wspace=0.0, hspace=0.0)
+
+    # handle optional max variable and marginals
+    if vn_max:
+        amax_fit_marg = data_fit.groupby('time.year').apply(
+            grouped_max, vn=vn_max, dim='time')
+        amax_sim_marg = data_sim.groupby('time.year').apply(
+            grouped_max, vn=vn_max, dim='time')
+
+    # variables
+    for c, vn in enumerate(vns):
+
+        if vn_max:
+            # get marginal variables at max
+            amax_fit = amax_fit_marg[vn]
+            amax_sim = amax_sim_marg[vn]
+
+        else:
+            # calculate Annual Maxima values 
+            amax_fit = data_fit[vn].groupby('time.year').max(dim='time')
+            amax_sim = data_sim[vn].groupby('time.year').max(dim='time')
+
+        # get values and time, remove nans
+        dh = amax_fit.values[:]; th = amax_fit['year'].values[:]
+        th = th[~np.isnan(dh)]; dh = dh[~np.isnan(dh)]
+
+        # remove last simulation year (1 time instant only to calculate max)
+        ds = amax_sim.values[:-1]; ts = amax_sim['year'].values[:-1]
+        ts = ts[~np.isnan(ds)]; ds = ds[~np.isnan(ds)]
+
+        # prepare values for return period plot
+        dh = np.sort(dh); th = t_rp(th)
+        ds = np.sort(ds); ts = t_rp(ts)
+
+        # axes
+        ax = plt.subplot(gs[c, 0])
+        axplot_compare_annualmax(
+            ax, dh, th, ds, ts, vn,
+            color_1=color_1, color_2=color_2,
+            label_1=label_1, label_2=label_2,
+        )
+
+    # last xaxis
+    ax.set_xlabel('Return Period (Years)', fontsize=14)
+
+    # fig suptitle
+    if supt:
+        fig.suptitle(
+            '{0} - {1} Annual Max. Comparison: {2}'.format(label_1, label_2, ', '.join(vns)),
+            fontsize=13, fontweight = 'bold',
+        )
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+def Plot_FitSim_GevFit(data_fit, data_sim, vn, xds_GEV_Par, kma_fit,
+                       n_bins=30,
+                       color_1='white', color_2='skyblue',
+                       alpha_1=0.7, alpha_2=0.4,
+                       label_1='Historical', label_2 = 'Simulation',
+                       gs_1 = 1, gs_2 = 1, n_clusters = 1, vlim=1,
+                       show=True):
+    'Plots fit vs sim histograms and gev fit by clusters for variable "vn"'
+
+    # plot figure
+    fig = plt.figure(figsize=(_fsize*gs_2/2, _fsize*gs_1/2.3))
+
+    # grid spec
+    gs = gridspec.GridSpec(gs_1, gs_2)  #, wspace=0.0, hspace=0.0)
+
+    # clusters
+    for c in range(n_clusters):
+
+        # select wt data
+        wt = c+1
+
+        ph_wt = np.where(kma_fit.bmus==wt)[0]
+        ps_wt = np.where(data_sim.DWT==wt)[0]
+
+        dh = data_fit[vn].values[:][ph_wt]  #; dh = dh[~np.isnan(dh)]
+        ds = data_sim[vn].values[:][ps_wt] #; ds = ds[~np.isnan(ds)]
+
+        # select wt GEV parameters
+        pars_GEV = xds_GEV_Par[vn]
+        sha = pars_GEV.sel(parameter='shape').sel(n_cluster=wt).values
+        sca = pars_GEV.sel(parameter='scale').sel(n_cluster=wt).values
+        loc = pars_GEV.sel(parameter='location').sel(n_cluster=wt).values
+
+
+        # compare histograms
+        ax = fig.add_subplot(gs[c])
+        axplot_compare_histograms(
+            ax, dh, ds, ttl='WT: {0}'.format(wt), density=True, n_bins=n_bins,
+            color_1=color_1, color_2=color_2,
+            alpha_1=alpha_1, alpha_2=alpha_2,
+            label_1=label_1, label_2=label_2,
+        )
+
+        # add gev fit 
+        x = np.linspace(genextreme.ppf(0.001, -1*sha, loc, sca), vlim, 100)
+        ax.plot(x, genextreme.pdf(x, -1*sha, loc, sca), label='GEV fit')
+
+        # customize axis
+        ax.legend(prop={'size':8})
+
+    # fig suptitle
+    #fig.suptitle('{0}'.format(vn), fontsize=14, fontweight = 'bold')
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
+# Extremes Return Period for all simulations
+
 def axplot_RP(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, var_name, sim_percentile=95):
     'axes plot return period historical vs simulation'
 
@@ -367,7 +532,14 @@ def Plot_ReturnPeriodValidation(xds_hist, xds_sim, sim_percentile=95, show=True)
     return fig
 
 
+
+
+
+
+
+
 # TODO: revisar funciones _simulations
+
 
 def axplot_RP_Sims(ax, tups_time_val, var_name):
     'axes plot return period historical vs simulation'
@@ -416,7 +588,6 @@ def axplot_RP_Sims(ax, tups_time_val, var_name):
     ax.set_xlim(left=10**0, right=np.max(t_s))
     ax.tick_params(axis='both', which='both', top=True, right=True)
     ax.grid(which='both')
-
 
 def Plot_ReturnPeriod_Simulations(l_xds_sim, show=True):
     'Plot Return Period historical - simulation validation'
@@ -526,7 +697,6 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
     ax.set_ylabel('{0}'.format(var_name))
     ax.set_xlim(left=10**0, right=np.max(np.concatenate([t_h,t_s])))
     ax.tick_params(axis='both', which='both', top=True, right=True)
-
 
 def Plot_ReturnPeriodValidation_v2(xds_hist, xds_sim, xds_sim2, show=True):
     'Plot Return Period historical - simulation validation'
