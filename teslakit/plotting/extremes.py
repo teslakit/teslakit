@@ -15,6 +15,9 @@ from matplotlib.colors import DivergingNorm
 from scipy.interpolate import interp1d
 from scipy.stats import  gumbel_l, genextreme
 
+# teslakit
+from teslakit.plotting.outputs import axplot_compare_histograms
+
 # import constants
 from .config import _faspect, _fsize, _fdpi
 
