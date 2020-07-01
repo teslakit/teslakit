@@ -13,6 +13,7 @@ import seaborn as sns
 # teslakit
 from ..util.operations import GetBestRowsCols
 from .custom_colors import GetFamsColors
+from .outputs import axplot_compare_histograms
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -50,21 +51,6 @@ def axplot_polarhist(ax, vars_values, vars_colors, n_bins, wt_num):
     ax.set_facecolor('whitesmoke')
     ax.set_xticks([])
     ax.set_yticks([])
-
-def axplot_histcompare(ax, var_fit, var_sim, fam_color, n_bins):
-    'axes plot histogram comparison between fit-sim waves variables'
-
-    (_, bins, _) = ax.hist(var_fit, n_bins, weights=np.ones(len(var_fit)) / len(var_fit),
-            alpha=0.9, color='white', ec='k', label = 'Historical')
-
-    ax.hist(var_sim, bins=bins, weights=np.ones(len(var_sim)) / len(var_sim),
-            alpha=0.7, color=fam_color, ec='k', label = 'Simulation')
-
-    # customize axes
-    ax.legend(prop={'size':8})
-    #ax.set_facecolor('whitesmoke')
-    #ax.set_xticks([])
-    #ax.set_yticks([])
 
 
 def Plot_Waves_DWTs(xds_wvs_fams_sel, bmus, n_clusters, show=True):
@@ -238,7 +224,7 @@ def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim,
             gc = n_fams.index(nf)
             ax = plt.subplot(gs[gr, gc])
 
-            axplot_histcompare(ax, vf, vs, fc, n_bins)
+            axplot_compare_histograms(ax, vf, vs, color_2=fc, n_bins=n_bins)
 
             # first row titles
             if gr == 0:
