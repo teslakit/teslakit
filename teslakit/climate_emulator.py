@@ -1009,7 +1009,7 @@ class Climate_Emulator(object):
         # filter parameters
         hs_min, hs_max = 0, 15
         tp_min, tp_max = 2, 25
-        ws_min, ws_max = 0.001, 0.06
+        ws_min, ws_max = 0, 0.06
 
         # waves families - variables (sorted for simulation output)
         wvs_fams = self.fams
@@ -1157,8 +1157,8 @@ class Climate_Emulator(object):
 
             # wave stepness 
             if filters['ws']:
-                hs_s = sim_row[0::3][crm==1]
-                tp_s = sim_row[1::3][crm==1]
+                hs_s = sim_row[0:len(wvs_fams)*3:3][crm==1]
+                tp_s = sim_row[1:len(wvs_fams)*3:3][crm==1]
                 ws_s = hs_s / (1.56 * tp_s**2 )
                 if any(v <= ws_min for v in ws_s) or any(v >= ws_max for v in ws_s):
                     continue
@@ -1388,7 +1388,7 @@ class Climate_Emulator(object):
         'Plot vn variable GEV parameters for each WT. variables: Hs, Tp'
 
         # GEV parameters 
-        GEV_Par = self.GEV_Par
+        GEV_Par = self.GEV_Par.copy(deep='True')
 
         # locate fam_vn variables 
         vars_gev_params = [x for x in self.vars_GEV if vn in x]

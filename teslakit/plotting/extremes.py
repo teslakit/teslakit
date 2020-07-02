@@ -347,6 +347,9 @@ def Plot_FitSim_AnnualMax(data_fit, data_sim, vns, vn_max=None,
             label_1=label_1, label_2=label_2,
         )
 
+        # customize axes
+        ax.legend(prop={'size':8})
+
     # last xaxis
     ax.set_xlabel('Return Period (Years)', fontsize=14)
 
