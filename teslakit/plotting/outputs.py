@@ -221,7 +221,7 @@ def Plot_LevelVariables_Histograms(data_hist, data_sim, show=True):
 
     # Compare histograms 
     Plot_FitSim_Histograms(
-        data_fit, data_sim, ['level', 'AT', 'MMSL', 'TWL'],
+        data_hist, data_sim, ['level', 'AT', 'MMSL', 'TWL'],
         color_1='white', color_2='skyblue', alpha_1=0.9, alpha_2=0.7,
         label_1='Historical', label_2 = 'Simulation',
         gs_1 = 2, gs_2 = 2,

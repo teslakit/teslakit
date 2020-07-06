@@ -268,6 +268,7 @@ def Plot_Schemaball(xds_data):
 
 # Climate Emulator: Simulaton Report
 
+# TODO: refactor, upgrade, add to CE.Report_...
 
 def axplot_compare_annualmax(ax, var_1, trp_1, var_2, trp_2, vn,
                              label_1='Historical', label_2='Simulation',
@@ -391,6 +392,7 @@ def Plot_FitSim_GevFit(data_fit, data_sim, vn, xds_GEV_Par, kma_fit,
         dh = data_fit[vn].values[:][ph_wt]  #; dh = dh[~np.isnan(dh)]
         ds = data_sim[vn].values[:][ps_wt] #; ds = ds[~np.isnan(ds)]
 
+        # TODO: problem if gumbell?
         # select wt GEV parameters
         pars_GEV = xds_GEV_Par[vn]
         sha = pars_GEV.sel(parameter='shape').sel(n_cluster=wt).values
@@ -412,6 +414,59 @@ def Plot_FitSim_GevFit(data_fit, data_sim, vn, xds_GEV_Par, kma_fit,
         ax.plot(x, genextreme.pdf(x, -1*sha, loc, sca), label='GEV fit')
 
         # customize axis
+        ax.legend(prop={'size':8})
+
+    # fig suptitle
+    #fig.suptitle('{0}'.format(vn), fontsize=14, fontweight = 'bold')
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
+def Plot_Fit_QQ(data_fit, vn, xds_GEV_Par, kma_fit, color='black',
+                gs_1 = 1, gs_2 = 1, n_clusters = 1,
+                show=True):
+    'Plots QQ (empirical-gev) for variable vn and each kma cluster'
+
+    # plot figure
+    fig = plt.figure(figsize=(_fsize*gs_2/2, _fsize*gs_1/2.3))
+
+    # grid spec
+    gs = gridspec.GridSpec(gs_1, gs_2)  #, wspace=0.0, hspace=0.0)
+
+    # clusters
+    for c in range(n_clusters):
+
+        # select wt data
+        wt = c+1
+        ph_wt = np.where(kma_fit.bmus==wt)[0]
+        dh = data_fit[vn].values[:][ph_wt]; dh = dh[~np.isnan(dh)]
+
+        # prepare data
+        Q_emp = np.sort(dh)
+        bs = np.linspace(1, len(dh), len(dh))
+        pp = bs / (len(dh)+1)
+
+        # TODO: problem if gumbell?
+        # select wt GEV parameters
+        pars_GEV = xds_GEV_Par[vn]
+        sha = pars_GEV.sel(parameter='shape').sel(n_cluster=wt).values
+        sca = pars_GEV.sel(parameter='scale').sel(n_cluster=wt).values
+        loc = pars_GEV.sel(parameter='location').sel(n_cluster=wt).values
+
+        # calc GEV pdf
+        Q_gev = genextreme.ppf(pp, -1*sha, loc, sca)
+
+        # scatter plot
+        ax = fig.add_subplot(gs[c])
+        ax.plot(Q_emp, Q_gev, 'ok', color = color, label='N = {0}'.format(len(dh)))
+        ax.plot([0, 1], [0, 1], '--b', transform=ax.transAxes)
+
+        # customize axis
+        ax.axis('equal')
+        ax.set_xlabel('Empirical')
+        ax.set_ylabel('GEV')
         ax.legend(prop={'size':8})
 
     # fig suptitle
