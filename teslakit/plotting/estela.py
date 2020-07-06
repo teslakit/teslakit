@@ -145,8 +145,6 @@ def Plot_EOFs_EstelaPred(xds_PCA, n_plot, mask_land=None, show=True):
     '''
 
     # TODO: fix data_pos, fails only after pred.Load()?
-    print(xds_PCA)
-
 
     # PCA data
     variance = xds_PCA['variance'].values[:]
