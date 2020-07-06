@@ -13,7 +13,7 @@ fast_reindex_hourly
 np.warnings.filterwarnings('ignore')
 
 
-def GetDistribution(xds_wps, swell_sectors):
+def GetDistribution(xds_wps, swell_sectors, n_partitions=5):
     '''
     Separates wave partitions (0-5) into families.
     Default: sea, swl1, swl2
@@ -46,26 +46,11 @@ def GetDistribution(xds_wps, swell_sectors):
 
     # concatenate energy groups 
     cat_hs = np.column_stack(
-        (xds_wps.phs1.values,
-        xds_wps.phs2.values,
-        xds_wps.phs3.values,
-        xds_wps.phs4.values,
-        xds_wps.phs5.values )
-    )
+        [xds_wps['phs{0}'.format(i)] for i in range(1, n_partitions+1)])
     cat_tp = np.column_stack(
-        (xds_wps.ptp1.values,
-        xds_wps.ptp2.values,
-        xds_wps.ptp3.values,
-        xds_wps.ptp4.values,
-        xds_wps.ptp5.values )
-    )
+        [xds_wps['ptp{0}'.format(i)] for i in range(1, n_partitions+1)])
     cat_dir = np.column_stack(
-        (xds_wps.pdir1.values,
-        xds_wps.pdir2.values,
-        xds_wps.pdir3.values,
-        xds_wps.pdir4.values,
-        xds_wps.pdir5.values )
-    )
+        [xds_wps['pdir{0}'.format(i)] for i in range(1, n_partitions+1)])
 
     # prepare output array
     xds_fams = xr.Dataset(
