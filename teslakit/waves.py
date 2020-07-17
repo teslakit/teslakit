@@ -13,10 +13,14 @@ fast_reindex_hourly
 np.warnings.filterwarnings('ignore')
 
 
-def GetDistribution(xds_wps, swell_sectors, n_partitions=5):
+# TODO: combine GetDistribution functions (parse gow input and call GetDistribution?)
+
+def GetDistribution_gow(xds_wps, swell_sectors, n_partitions=5):
     '''
-    Separates wave partitions (0-5) into families.
+    Separates wave partitions (0-n_partitions) into families.
     Default: sea, swl1, swl2
+
+    compatible with GOW.mat file
 
     xds_wps (waves partitionss):
         xarray.Dataset (time,), phs, pspr, pwfrac... {0-5 partitions}
@@ -55,10 +59,6 @@ def GetDistribution(xds_wps, swell_sectors, n_partitions=5):
     # prepare output array
     xds_fams = xr.Dataset(
         {
-            'Hs': ('time', xds_wps.hs.values[:]),
-            'Tp': ('time', xds_wps.tp.values[:]),
-            'Dir': ('time', xds_wps.dir.values[:]),
-
             'sea_Hs': ('time', sea_Hs),
             'sea_Tp': ('time', sea_Tp),
             'sea_Dir': ('time', sea_Dir),
@@ -123,10 +123,12 @@ def GetDistribution(xds_wps, swell_sectors, n_partitions=5):
 
     return xds_fams
 
-def GetDistribution_ws(xds_wps, swell_sectors):
+def GetDistribution_ws(xds_wps, swell_sectors, n_partitions=5):
     '''
     Separates wave partitions (0-5) into families.
     Default: sea, swl1, swl2
+
+    Compatible with wavespectra partitions
 
     xds_wps (waves partitionss):
         xarray.Dataset (time,), phs, pspr, pwfrac... {0-5 partitions}
@@ -137,41 +139,34 @@ def GetDistribution_ws(xds_wps, swell_sectors):
         xarray.Dataset (time,), fam_V, {fam: sea,swell_1,swell2. V: Hs,Tp,Dir}
     '''
 
-    sea_Hs= xds_wps.isel(part=0).hs.values
-    sea_Tp=xds_wps.isel(part=0).tp.values
+    # sea (partition 0)
+    sea_Hs = xds_wps.isel(part=0).hs.values
+    sea_Tp = xds_wps.isel(part=0).tp.values
     sea_Dir = xds_wps.isel(part=0).dpm.values
-    time= xds_wps.time.values
+    time = xds_wps.time.values
+
+    # fix sea all-nans to 0s nansum behaviour
+    p_fix = np.where(sea_Hs==0)
+    sea_Hs[p_fix] = np.nan
+    sea_Tp[p_fix] = np.nan
+    sea_Dir[p_fix] = np.nan
 
     # concatenate energy groups 
     cat_hs = np.column_stack(
-        (xds_wps.isel(part=1).hs.values,
-        xds_wps.isel(part=2).hs.values,
-        xds_wps.isel(part=3).hs.values,
-        xds_wps.isel(part=4).hs.values,
-        xds_wps.isel(part=5).hs.values)
-    )
+        [xds_wps.isel(part=i).hs.values for i in range(1, n_partitions+1)])
     cat_tp = np.column_stack(
-        (xds_wps.isel(part=1).tp.values,
-        xds_wps.isel(part=2).tp.values,
-        xds_wps.isel(part=3).tp.values,
-        xds_wps.isel(part=4).tp.values,
-        xds_wps.isel(part=5).tp.values)
-    )
+        [xds_wps.isel(part=i).tp.values for i in range(1, n_partitions+1)])
     cat_dir = np.column_stack(
-        (xds_wps.isel(part=1).dpm.values,
-        xds_wps.isel(part=2).dpm.values,
-        xds_wps.isel(part=3).dpm.values,
-        xds_wps.isel(part=4).dpm.values,
-        xds_wps.isel(part=5).dpm.values)
-    )
+        [xds_wps.isel(part=i).dpm.values for i in range(1, n_partitions+1)])
 
     # prepare output array
-    xds_parts = xr.Dataset({
-        'sea_Hs':('time',sea_Hs),
-        'sea_Tp':('time',sea_Tp),
-        'sea_Dir':('time',sea_Dir)
-    },
-        coords = {'time':time}
+    xds_fams = xr.Dataset(
+        {
+            'sea_Hs': ('time', sea_Hs),
+            'sea_Tp': ('time', sea_Tp),
+            'sea_Dir': ('time', sea_Dir),
+        },
+        coords = {'time': time}
     )
 
     # solve sectors
@@ -221,15 +216,16 @@ def GetDistribution_ws(xds_wps, swell_sectors):
         # fix swell all-nans to 0s nansum behaviour
         p_fix = np.where(swell_Hs==0)
         swell_Hs[p_fix] = np.nan
+        swell_Tp[p_fix] = np.nan
         swell_Dir[p_fix] = np.nan
 
         # append data to partitons dataset
-        xds_parts['swell_{0}_Hs'.format(c)] = ('time', swell_Hs)
-        xds_parts['swell_{0}_Tp'.format(c)] = ('time', swell_Tp)
-        xds_parts['swell_{0}_Dir'.format(c)] = ('time', swell_Dir)
+        xds_fams['swell_{0}_Hs'.format(c)] = ('time', swell_Hs)
+        xds_fams['swell_{0}_Tp'.format(c)] = ('time', swell_Tp)
+        xds_fams['swell_{0}_Dir'.format(c)] = ('time', swell_Dir)
         c+=1
 
-    return xds_parts
+    return xds_fams
 
 def AWL(hs, tp):
     'Returns Atmospheric Water Level'

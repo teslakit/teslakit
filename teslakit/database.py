@@ -325,13 +325,19 @@ class Database(object):
 
     # WAVES
 
-    def Load_WAVES_partitions(self):
-        xds = ReadGowMat(self.paths.site.WAVES.partitions_p1)
+    def Load_WAVES_partitions_GOW(self):
+        xds = ReadGowMat(self.paths.site.WAVES.partitions_gow)
         xds = fill_metadata(xds)
         return xds
 
-    def Load_WAVES_partitions_nc(self):
-        return xr.open_dataset(self.paths.site.WAVES.partitions_p1)
+    def Load_WAVES_spectra(self):
+        return xr.open_dataset(self.paths.site.WAVES.spectra)
+
+    def Save_WAVES_partitions(self, xds):
+        save_nc(xds, self.paths.site.WAVES.partitions)
+
+    def Load_WAVES_partitions(self):
+        return xr.open_dataset(self.paths.site.WAVES.partitions)
 
     def Save_WAVES_hist(self, xds):
         save_nc(xds, self.paths.site.WAVES.hist)
