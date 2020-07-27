@@ -1064,6 +1064,8 @@ class hyswan_db(object):
 
             'swan_projects': op.join(p_base, 'swan_projects'),
 
+            'reconstruction': op.join(p_base, 'recon.pickle'),
+
         }
 
     def __str__(self):
