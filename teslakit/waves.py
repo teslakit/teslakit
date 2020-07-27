@@ -417,3 +417,120 @@ def Intradaily_Hydrograph(xds_wvs, xds_tcs):
 
     return xds_wvs_h
 
+
+# --------------------------------------
+
+# TODO check / refactor 
+import math
+def dispersionLonda(T, h):
+    L1 = 1
+    L2 = ((9.81*T**2)/(2*np.pi))*math.tanh(h*2*np.pi/L1)
+    umbral = 2
+
+    while(umbral>0.1):
+        L2 = ((9.81*T**2)/(2*np.pi))*math.tanh(h*2*np.pi/L1)
+        umbral = abs(L2-L1)
+        L1 = L2
+
+    L = L2
+    k = (2*np.pi)/L
+    c = np.sqrt(9.8*np.tanh(k*h)/k)
+    return L, k, c
+
+def Snell_Propagation(T, H_I, dir_I, Prof_I, Prof_E, OrientBati):
+    '''
+    [H_E,dir_E]=PropagacionSNELL(T,H_I,dir_I,Prof_I,Prof_E,OrientBati)
+    [H_E,dir_E,L_E,L_I]=PropagacionSNELL(T,H_I,dir_I,Prof_I,Prof_E,OrientBati)
+    [H_E,dir_E,L_E,L_I,Ks,Kr]=PropagacionSNELL(T,H_I,dir_I,Prof_I,Prof_E,OrientBati)
+
+    Descripci?n: Funci?n que propaga el oleaje por SNELL con batimetr?a recta
+    y paralela.
+
+    Entradas:
+      T: Periodo.                                        Segundos.
+      H_I: Altura de ola en el punto inicial.            Metros.
+      dir_I: Direcci?n del oleaje inicial.               Rumbo (0 en el N)
+      prof_I: Profundidad inicial.                       Metros.
+      prof_E: Profundidad final.                         Metros.
+      OrientBati: Orientaci?n de la perpendicular a la batimetria. Rumbo (0 en el N)
+
+    Salidas:
+      H_E: Altura de ola en el punto final.              Metros.
+      dir_E: Direccion del oleaje final.                 Rumbo (0 en el N)
+      L_E: Longitud de onda final.                       Metros
+      L_I: Longitud de onda inicial.                     Metros
+      Ks: Coeficiente de asomeramiento (shoaling).
+      Kr: Coeficiente de refraccion (Snell batimetria recta y paralela).
+
+
+     Autor:
+
+
+       Versi?n:Ene/19
+
+     Basada en el script de:
+     Soledad Requejo Landeira &   Jos? Antonio ?lvarez Antol?nez
+    '''
+
+    # Establece el angulo relativo entre el oleaje y la batimetria
+    Teta_I = dir_I - OrientBati
+
+    # Fija el angulo relativo entre -90 y 90 grados
+    posd1 = np.where(Teta_I < -90)
+    Teta_I[posd1[0]] = Teta_I[posd1[0]] + 360
+
+    posd2 = np.where(Teta_I > 90)
+    Teta_I[posd2[0]] = Teta_I[posd2[0]] - 360
+
+    # obligamos que el angulo este en este sector
+    Teta_I[np.where(Teta_I > 90)[0]] = 90
+    Teta_I[np.where(Teta_I < -90)[0]] = -90
+
+    # Resolucion de la ec. de dispersion en la profundidad de partida y 
+    # en la objetivo y calculo de las celeridades de grupo correspondientes
+    L_I = []
+    k_I = []
+    c_I = []
+    Cg_I = []
+
+    L_E = []
+    k_E = []
+    c_E = []
+    Cg_E = []
+
+    for i in range(len(T)):
+        [a,b,c] = dispersionLonda(T[i],Prof_I)
+        L_I.append(a)
+        k_I.append(b)
+        c_I.append(c)
+        Cg_I.append((c/2)*(1+((2*b*Prof_I)/(np.sinh(2*b*Prof_I)))))
+
+        [d,e,f] = dispersionLonda(T[i],Prof_E)
+        L_E.append(d)
+        k_E.append(e)
+        c_E.append(f)
+        Cg_E.append((f/2)*(1+((2*e*Prof_E)/(np.sinh(2*e*Prof_E)))))
+
+
+    dir_E = []
+    Teta_E = []
+    Ks = []
+    Kr = []
+    for i in range(len(Cg_E)):
+        H = math.asin((k_I[i]*np.sin(np.deg2rad(Teta_I[i])))/k_E[i])
+        Teta_E.append(np.rad2deg(H))
+        dir_E.append(np.rad2deg(H) + OrientBati)
+        Ks.append(np.sqrt(Cg_I[i]/Cg_E[i]))
+        Kr.append(np.sqrt(np.cos(np.deg2rad(Teta_I[i]))/np.cos(H)))
+
+    for i in range(len(dir_E)):
+        if dir_E[i] < 0:
+            dir_E[i] = dir_E[i] + 360
+        if dir_E[i] >=360:
+            dir_E[i] = dir_E[i] -360
+
+    # Altura de ola final
+    H_E = H_I*Kr*Ks
+
+    return H_E, dir_E, Ks, Kr
+
