@@ -9,24 +9,24 @@ The stochastic climate emulator proposed is built on the recognition that coasta
 
 teslakit modules:
 
-- [alr](.teslakit/alr.py) AutoRegressive Logistic Model customized wrapper
-- [climate\_emulator](.teslakit/climate_emulator.py) DWTs-Waves Extremes Statistical Emulator (GEV, Gumbel, Weibull)
-- [estela](.teslakit/estela.py) SLP ESTELA Predictor module
-- [extremes](.teslakit/extremes.py) Extremes Statistics library
-- [intradaily](.teslakit/intradaily.py) Intradaily Hydrographs library
-- [kma](.teslakit/kma.py) KMeans Classification library 
-- [mda](.teslakit/mda.py) MaxDiss Classification library 
-- [mjo](.teslakit/mjo.py) Madden-Julian Oscilation data functions 
-- [pca](.teslakit/pca.py) Customized Principal Component Analysis library 
-- [rbf](.teslakit/rbf.py) Radial Basis Function library 
-- [statistical](.teslakit/statistical.py) statistical multipurpose module: KDE,
+- [alr](./teslakit/alr.py) AutoRegressive Logistic Model customized wrapper
+- [climate\_emulator](./teslakit/climate_emulator.py) DWTs-Waves Extremes Statistical Emulator (GEV, Gumbel, Weibull)
+- [estela](./teslakit/estela.py) SLP ESTELA Predictor module
+- [extremes](./teslakit/extremes.py) Extremes Statistics library
+- [intradaily](./teslakit/intradaily.py) Intradaily Hydrographs library
+- [kma](./teslakit/kma.py) KMeans Classification library 
+- [mda](./teslakit/mda.py) MaxDiss Classification library 
+- [mjo](./teslakit/mjo.py) Madden-Julian Oscilation data functions 
+- [pca](./teslakit/pca.py) Customized Principal Component Analysis library 
+- [rbf](./teslakit/rbf.py) Radial Basis Function library 
+- [statistical](./teslakit/statistical.py) statistical multipurpose module: KDE,
   GeneralizedPareto, Empirical Kernels for copula fit and simulation
-- [storms](.teslakit/storms.py) storms and tropical cyclones library
-- [tides](.teslakit/tides.py) tides functions library
-- [waves](.teslakit/waves.py) waves functions library
+- [storms](./teslakit/storms.py) storms and tropical cyclones library
+- [tides](./teslakit/tides.py) tides functions library
+- [waves](./teslakit/waves.py) waves functions library
 
-- [plotting](.teslakit/plotting/) set of modules for teslakit data and output plotting 
-- [database](.teslakit/database.py) custom database developed to ease the multiple files required for a teslakit site 
+- [plotting](./teslakit/plotting/) set of modules for teslakit data and output plotting 
+- [database](./teslakit/database.py) custom database developed to ease the multiple files required for a teslakit site 
 
 databases:
 
