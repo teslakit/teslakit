@@ -33,7 +33,7 @@ databases:
 - Sea Surface Temperature (SST): https://www1.ncdc.noaa.gov/pub/data/cmb/ersst/v5/netcdf/
 - Madden-Julian Oscillation (MJO): http://www.bom.gov.au/climate/mjo/ 
 - Tropical Cyclones (TCs): https://www.ncdc.noaa.gov/ibtracs/
-- Waves Spectra (WVS): http://data-cbr.csiro.au/thredds/catalog/catch\_all/CMAR\_CAWCR-Wave\_archive/CAWCR\_Wave\_Hindcast\_aggregate/spec/catalog.xml
+- Waves Spectra (WVS): http://data-cbr.csiro.au/thredds/catalog/catch_all/CMAR_CAWCR-Wave_archive/CAWCR_Wave_Hindcast_aggregate/spec/catalog.xml
 
 
 ## Project Map
