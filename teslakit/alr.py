@@ -38,7 +38,7 @@ from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions
 from .plotting.alr import Plot_Compare_Covariate
 
 class ALR_WRP(object):
-    'AutoRegressive Logistic methodology Wrapper'
+    'AutoRegressive Logistic Model Wrapper'
 
     def __init__(self, p_base):
 

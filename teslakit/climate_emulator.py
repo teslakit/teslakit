@@ -37,11 +37,28 @@ from .plotting.extremes import Plot_GEVParams, Plot_ChromosomesProbs, \
         Plot_SigmaCorrelation
 
 
-# TODO: LOG, introducir switch log on / log off para ejecuciones silenciosas
-# TODO: optimizar simulacion waves
-
 class Climate_Emulator(object):
-    'KMA - DWTs Climate Emulator'
+    '''
+    KMA - DWTs Climate Emulator
+
+    Fit Waves extremes model (GEV, Gumbel, Weibull distributions) and DWTs series
+    Simulate (probabilistic) a new dataset of Waves from a custom DWTs series
+
+    This custom emulator uses Waves data divided by families (sea, swell_1,
+    swell_2, ...), each family is defined by 3 variables: Hs, Tp, Dir
+
+
+    Some configuration parameters:
+
+    A chromosomes methodology for statistical fit is available, it will handle
+    on/off probabilities for each different waves family combination.
+
+    Aditional variables, outside of waves families, can be given to the emulator.
+
+    A variable has to be selected as the PROXY to calculate storms max. (default: AWL)
+
+    User can manually set a variable for an empircal / weibull / gev distribution.
+    '''
 
     def __init__(self, p_base):
 
@@ -777,7 +794,6 @@ class Climate_Emulator(object):
 
                     # GUMBELL Loglikelihood function acov
                     theta = (loc[i], sca[i])
-                    # TODO comprobar gumbel_l acov y evlike acov son similares
                     acov = ACOV(gumbel_l.nnlf, theta, var_wvs)
 
                     # GUMBELL params used for multivar. normal random generation
@@ -790,8 +806,6 @@ class Climate_Emulator(object):
 
                 # GEV WTs: parameters sampling
                 else:
-                    # TODO: signo acov correcto?
-                    # TODO: PARECE QUE ACOV NO FUNCIONA SIEMPRE, NLOGL inf
 
                     # GEV Loglikelihood function acov
                     theta = (sha[i], loc[i], sca[i])
@@ -823,6 +837,8 @@ class Climate_Emulator(object):
         n_sims           - number of simulations to compute
         filters          - filter simulated waves by hs, tp, and/or wave setpness
         '''
+
+        # TODO can optimize?
 
         # max. storm waves and KMA
         xds_KMA_MS = self.KMA_MS
@@ -1310,7 +1326,7 @@ class Climate_Emulator(object):
                             mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
 
                     else:
-                        # TODO: no deberia caer aqui. comentar duda
+                        # TODO: no deberia caer aqui
                         mu_s = 0
                         ss_s = 0
                         tau_s = 0
@@ -1399,6 +1415,16 @@ class Climate_Emulator(object):
             f_out.append(f)
 
         return f_out
+
+    def Report_Sim_QQplot(self, WVS_sim, vn, n_sim=0, show=True):
+        '''
+        QQplot for variable vn
+        '''
+
+        # TODO
+        #f_out = Plot_QQplot(kma_bmus, d_sigma, show=show)
+
+        return None
 
 
 def ChromMatrix(vs):

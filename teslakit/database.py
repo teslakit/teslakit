@@ -160,9 +160,9 @@ class Database(object):
             ('MJO', ['hist'], [op.isfile]),
             ('TCs', ['noaa', 'nakajo_mats'], [op.isfile, op.isdir]),
             ('SST', ['hist_pacific'], [op.isfile]),
-            ('WAVES', ['partitions_p1'], [op.isfile]),
-            ('ESTELA', ['coastmat', 'estelamat', 'gowpoint', 'slp'],
-             [op.isfile, op.isfile, op.isfile, op.isfile]),
+            ('WAVES', ['spectra'], [op.isfile]),
+            ('ESTELA', ['coastmat', 'estelamat', 'slp'],
+             [op.isfile, op.isfile, op.isfile]),
             ('TIDE', ['mareografo_nc', 'hist_astro'], [op.isfile, op.isfile]),
             #('HYCREWW', ['rbf_coef'], [op.isdir]),
             #('NEARSHORE', ['swan_projects'], [op.isdir]),
@@ -505,11 +505,11 @@ class Database(object):
         s =  SplitStorage(ps)
         s.Save(xds)
 
-    def Load_HIST_OFFSHORE(self, vns=[], decode_times=False):
+    def Load_HIST_OFFSHORE(self, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.HISTORICAL.offshore
 
         s =  SplitStorage(ps)
-        return s.Load(vns=vns, decode_times=decode_times)
+        return s.Load(vns=vns, decode_times=decode_times, use_cftime=use_cftime)
 
     def Generate_SIM_Covariates(self, total_sims=None):
 
@@ -565,16 +565,16 @@ class Database(object):
         s =  SplitStorage(ps_sim)
         s.Save(xds, safe_time=True)
 
-    def Load_SIM_OFFSHORE(self, n_sim, vns=[], decode_times=False):
+    def Load_SIM_OFFSHORE(self, n_sim, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.SIMULATION.offshore
 
         nm = '{0:08d}'.format(n_sim)  # sim code
         ps_sim = op.join(ps, nm)
 
         s =  SplitStorage(ps_sim)
-        return s.Load(vns=vns, decode_times=decode_times)
+        return s.Load(vns=vns, decode_times=decode_times, use_cftime=use_cftime)
 
-    def Load_SIM_OFFSHORE_all(self, vns=[], decode_times=False):
+    def Load_SIM_OFFSHORE_all(self, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.SIMULATION.offshore
 
         # locate simulations
@@ -606,7 +606,7 @@ class Database(object):
 
         # optional decode times to cftime 
         if decode_times:
-            out = xr.decode_cf(out, use_cftime=True)
+            out = xr.decode_cf(out, use_cftime=use_cftime)
 
         return out
 
@@ -724,11 +724,11 @@ class Database(object):
         s =  SplitStorage(ps)
         s.Save(xds)
 
-    def Load_HIST_NEARSHORE(self, vns=[], decode_times=False):
+    def Load_HIST_NEARSHORE(self, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.HISTORICAL.nearshore
 
         s =  SplitStorage(ps)
-        return s.Load(vns=vns, decode_times=decode_times)
+        return s.Load(vns=vns, decode_times=decode_times, use_cftime=use_cftime)
 
     def Save_SIM_NEARSHORE(self, xds, n_sim):
         ps = self.paths.site.SIMULATION.nearshore
@@ -739,16 +739,16 @@ class Database(object):
         s =  SplitStorage(ps_sim)
         s.Save(xds, safe_time=True)
 
-    def Load_SIM_NEARSHORE(self, n_sim, vns=[], decode_times=False):
+    def Load_SIM_NEARSHORE(self, n_sim, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.SIMULATION.nearshore
 
         nm = '{0:08d}'.format(n_sim)  # sim code
         ps_sim = op.join(ps, nm)
 
         s =  SplitStorage(ps_sim)
-        return s.Load(vns=vns, decode_times=decode_times)
+        return s.Load(vns=vns, decode_times=decode_times, use_cftime=use_cftime)
 
-    def Load_SIM_NEARSHORE_all(self, vns=[], decode_times=False):
+    def Load_SIM_NEARSHORE_all(self, vns=[], decode_times=False, use_cftime=False):
         ps = self.paths.site.SIMULATION.nearshore
 
         # locate simulations
@@ -780,7 +780,7 @@ class Database(object):
 
         # optional decode times to cftime 
         if decode_times:
-            out = xr.decode_cf(out, use_cftime=True)
+            out = xr.decode_cf(out, use_cftime=use_cftime)
 
         return out
 
@@ -911,7 +911,7 @@ class SplitStorage(object):
                     safe_time=safe_time
                 )
 
-    def Load(self, vns=[], decode_times=False):
+    def Load(self, vns=[], decode_times=False, use_cftime=False):
 
         # aux netCDF4
         def read_var_nc(p, vn):
@@ -965,9 +965,9 @@ class SplitStorage(object):
             out[vn] = (('time',), v_v)
             out[vn].attrs = v_a
 
-        # optional decode times to cftime 
+        # optional decode times to np.datetime64 or DatetimeGregorian
         if decode_times:
-            out = xr.decode_cf(out, use_cftime=True)
+            out = xr.decode_cf(out, use_cftime=use_cftime)
 
         return out
 

@@ -30,7 +30,6 @@ class Hydrograph(object):
         self.TAU = []
 
 
-# TODO: voy a crear uno nuevo en waves que sea general y de todo para todo time
 def Calculate_Hydrographs(xds_BMUS, xds_WAVES):
     '''
     Calculates intradaily hydrographs
