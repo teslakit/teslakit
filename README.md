@@ -169,7 +169,7 @@ Alba Cid Carrera (alba.cid@unican.es)\
 Alba Ricondo Cueva (alba.ricondo@unican.es)\
 Sara Ortega Van Vloten (sara.ortegav@unican.es)\
 Israel Rubio Llarena (israel.rubio@unican.es)\
-Fernando Mendez Incera (fernando.mendez@unican.es)\
+Fernando Mendez Incera (fernando.mendez@unican.es)
 
 ## Thanks also to
 
