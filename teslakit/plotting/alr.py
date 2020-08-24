@@ -146,7 +146,11 @@ def Plot_Params(params, term_names, show=True):
     fig, ax = plt.subplots(1,1, figsize=(_faspect*_fsize, _fsize))
 
     # text table and color
-    c = ax.pcolor(params, cmap=plt.cm.bwr)
+    #c = ax.pcolor(params, cmap=plt.cm.bwr)
+    c = ax.pcolor(
+        params, cmap='coolwarm_r',
+        norm=MidpointNormalize(midpoint=0)
+    )
     #for i in range(params.shape[1]):
     #    for j in range(params.shape[0]):
     #        v = params[j,i]

@@ -33,8 +33,9 @@ stats.chisqprob = lambda chisq, df: stats.chi2.sf(chisq, df)
 # tk
 from .io.aux_nc import StoreBugXdset
 from .util.time_operations import npdt64todatetime as npdt2dt
+from .kma import Persistences
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
-from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions
+from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions, Plot_Compare_Persistences
 from .plotting.alr import Plot_Compare_Covariate
 
 class ALR_WRP(object):
@@ -75,6 +76,9 @@ class ALR_WRP(object):
         # export folders for figures
         self.p_report_fit = op.join(p_base, 'report_fit')
         self.p_report_sim = op.join(p_base, 'report_sim')
+
+        # log sim
+        self.p_log_sim_xds = op.join(p_base, 'xds_log_sim.nc')
 
     def SetFitData(self, cluster_size, xds_bmus_fit, d_terms_settings):
         '''
@@ -464,7 +468,8 @@ class ALR_WRP(object):
         f = Plot_Terms(term_mx, term_ds, term_ns, show=show)
         return f
 
-    def Simulate(self, num_sims, time_sim, xds_covars_sim=None):
+    def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
+                 log_sim=False):
         '''
         Launch ARL model simulations
 
@@ -474,6 +479,8 @@ class ALR_WRP(object):
         xds_covars_sim     - xr.Dataset (time,), cov_values
             Covariates used at simulation, compatible with "n_sim" dimension
             ("n_sim" dimension (optional) will be iterated with each simulation)
+
+        log_sim            - Store a log with simulation detailed information.
         '''
 
         # switch library probabilities predictor function 
@@ -513,6 +520,15 @@ class ALR_WRP(object):
         # filter usage counter
         c_fs = 0
 
+        # initialize optional simulation log 
+        if log_sim:
+            logr_probs = np.nan * np.zeros(
+                (len(time_yfrac)-mk_order, num_sims, mk_order+1, self.cluster_size))
+            logr_ptrns = np.nan * np.zeros(
+                (len(time_yfrac)-mk_order, num_sims, self.cluster_size))
+            logr_nrnd = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+            logr_evbmu_sims = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+
         # start simulations
         print("\nLaunching {0} simulations...\n".format(num_sims))
         evbmus_sims = np.zeros((len(time_yfrac), num_sims))
@@ -539,7 +555,7 @@ class ALR_WRP(object):
                 desc = 'Sim. Num. {0:03d}{1}'.format(n+1, cvtxt)
             )
 
-            evbmus = evbmus_values[1:mk_order+1]
+            evbmus = evbmus_values[1:mk_order+1]  # TODO 0:mk_order ?
             for i in range(len(time_yfrac) - mk_order):
 
                 # handle simulation covars
@@ -574,6 +590,13 @@ class ALR_WRP(object):
                 nrnd = np.random.rand()
                 evbmus = np.append(evbmus, np.where(probTrans>nrnd)[0][0]+1)
 
+                # optional detail log
+                if log_sim:
+                    logr_probs[i,n,:,:] = prob
+                    logr_ptrns[i,n,:] = probTrans
+                    logr_nrnd[i,n] = nrnd
+                    logr_evbmu_sims[i,n] = np.where(probTrans>nrnd)[0][0]+1
+
                 # update progress bar 
                 pbar.update(1)
 
@@ -605,13 +628,34 @@ class ALR_WRP(object):
             },
         )
 
-
         # save output
         StoreBugXdset(xds_out, self.p_save_sim_xds)
 
+
+        # save log file
+        if log_sim:
+            xds_log = xr.Dataset(
+                {
+                    'probs': (('time', 'n_sim', 'mk', 'n_clusters'), logr_probs),
+                    'probTrans': (('time', 'n_sim', 'n_clusters'), logr_ptrns),
+                    'nrnd': (('time', 'n_sim'), logr_nrnd),
+                    'evbmus_sims': (('time', 'n_sim'), logr_evbmu_sims.astype(int)),
+                },
+
+                coords = {
+                    'time' : time_sim[mk_order:],
+                },
+            )
+
+            # save log 
+            StoreBugXdset(xds_log, self.p_log_sim_xds)
+            print('simulation data log stored at {0}'.format(self.p_log_sim_xds))
+            print()
+
+
         return xds_out
 
-    def Report_Sim(self, py_month_ini=1, show=True):
+    def Report_Sim(self, py_month_ini=1, persistences_table=False, show=True):
         '''
         Report that Compare fitting to simulated bmus
 
@@ -633,6 +677,11 @@ class ALR_WRP(object):
         bmus_values_hist = np.reshape(xds_ALR_fit.bmus.values,[-1,1])
         bmus_dates_hist = xds_ALR_fit.time.values[:]
         num_sims = bmus_values_sim.shape[1]
+
+        # calculate bmus persistences
+        pers_hist = Persistences(bmus_values_hist.flatten())
+        lsp = [Persistences(bs) for bs in bmus_values_sim.T.astype(int)]
+        pers_sim = {k:np.concatenate([x[k] for x in lsp]) for k in lsp[0].keys()}
 
         # fix datetime 64 dates
         if isinstance(bmus_dates_sim[0], np.datetime64):
@@ -660,6 +709,27 @@ class ALR_WRP(object):
             sttl = sttl, show = show,
         )
         l_figs.append(fig_CT)
+
+
+        # Plot Persistences comparison Fit vs Sim 
+        fig_PS = Plot_Compare_Persistences(
+            cluster_size,
+            pers_hist, pers_sim,
+            show = show,
+        )
+        l_figs.append(fig_PS)
+
+        # persistences set table
+        if persistences_table:
+            print('Persistences by WT (set)')
+            for c in range(cluster_size):
+                wt=c+1
+                p_h = pers_hist[wt]
+                p_s = pers_sim[wt]
+
+                print('WT: {0}'.format(wt))
+                print('  hist : {0}'.format((sorted(set(p_h)))))
+                print('  sim. : {0}'.format(sorted(set(p_s))))
 
 
         # TODO export handling (if show=False)    

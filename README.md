@@ -150,7 +150,7 @@ launch jupyter notebook
 jupyter notebook
 ```
 
-Current development test site notebooks can be found at [ROI](notebooks/nb_ROI/)
+Current development test site notebooks can be found at [ROI](notebooks/ROI/)
 
 Also, test site needed input files can be downloaded from [OneDrive](https://unican-my.sharepoint.com/:f:/g/personal/ripolln_unican_es/EiChCNEu0-9HpLUSt9r2nscBsvkWXBrroqvSwB-1gu8Tzg?e=NV9Faq)
 

@@ -14,11 +14,14 @@ import matplotlib.gridspec as gridspec
 import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 from matplotlib.colorbar import ColorbarBase
+from matplotlib.ticker import MaxNLocator
 
 # teslakit
 from ..util.operations import GetBestRowsCols
 from .custom_colors import GetClusterColors
 from ..kma import ClusterProbabilities, ChangeProbabilities
+from .outputs import axplot_compare_histograms
+
 
 # import constants
 from .config import _faspect, _fsize, _fdpi
@@ -432,7 +435,6 @@ def Plot_Probs_WT_WT(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
     if show: plt.show()
     return fig
 
-
 def Plot_Probs_WT_WT_anomaly(series_1, series_2, n_clusters_1, n_clusters_2, ttl='',
                      wt_colors=False, show=True):
     '''
@@ -493,6 +495,61 @@ def Plot_Probs_WT_WT_anomaly(series_1, series_2, n_clusters_1, n_clusters_2, ttl
 
     # add fig title
     fig.suptitle(ttl, fontsize=14, fontweight='bold')
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+def Plot_Compare_Persistences(n_clusters, pers_hist, pers_sim,
+                              color_1='plum', color_2='dodgerblue',
+                              alpha_1=0.7, alpha_2=0.4,
+                              label_1='Historical', label_2 = 'Simulation',
+                              show=True):
+    '''
+    Plot historical - simulation WT persistences comparison
+
+    pers_sim, pers_hist - dictionary {WT: ocurrences durations list}
+    '''
+
+    # dailt weather types matrix rows and cols
+    n_rows, n_cols = GetBestRowsCols(n_clusters)
+
+    # plot figure
+    fig = plt.figure(figsize=(_fsize*n_cols/2, _fsize*n_rows/2.3))
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.2, hspace=0.2)
+
+    for c in range(n_clusters):
+
+        # select wt data
+        wt = c+1
+
+        # persistences
+        p_h = pers_hist[wt]
+        p_s = pers_sim[wt]
+
+        # common set
+        ss = np.array(sorted(list(set(p_h).union(set(p_s)))))+0.5
+        # filter when only 1 bin 
+        if len(ss) == 1: continue
+
+        # compare histograms
+        ax = fig.add_subplot(gs[c])
+        axplot_compare_histograms(
+            ax, sorted(p_h), sorted(p_s), ttl='WT: {0}'.format(wt),
+            density=True,
+            n_bins=ss,
+            color_1=color_1, color_2=color_2,
+            alpha_1=alpha_1, alpha_2=alpha_2,
+            label_1=label_1, label_2=label_2,
+        )
+
+        # customize axis
+        ax.set_ylabel('')
+        ax.legend(prop={'size':8})
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    # suptitle
+    fig.suptitle('WTs Persistences (days)', fontweight='bold', fontsize=12)
 
     # show and return figure
     if show: plt.show()

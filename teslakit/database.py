@@ -158,7 +158,7 @@ class Database(object):
         # files/folder to check ()
         conf = [
             ('MJO', ['hist'], [op.isfile]),
-            ('TCs', ['noaa', 'nakajo_mats'], [op.isfile, op.isdir]),
+            ('TCs', ['noaa'], [op.isfile]),
             ('SST', ['hist_pacific'], [op.isfile]),
             ('WAVES', ['spectra'], [op.isfile]),
             ('ESTELA', ['coastmat', 'estelamat', 'slp'],

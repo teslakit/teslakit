@@ -16,26 +16,18 @@ from sklearn import linear_model
 def Persistences(series):
     'Return series persistences for each element'
 
+    # locate dates where series changes
+    s_diff = np.diff(series)
+    ix_ch = np.where((s_diff != 0))[0]+1
+    ix_ch = np.insert(ix_ch, 0, 0)
+
+    wt_ch = series[ix_ch][:-1] # bmus where WT changes
+    wt_dr = np.diff(ix_ch)
+
     # output dict
     d_pers = {}
     for e in set(series):
-        d_pers[e] = []
-
-    # analize series
-    e0 = None
-    while series.any():
-
-        # pol left
-        e1 = series[0]
-        series = np.delete(series, 0)
-
-        if e1 != e0:
-            d_pers[e1].append(1)
-        else:
-            d_pers[e1][-1]+=1
-
-        # step forward
-        e0 = e1
+        d_pers[e] = wt_dr[wt_ch==e]
 
     return d_pers
 
