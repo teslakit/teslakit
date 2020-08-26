@@ -68,7 +68,7 @@ def StoreBugXdset(xds_data, p_ncfile):
                 dv.calendar = calendar
 
             else:
-                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype='float32')
+                dv = root.createVariable(varname=vn, dimensions=(vn,), datatype=type(vals[0]))
                 dv[:] = vals
 
         # variables values

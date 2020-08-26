@@ -483,6 +483,50 @@ class ALR_WRP(object):
         log_sim            - Store a log with simulation detailed information.
         '''
 
+        class SimLog(object):
+            '''
+            simulatiom log - records and stores detail info for each time step and n_sim
+            '''
+            def __init__(self, time_yfrac, mk_order, num_sims, cluster_size, terms_fit_names):
+
+                # initialize variables to record
+                self.terms = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, len(terms_fit_names)))
+                self.probs = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, mk_order+1, cluster_size))
+                self.ptrns = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, cluster_size))
+                self.nrnd = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+                self.evbmu_sims = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+
+            def Add(self, terms, prob, probTrans, nrnd):
+
+                # add iteration to log
+                self.terms[i,n,:] = terms
+                self.probs[i,n,:,:] = prob
+                self.ptrns[i,n,:] = probTrans
+                self.nrnd[i,n] = nrnd
+                self.evbmu_sims[i,n] = np.where(probTrans>nrnd)[0][0]+1
+
+            def Save(self, p_save, terms_names):
+
+                # use xarray to store netcdf
+                xds_log = xr.Dataset(
+                    {
+                        'alr_terms': (('time', 'n_sim', 'terms'), self.terms),
+                        'probs': (('time', 'n_sim', 'mk', 'n_clusters'), self.probs),
+                        'probTrans': (('time', 'n_sim', 'n_clusters'), self.ptrns),
+                        'nrnd': (('time', 'n_sim'), self.nrnd),
+                        'evbmus_sims': (('time', 'n_sim'), self.evbmu_sims.astype(int)),
+                    },
+
+                    coords = {
+                        'time' : time_sim[mk_order:],
+                        'terms' : terms_names,
+                    },
+                )
+
+                StoreBugXdset(xds_log, p_save)
+                print('simulation data log stored at {0}\n'.format(p_save))
+
+
         # switch library probabilities predictor function 
         if self.model_library == 'statsmodels':
             pred_prob_fun = self.model.predict
@@ -522,12 +566,7 @@ class ALR_WRP(object):
 
         # initialize optional simulation log 
         if log_sim:
-            logr_probs = np.nan * np.zeros(
-                (len(time_yfrac)-mk_order, num_sims, mk_order+1, self.cluster_size))
-            logr_ptrns = np.nan * np.zeros(
-                (len(time_yfrac)-mk_order, num_sims, self.cluster_size))
-            logr_nrnd = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
-            logr_evbmu_sims = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+            SL = SimLog(time_yfrac, mk_order, num_sims, self.cluster_size, self.terms_fit_names)
 
         # start simulations
         print("\nLaunching {0} simulations...\n".format(num_sims))
@@ -577,7 +616,7 @@ class ALR_WRP(object):
                     d_terms_settings_sim['covariates'] = (True, xds_cov_sim_step)
 
                 # generate time step ALR terms
-                terms_i, _ = self.GenerateALRTerms(
+                terms_i, terms_names = self.GenerateALRTerms(
                     d_terms_settings_sim,
                     np.append(evbmus[ i : i + mk_order], 0),
                     time_yfrac[i : i + mk_order + 1],
@@ -591,11 +630,7 @@ class ALR_WRP(object):
                 evbmus = np.append(evbmus, np.where(probTrans>nrnd)[0][0]+1)
 
                 # optional detail log
-                if log_sim:
-                    logr_probs[i,n,:,:] = prob
-                    logr_ptrns[i,n,:] = probTrans
-                    logr_nrnd[i,n] = nrnd
-                    logr_evbmu_sims[i,n] = np.where(probTrans>nrnd)[0][0]+1
+                if log_sim: SL.Add(X, prob, probTrans, nrnd)
 
                 # update progress bar 
                 pbar.update(1)
@@ -631,27 +666,8 @@ class ALR_WRP(object):
         # save output
         StoreBugXdset(xds_out, self.p_save_sim_xds)
 
-
         # save log file
-        if log_sim:
-            xds_log = xr.Dataset(
-                {
-                    'probs': (('time', 'n_sim', 'mk', 'n_clusters'), logr_probs),
-                    'probTrans': (('time', 'n_sim', 'n_clusters'), logr_ptrns),
-                    'nrnd': (('time', 'n_sim'), logr_nrnd),
-                    'evbmus_sims': (('time', 'n_sim'), logr_evbmu_sims.astype(int)),
-                },
-
-                coords = {
-                    'time' : time_sim[mk_order:],
-                },
-            )
-
-            # save log 
-            StoreBugXdset(xds_log, self.p_log_sim_xds)
-            print('simulation data log stored at {0}'.format(self.p_log_sim_xds))
-            print()
-
+        if log_sim: SL.Save(self.p_log_sim_xds, terms_names)
 
         return xds_out
 
