@@ -37,6 +37,7 @@ from .kma import Persistences
 from .plotting.alr import Plot_PValues, Plot_Params, Plot_Terms
 from .plotting.wts import Plot_Compare_PerpYear, Plot_Compare_Transitions, Plot_Compare_Persistences
 from .plotting.alr import Plot_Compare_Covariate
+from .plotting.alr import Plot_Log_Sim
 
 class ALR_WRP(object):
     'AutoRegressive Logistic Model Wrapper'
@@ -490,7 +491,8 @@ class ALR_WRP(object):
             def __init__(self, time_yfrac, mk_order, num_sims, cluster_size, terms_fit_names):
 
                 # initialize variables to record
-                self.terms = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, len(terms_fit_names)))
+                self.terms = np.nan * np.zeros((len(time_yfrac)-mk_order,
+                                                num_sims, mk_order+1, len(terms_fit_names)))
                 self.probs = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, mk_order+1, cluster_size))
                 self.ptrns = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims, cluster_size))
                 self.nrnd = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
@@ -499,7 +501,7 @@ class ALR_WRP(object):
             def Add(self, terms, prob, probTrans, nrnd):
 
                 # add iteration to log
-                self.terms[i,n,:] = terms
+                self.terms[i,n,:,:] = terms
                 self.probs[i,n,:,:] = prob
                 self.ptrns[i,n,:] = probTrans
                 self.nrnd[i,n] = nrnd
@@ -510,7 +512,7 @@ class ALR_WRP(object):
                 # use xarray to store netcdf
                 xds_log = xr.Dataset(
                     {
-                        'alr_terms': (('time', 'n_sim', 'terms'), self.terms),
+                        'alr_terms': (('time', 'n_sim', 'mk', 'terms',), self.terms),
                         'probs': (('time', 'n_sim', 'mk', 'n_clusters'), self.probs),
                         'probTrans': (('time', 'n_sim', 'n_clusters'), self.ptrns),
                         'nrnd': (('time', 'n_sim'), self.nrnd),
@@ -793,4 +795,23 @@ class ALR_WRP(object):
                     cn,
                     n_sim = num_sims, p_export = p_rep_cn
                 )
+
+    def Report_Sim_Log(self, n_sim=0, t_slice=None, show=True):
+        '''
+        Interactive plot for simulation log
+
+        n_sim  - simulation log to plot
+        '''
+
+        # load fit and sim bmus
+        xds_log = xr.open_dataset(self.p_log_sim_xds, decode_times=True)
+
+        # get simulation
+        log_sim = xds_log.isel(n_sim=n_sim)
+
+        if t_slice != None:
+            log_sim = log_sim.sel(time=t_slice)
+
+        # plot interactive report
+        Plot_Log_Sim(log_sim);
 

@@ -8,6 +8,8 @@ import os.path as op
 # pip
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
+from matplotlib.ticker import (MultipleLocator)
 
 # teslakit
 from .util import MidpointNormalize
@@ -173,6 +175,92 @@ def Plot_Params(params, term_names, show=True):
 
     # add grid
     ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
+
+    # show and return figure
+    if show: plt.show()
+    return fig
+
+
+def Plot_Log_Sim(log, show=True):
+    '''
+    Plot ALR simulation log
+
+    log - xarray.Dataset from alr wrapper (n_sim already selected)
+    '''
+
+    # plot figure
+    #fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    fig = plt.figure(figsize=[18.5,9])
+
+    # figure gridspec
+    gs1 = gridspec.GridSpec(4,1)
+    ax1 = fig.add_subplot(gs1[0])
+    ax2 = fig.add_subplot(gs1[1], sharex=ax1)
+    ax3 = fig.add_subplot(gs1[2], sharex=ax1)
+    ax4 = fig.add_subplot(gs1[3], sharex=ax1)
+
+    # Plot evbmus values
+    ax1.plot(
+        log.time, log.evbmus_sims, ':',
+        linewidth=0.5, color='grey',
+        marker='.', markersize=3,
+        markerfacecolor='crimson', markeredgecolor='crimson'
+    )
+
+    ax1.yaxis.set_major_locator(MultipleLocator(4))
+    ax1.grid(which='major', linestyle=':', alpha=0.5)
+    ax1.set_xlim(log.time[0], log.time[-1])
+    ax1.set_ylabel('Bmus', fontsize=12)
+
+    # Plot evbmus probabilities
+    z = np.diff(np.column_stack(
+        ([np.zeros([len(log.time),1]), log.probTrans.values])
+    ), axis=1)
+    z1 = np.column_stack((z, z[:,-1])).T
+    z2 = np.column_stack((z1, z1[:,-1]))
+    p1 = ax2.pcolor(
+        np.append(log.time, log.time[-1]),
+        np.append(log.n_clusters, log.n_clusters[-1]), z2,
+        cmap='PuRd', edgecolors='grey', linewidth=0.05
+    )
+    ax2.set_ylabel('Bmus',fontsize=12)
+
+    # TODO: gestionar terminos markov 
+    # TODO: no tengo claro si el primero oel ultimo
+    alrt0 = log.alr_terms.isel(mk=0)
+
+    # Plot Terms
+    for v in range(len(log.terms)):
+        if log.terms.values[v].startswith('ss'):
+            ax3.plot(log.time, alrt0[:,v], label=log.terms.values[v])
+
+        if log.terms.values[v].startswith('PC'):
+            ax4.plot(log.time, alrt0[:,v], label=log.terms.values[v])
+
+        if log.terms.values[v].startswith('MJO'):
+            ax4.plot(log.time, alrt0[:,v], label=log.terms.values[v])
+
+    # TODO: plot terms markov??
+
+    ax3.set_ylim(-1.8,1.2)
+    handles, labels = ax3.get_legend_handles_labels()
+    ax3.legend(loc='lower left',ncol=len(handles))
+    ax3.set_ylabel('Seasonality',fontsize=12)
+
+    handles, labels = ax4.get_legend_handles_labels()
+    ax4.legend(loc='lower left',ncol=len(handles))
+    ax4.set_ylabel('Covariates',fontsize=12)
+    # cbar=plt.colorbar(p1,ax=ax2,pad=0)
+    # cbar.set_label('Transition probability')
+
+    gs1.tight_layout(fig, rect=[0.05, [], 0.95, []])
+
+    # custom colorbar for probability
+    gs2 = gridspec.GridSpec(1,1)
+    ax1 = fig.add_subplot(gs2[0])
+    plt.colorbar(p1, cax=ax1)
+    ax1.set_ylabel('Probability')
+    gs2.tight_layout(fig, rect=[0.935, 0.52, 0.99, 0.73])
 
     # show and return figure
     if show: plt.show()
