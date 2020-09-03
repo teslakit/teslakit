@@ -470,7 +470,7 @@ class ALR_WRP(object):
         return f
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
-                 log_sim=False):
+                 log_sim=False, of_probs=0.98, of_pers=5):
         '''
         Launch ARL model simulations
 
@@ -482,6 +482,9 @@ class ALR_WRP(object):
             ("n_sim" dimension (optional) will be iterated with each simulation)
 
         log_sim            - Store a log with simulation detailed information.
+
+        of_probs           - overfit filter probabilities activation
+        of_pers            - overfit filter persistences activation
         '''
 
         class SimLog(object):
@@ -498,14 +501,22 @@ class ALR_WRP(object):
                 self.nrnd = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
                 self.evbmu_sims = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
 
-            def Add(self, terms, prob, probTrans, nrnd):
+                # overfit filter variables (filter states and filtered bmus) 
+                self.of_state = np.zeros((len(time_yfrac)-mk_order, num_sims), dtype=bool)
+                self.of_bmus = np.nan * np.zeros((len(time_yfrac)-mk_order, num_sims))
+
+            def Add(self, ix_t, ix_s, terms, prob, probTrans, nrnd, of_state, of_bmus):
 
                 # add iteration to log
-                self.terms[i,n,:,:] = terms
-                self.probs[i,n,:,:] = prob
-                self.ptrns[i,n,:] = probTrans
-                self.nrnd[i,n] = nrnd
-                self.evbmu_sims[i,n] = np.where(probTrans>nrnd)[0][0]+1
+                self.terms[ix_t,ix_s,:,:] = terms
+                self.probs[ix_t,ix_s,:,:] = prob
+                self.ptrns[ix_t,ix_s,:] = probTrans
+                self.nrnd[ix_t,ix_s] = nrnd
+                self.evbmu_sims[ix_t,ix_s] = np.where(probTrans>nrnd)[0][0]+1
+
+                # add overfit filter data to log
+                self.of_state[ix_t,ix_s] = of_state
+                self.of_bmus[ix_t,ix_s] = of_bmus
 
             def Save(self, p_save, terms_names):
 
@@ -517,6 +528,9 @@ class ALR_WRP(object):
                         'probTrans': (('time', 'n_sim', 'n_clusters'), self.ptrns),
                         'nrnd': (('time', 'n_sim'), self.nrnd),
                         'evbmus_sims': (('time', 'n_sim'), self.evbmu_sims.astype(int)),
+
+                        'overfit_filter_state': (('time', 'n_sim'), self.of_state),
+                        'evbmus_sims_filtered': (('time', 'n_sim'), self.of_bmus.astype(int)),
                     },
 
                     coords = {
@@ -527,6 +541,50 @@ class ALR_WRP(object):
 
                 StoreBugXdset(xds_log, p_save)
                 print('simulation data log stored at {0}\n'.format(p_save))
+
+        class OverfitFilter(object):
+            '''
+            overfit filter for alr outlayer outputs.
+            '''
+            def __init__(self, probs_lim, pers_lim):
+
+                self.active = False
+                self.probs_lim = probs_lim
+                self.pers_lim = pers_lim
+                self.log = ''
+
+            def CheckStatus(self, prob, bmus):
+                'check current iteration filter status'
+
+                # active filter
+                if self.active:
+
+                    # continuation condition 
+                    self.active = np.nanmax(prob[-1, :]) >= of_probs
+
+                    # log when deactivated
+                    if self.active == False:
+                        self.log += '{0} - deactivated (max prob {1})\n'.format(
+                            time_sim[i], np.nanmax(prob[-1,:]))
+
+                # inactive filter
+                else:
+
+                    # re-activation condition
+                    self.active = np.nanmax(prob[-1, :]) >= of_probs and \
+                            np.all(evbmus[-1*of_pers:]==new_bmus)
+
+                    # log when activated
+                    if self.active:
+                        self.log += '{0} - activated (max prob {1})\n'.format(
+                            time_sim[i], np.nanmax(prob[-1,:]))
+
+            def PrintLog(self):
+                'Print filter log'
+
+                if self.log != '':
+                    print('overfit filter log')
+                    print(self.log)
 
 
         # switch library probabilities predictor function 
@@ -569,6 +627,9 @@ class ALR_WRP(object):
         # initialize optional simulation log 
         if log_sim:
             SL = SimLog(time_yfrac, mk_order, num_sims, self.cluster_size, self.terms_fit_names)
+
+        # initialize ALR overfit filter
+        ofilt = OverfitFilter(of_probs, of_pers)
 
         # start simulations
         print("\nLaunching {0} simulations...\n".format(num_sims))
@@ -628,11 +689,26 @@ class ALR_WRP(object):
                 X = np.concatenate(list(terms_i.values()), axis=1)
                 prob = pred_prob_fun(X)  # statsmodels // sklearn functions
                 probTrans = np.cumsum(prob[-1,:])
+
+                # generate random cluster with ALR probs
                 nrnd = np.random.rand()
-                evbmus = np.append(evbmus, np.where(probTrans>nrnd)[0][0]+1)
+                new_bmus = np.where(probTrans>nrnd)[0][0]+1
+
+                # overfit filter status swich
+                ofilt.CheckStatus(prob, np.append(evbmus, new_bmus))
+
+                # override overfit bmus if filter active
+                if ofilt.active:
+                    # criteria: random bmus from that date of the year at  historical
+                    ix_of = np.random.choice(np.where(
+                        self.xds_bmus_fit["time.dayofyear"] == time_sim[i].timetuple().tm_yday)[0])
+                    new_bmus = self.xds_bmus_fit.bmus.values[ix_of]
+
+                # append_bmus 
+                evbmus = np.append(evbmus, new_bmus)
 
                 # optional detail log
-                if log_sim: SL.Add(X, prob, probTrans, nrnd)
+                if log_sim: SL.Add(i, n, X, prob, probTrans, nrnd, ofilt.active, new_bmus)
 
                 # update progress bar 
                 pbar.update(1)
@@ -641,23 +717,12 @@ class ALR_WRP(object):
 
             # close progress bar
             pbar.close()
-
-            # TODO ?
-            # Probabilities in the nsims simulations
-            #evbmus_prob = np.zeros((evbmus_sims.shape[0], self.cluster_size))
-            #for i in range(evbmus_sims.shape[0]):
-            #    for j in range(self.cluster_size):
-            #        evbmus_prob[i, j] = len(np.argwhere(evbmus_sims[i,:]==j+1))/float(num_sims)
-
         print()  # white line after all progress bars
-
-        #evbmus_probcum = np.cumsum(evbmus_prob, axis=1)
 
         # return ALR simulation data in a xr.Dataset
         xds_out = xr.Dataset(
             {
                 'evbmus_sims': (('time', 'n_sim'), evbmus_sims.astype(int)),
-                #'evbmus_probcum': (('time', 'n_cluster'), evbmus_probcum),
             },
 
             coords = {
@@ -670,6 +735,9 @@ class ALR_WRP(object):
 
         # save log file
         if log_sim: SL.Save(self.p_log_sim_xds, terms_names)
+
+        # overfit filter log
+        ofilt.PrintLog()
 
         return xds_out
 
