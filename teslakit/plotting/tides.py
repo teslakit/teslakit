@@ -125,7 +125,7 @@ def Plot_Tide_MMSL(tide_time, tide_val, mmsl_time, mmsl_val, show=True):
     return fig
 
 def Plot_Validate_MMSL_tseries(
-    mmsl_time, mmsl_data, mmsl_pred, show=True):
+    mmsl_time, mmsl_data, mmsl_pred, mmsl_pred_quantiles=np.array([]), show=True):
     'Plots series comparison between mmsl data and mmsl predicted with nlm'
 
     # plot figure
@@ -146,6 +146,13 @@ def Plot_Validate_MMSL_tseries(
     axs.set_title(ttl, fontweight='bold')
     axs.set_xlabel('time')
     axs.set_ylabel('MMSL (mm)')
+
+    # optional: plot mmsl quantiles
+    if mmsl_pred_quantiles.any():
+        plt.fill_between(
+            mmsl_time, mmsl_pred_quantiles[0,:], mmsl_pred_quantiles[1,:],
+            color='grey', alpha=.5, label='Percentiles',
+        )
 
     # show and return figure
     if show: plt.show()
