@@ -1,4 +1,4 @@
-# TESLA-kit Coastal risk assessment <img src="./docs/img/logo.svg" align="left" alt="" width="120"
+# TESLA-kit Coastal risk assessment <img src="./docs/img/logo.svg" align="left" alt="" width="120" />
 
 Teslakit is a Python3 collection of libraries for numerical and statistical calculations and methodologies for handling global climate data.
 
