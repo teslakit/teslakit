@@ -481,7 +481,9 @@ class ALR_WRP(object):
             Covariates used at simulation, compatible with "n_sim" dimension
             ("n_sim" dimension (optional) will be iterated with each simulation)
 
-        log_sim            - Store a log with simulation detailed information.
+        log_sim            - Store a .nc file with all simulation detailed information.
+
+        filters for exceptional ALR overfit probabilities situation and patch:
 
         of_probs           - overfit filter probabilities activation
         of_pers            - overfit filter persistences activation
@@ -553,7 +555,7 @@ class ALR_WRP(object):
                 self.pers_lim = pers_lim
                 self.log = ''
 
-            def CheckStatus(self, prob, bmus):
+            def CheckStatus(self, n_sim, prob, bmus):
                 'check current iteration filter status'
 
                 # active filter
@@ -564,8 +566,8 @@ class ALR_WRP(object):
 
                     # log when deactivated
                     if self.active == False:
-                        self.log += '{0} - deactivated (max prob {1})\n'.format(
-                            time_sim[i], np.nanmax(prob[-1,:]))
+                        self.log += 'sim. {0:02d} - {1} - deactivated (max prob {2})\n'.format(
+                            n_sim, time_sim[i], np.nanmax(prob[-1,:]))
 
                 # inactive filter
                 else:
@@ -576,8 +578,8 @@ class ALR_WRP(object):
 
                     # log when activated
                     if self.active:
-                        self.log += '{0} - activated (max prob {1})\n'.format(
-                            time_sim[i], np.nanmax(prob[-1,:]))
+                        self.log += 'sim. {0:02d} - {1} - activated (max prob {2})\n'.format(
+                            n_sim, time_sim[i], np.nanmax(prob[-1,:]))
 
             def PrintLog(self):
                 'Print filter log'
@@ -621,9 +623,6 @@ class ALR_WRP(object):
         # use a d_terms_settigs copy 
         d_terms_settings_sim = self.d_terms_settings.copy()
 
-        # filter usage counter
-        c_fs = 0
-
         # initialize optional simulation log 
         if log_sim:
             SL = SimLog(time_yfrac, mk_order, num_sims, self.cluster_size, self.terms_fit_names)
@@ -631,9 +630,12 @@ class ALR_WRP(object):
         # initialize ALR overfit filter
         ofilt = OverfitFilter(of_probs, of_pers)
 
+        # initialize ALR simulated bmus array, and overfit filter register array
+        evbmus_sims = np.zeros((len(time_yfrac), num_sims))
+        ofbmus_sims = np.zeros((len(time_yfrac), num_sims), dtype=bool)
+
         # start simulations
         print("\nLaunching {0} simulations...\n".format(num_sims))
-        evbmus_sims = np.zeros((len(time_yfrac), num_sims))
         for n in range(num_sims):
 
             # preload some data (simulation covariates)
@@ -657,7 +659,7 @@ class ALR_WRP(object):
                 desc = 'Sim. Num. {0:03d}{1}'.format(n+1, cvtxt)
             )
 
-            evbmus = evbmus_values[1:mk_order+1]  # TODO 0:mk_order ?
+            evbmus = evbmus_values[1:mk_order+1]
             for i in range(len(time_yfrac) - mk_order):
 
                 # handle simulation covars
@@ -695,7 +697,7 @@ class ALR_WRP(object):
                 new_bmus = np.where(probTrans>nrnd)[0][0]+1
 
                 # overfit filter status swich
-                ofilt.CheckStatus(prob, np.append(evbmus, new_bmus))
+                ofilt.CheckStatus(n, prob, np.append(evbmus, new_bmus))
 
                 # override overfit bmus if filter active
                 if ofilt.active:
@@ -706,6 +708,9 @@ class ALR_WRP(object):
 
                 # append_bmus 
                 evbmus = np.append(evbmus, new_bmus)
+
+                # store overfit filter status
+                ofbmus_sims[i+mk_order, n] = ofilt.active
 
                 # optional detail log
                 if log_sim: SL.Add(i, n, X, prob, probTrans, nrnd, ofilt.active, new_bmus)
@@ -723,6 +728,7 @@ class ALR_WRP(object):
         xds_out = xr.Dataset(
             {
                 'evbmus_sims': (('time', 'n_sim'), evbmus_sims.astype(int)),
+                'ofbmus_sims': (('time', 'n_sim'), ofbmus_sims),
             },
 
             coords = {
