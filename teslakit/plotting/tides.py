@@ -25,23 +25,39 @@ def axplot_histcompare(ax, var_fit, var_sim, color='green', n_bins=40,
     # customize axes
     ax.legend(prop={'size':10})
 
-def Plot_AstronomicalTide(time, atide, show=True):
-    'Plots astronomical tide temporal series'
+def Plot_TideSeries(time, tide, ttl, ylabel, show=True):
+    'Plots generic tide data time series'
 
     # plot figure
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize))
     plt.plot(
-        time, atide, '-k',
+        time, tide, '-k',
         linewidth = 0.04,
     )
     plt.xlim(time[0], time[-1])
-    plt.title('Astronomical tide')
+    plt.title(ttl)
     plt.xlabel('time')
-    plt.ylabel('tide (m)')
+    plt.ylabel(ylabel)
 
     # show and return figure
     if show: plt.show()
     return fig
+
+def Plot_WaterLevel(time, atide, show=True):
+    'Plots water level temporal series'
+
+    ttl = 'Meassured Water Level'
+    ylab = 'water level (m)'
+
+    return Plot_TideSeries(time, atide, ttl, ylab, show)
+
+def Plot_AstronomicalTide(time, atide, show=True):
+    'Plots astronomical tide temporal series'
+
+    ttl = 'Astronomical Tide'
+    ylab = 'tide (m)'
+
+    return Plot_TideSeries(time, atide, ttl, ylab, show)
 
 def Plot_ValidateTTIDE(time, atide, atide_ttide, show=True):
     'Compares astronomical tide and Utide prediction'

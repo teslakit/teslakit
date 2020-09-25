@@ -85,7 +85,6 @@ def axplot_AWT_years(ax, dates_wt, bmus_wt, color_wt, xticks_clean=False,
         )
 
     # configure axis
-    ax.set_xlim(xlims[0], xlims[1])
     ax.set_yticks([])
     ax.xaxis.set_major_locator(yloc5)
     ax.xaxis.set_minor_locator(yloc1)
@@ -100,6 +99,9 @@ def axplot_AWT_years(ax, dates_wt, bmus_wt, color_wt, xticks_clean=False,
         ax.set_xlabel('Year', {'fontsize':8})
 
     if ylab: ax.set_ylabel(ylab)
+
+    if xlims is not None:
+        ax.set_xlim(xlims[0], xlims[1])
 
 def axplot_EOF_evolution(ax, years, EOF_evol):
     'axes plot EOFs evolution'

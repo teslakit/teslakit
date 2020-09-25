@@ -470,7 +470,7 @@ class ALR_WRP(object):
         return f
 
     def Simulate(self, num_sims, time_sim, xds_covars_sim=None,
-                 log_sim=False, of_probs=0.98, of_pers=5):
+                 log_sim=False, overfit_filter=False, of_probs=0.98, of_pers=5):
         '''
         Launch ARL model simulations
 
@@ -485,6 +485,7 @@ class ALR_WRP(object):
 
         filters for exceptional ALR overfit probabilities situation and patch:
 
+        overfit_filter     - overfit filter activation
         of_probs           - overfit filter probabilities activation
         of_pers            - overfit filter persistences activation
         '''
@@ -562,7 +563,7 @@ class ALR_WRP(object):
                 if self.active:
 
                     # continuation condition 
-                    self.active = np.nanmax(prob[-1, :]) >= of_probs
+                    self.active = np.nanmax(prob[-1, :]) >= self.probs_lim
 
                     # log when deactivated
                     if self.active == False:
@@ -573,8 +574,8 @@ class ALR_WRP(object):
                 else:
 
                     # re-activation condition
-                    self.active = np.nanmax(prob[-1, :]) >= of_probs and \
-                            np.all(evbmus[-1*of_pers:]==new_bmus)
+                    self.active = np.nanmax(prob[-1, :]) >= self.probs_lim and \
+                            np.all(evbmus[-1*self.pers_lim:]==new_bmus)
 
                     # log when activated
                     if self.active:
@@ -696,8 +697,9 @@ class ALR_WRP(object):
                 nrnd = np.random.rand()
                 new_bmus = np.where(probTrans>nrnd)[0][0]+1
 
-                # overfit filter status swich
-                ofilt.CheckStatus(n, prob, np.append(evbmus, new_bmus))
+                # overfit filter status swich (if active)
+                if overfit_filter:
+                    ofilt.CheckStatus(n, prob, np.append(evbmus, new_bmus))
 
                 # override overfit bmus if filter active
                 if ofilt.active:
@@ -747,7 +749,7 @@ class ALR_WRP(object):
 
         return xds_out
 
-    def Report_Sim(self, py_month_ini=1, persistences_table=False, show=True):
+    def Report_Sim(self, py_month_ini=1, persistences_hists=False, persistences_table=False, show=True):
         '''
         Report that Compare fitting to simulated bmus
 
@@ -804,12 +806,13 @@ class ALR_WRP(object):
 
 
         # Plot Persistences comparison Fit vs Sim 
-        fig_PS = Plot_Compare_Persistences(
-            cluster_size,
-            pers_hist, pers_sim,
-            show = show,
-        )
-        l_figs.append(fig_PS)
+        if persistences_hists:
+            fig_PS = Plot_Compare_Persistences(
+                cluster_size,
+                pers_hist, pers_sim,
+                show = show,
+            )
+            l_figs.append(fig_PS)
 
         # persistences set table
         if persistences_table:

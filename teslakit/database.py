@@ -409,6 +409,9 @@ class Database(object):
     def Save_TIDE_sim_astro(self, xds):
         save_nc(xds, self.paths.site.TIDE.sim_astro, True)
 
+    def Save_TIDE_hist_astro(self, xds):
+        save_nc(xds, self.paths.site.TIDE.hist_astro)
+
     def Load_TIDE_sim_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_astro, decode_times=True)
 
