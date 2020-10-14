@@ -391,14 +391,14 @@ class Database(object):
 
     # TIDE
 
-    def Load_TIDE_hist(self):
-        xds_ml = xr.open_dataset(self.paths.site.TIDE.mareografo_nc)
-        xds_at = xr.open_dataset(self.paths.site.TIDE.hist_astro)
+    def Load_TIDE_gauge(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.gauge)
+        xds = fill_metadata(xds)
 
-        xds_ml = fill_metadata(xds_ml)
-        xds_at = fill_metadata(xds_at)
+        return xds
 
-        return xds_ml, xds_at
+    def Save_TIDE_hist_astro(self, xds):
+        save_nc(xds, self.paths.site.TIDE.hist_astro)
 
     def Load_TIDE_hist_astro(self):
         xds_at = xr.open_dataset(self.paths.site.TIDE.hist_astro)
@@ -409,8 +409,6 @@ class Database(object):
     def Save_TIDE_sim_astro(self, xds):
         save_nc(xds, self.paths.site.TIDE.sim_astro, True)
 
-    def Save_TIDE_hist_astro(self, xds):
-        save_nc(xds, self.paths.site.TIDE.hist_astro)
 
     def Load_TIDE_sim_astro(self):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_astro, decode_times=True)
