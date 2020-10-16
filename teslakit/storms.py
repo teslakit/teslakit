@@ -177,18 +177,25 @@ def Extract_Circle(xds_TCs, p_lon, p_lat, r, d_vns):
 
             # more parameters 
             prs_s_in = prs[i_storm][ix_in]  # pressure
+
+            # nan data filter
+            if np.all(np.isnan(prs_s_in)):
+                continue
+            no_nan = ~np.isnan(prs_s_in)
+
+            prs_s_in = prs_s_in[no_nan]
             prs_s_min = np.min(prs_s_in)  # pressure minimun
             prs_s_mean = np.mean(prs_s_in)
 
-            vel_s_in = velpm[ix_in]  # velocity
+            vel_s_in = velpm[ix_in][no_nan]  # velocity
             vel_s_mean = np.mean(vel_s_in) # velocity mean
 
             categ = GetStormCategory(prs_s_min)  # category
 
-            dist_in = geo_dist[ix_in]
+            dist_in = geo_dist[ix_in][no_nan]
             p_dm = np.where((dist_in==np.min(dist_in)))[0]  # closest to point
 
-            time_s_in = time[i_storm][ix_in]  # time
+            time_s_in = time[i_storm][ix_in][no_nan]  # time
             time_closest = time_s_in[p_dm][0]  # time closest to point 
 
             # filter storms 

@@ -170,12 +170,8 @@ def axlegend_vel(ax):
     ax.add_artist(leg_vel)
 
 
-def Plot_TCs_TracksParams(TCs_tracks, TCs_params, show=True):
+def Plot_TCs_TracksParams(TCs_tracks, TCs_params, nm_lon='lon', nm_lat='lat', show=True):
     'Plots storms tracks and storms parametrized'
-
-    # custom wmo names
-    nm_lon = 'lon_wmo'
-    nm_lat = 'lat_wmo'
 
     # get data from historical tracks
     n_storms = TCs_tracks.storm.shape[0]
@@ -225,6 +221,7 @@ def Plot_TCs_TracksParams(TCs_tracks, TCs_params, show=True):
 def Plot_TCs_HistoricalTracks(xds_TCs_r1, xds_TCs_r2,
                               lon1, lon2, lat1, lat2,
                               pnt_lon, pnt_lat, r1, r2,
+                              nm_lon='lon', nm_lat='lat',
                               show=True):
     'Plot Historical TCs tracks map, requires basemap module'
 
@@ -251,43 +248,43 @@ def Plot_TCs_HistoricalTracks(xds_TCs_r1, xds_TCs_r2,
 
     # plot r1 storms
     for s in range(len(xds_TCs_r1.storm)):
-        lon = xds_TCs_r1.isel(storm = s).lon_wmo.values[:]
+        lon = xds_TCs_r1.isel(storm = s)[nm_lon].values[:]
         lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
 
         if s==0:
             ax.plot(
-                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r1.isel(storm = s)[nm_lat].values[:],
                 '-', color = 'grey', alpha = 0.5,
                 label = 'Enter {0}° radius'.format(r1)
             )
         else:
             ax.plot(
-                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r1.isel(storm = s)[nm_lat].values[:],
                 '-', color = 'grey',alpha = 0.5
             )
             ax.plot(
-                lon[0], xds_TCs_r1.isel(storm = s).lat_wmo.values[0],
+                lon[0], xds_TCs_r1.isel(storm = s)[nm_lat].values[0],
                 '.', color = 'grey', markersize = 10
             )
 
     # plot r2 storms
     for s in range(len(xds_TCs_r2.storm)):
-        lon = xds_TCs_r2.isel(storm = s).lon_wmo.values[:]
+        lon = xds_TCs_r2.isel(storm = s)[nm_lon].values[:]
         lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
 
         if s==0:
             ax.plot(
-                lon, xds_TCs_r2.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r2.isel(storm = s)[nm_lat].values[:],
                 color = 'indianred', alpha = 0.8,
                 label = 'Enter {0}° radius'.format(r2)
             )
         else:
             ax.plot(
-                lon, xds_TCs_r2.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r2.isel(storm = s)[nm_lat].values[:],
                 color = 'indianred', alpha = 0.8
             )
             ax.plot(
-                lon[0], xds_TCs_r2.isel(storm = s).lat_wmo.values[0],
+                lon[0], xds_TCs_r2.isel(storm = s)[nm_lat].values[0],
                 '.', color = 'indianred', markersize = 10
             )
 
@@ -328,6 +325,7 @@ def Plot_TCs_HistoricalTracks(xds_TCs_r1, xds_TCs_r2,
 def Plot_TCs_HistoricalTracks_Category(xds_TCs_r1, cat,
                                       lon1, lon2, lat1, lat2,
                                       pnt_lon, pnt_lat, r1,
+                                      nm_lon='lon', nm_lat='lat',
                                       show=True):
     'Plot Historical TCs category map, requires basemap module'
 
@@ -353,23 +351,23 @@ def Plot_TCs_HistoricalTracks_Category(xds_TCs_r1, cat,
     m.drawmeridians(np.arange(lon1, lon2, 20), labels = [0,0,0,1])
 
     for s in range(len(xds_TCs_r1.storm)):
-        lon = xds_TCs_r1.isel(storm = s).lon_wmo.values[:]
+        lon = xds_TCs_r1.isel(storm = s)[nm_lon].values[:]
         lon[np.where(lon<0)] = lon[np.where(lon<0)] + 360
 
         if s==0:
             ax.plot(
-                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r1.isel(storm = s)[nm_lat].values[:],
                 '-', color = get_storm_color(int(cat[s].values)),
                 alpha = 0.5, label = 'Enter {0}° radius'.format(r1)
             )
         else:
             ax.plot(
-                lon, xds_TCs_r1.isel(storm = s).lat_wmo.values[:],
+                lon, xds_TCs_r1.isel(storm = s)[nm_lat].values[:],
                 '-', color = get_storm_color(int(cat[s].values)),
                 alpha = 0.5,
             )
             ax.plot(
-                lon[0], xds_TCs_r1.isel(storm = s).lat_wmo.values[0],
+                lon[0], xds_TCs_r1.isel(storm = s)[nm_lat].values[0],
                 '.', color = get_storm_color(int(cat[s].values)),
                 markersize = 10,
             )
