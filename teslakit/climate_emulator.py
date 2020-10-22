@@ -1022,8 +1022,9 @@ class Climate_Emulator(object):
             dims: storm
         '''
 
+        # TODO: sacar fuera
         # filter parameters
-        hs_min, hs_max = 0, 15
+        hs_min, hs_max = 0, 8
         tp_min, tp_max = 2, 25
         ws_min, ws_max = 0, 0.06
 
