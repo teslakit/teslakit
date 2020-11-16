@@ -86,7 +86,14 @@ class Climate_Emulator(object):
         self.extra_variables = []   # extra variables to use in emulator (no waves families)
 
         # to override a particular variable simulation distribution with a Empirical
-        self.icdf_empirical_override = []  # full variable name: "family_var_WT", example: ['swell_2_Hs_23', 'sea_Hs_15', ...] 
+        self.sim_icdf_empirical_override = []  # full variable name: "family_var_WT", example: ['swell_2_Hs_23', 'sea_Hs_15', ...] 
+
+        # simulated waves filter
+        self.sim_waves_filter = {
+            'hs': (0, 8),
+            'tp': (2, 25),
+            'ws': (0, 0.06),
+        }
 
         # paths
         self.p_base      = p_base
@@ -980,7 +987,7 @@ class Climate_Emulator(object):
 
         # optional empirical var_wt override
         fv = '{0}_{1}'.format(vn, i_wt+1)
-        if fv in self.icdf_empirical_override:
+        if fv in self.sim_icdf_empirical_override:
             ppf_VV = Empirical_ICDF(vv, pb)
             return ppf_VV
 
@@ -1031,11 +1038,10 @@ class Climate_Emulator(object):
             dims: storm
         '''
 
-        # TODO: sacar fuera
-        # filter parameters
-        hs_min, hs_max = 0, 8
-        tp_min, tp_max = 2, 25
-        ws_min, ws_max = 0, 0.06
+        # waves parameters filters
+        hs_min, hs_max = self.sim_waves_filter['hs']
+        tp_min, tp_max = self.sim_waves_filter['tp']
+        ws_min, ws_max = self.sim_waves_filter['ws']
 
         # waves families - variables (sorted for simulation output)
         wvs_fams = self.fams
