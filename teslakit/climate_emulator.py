@@ -78,12 +78,15 @@ class Climate_Emulator(object):
         self.do_chrom = True        # True for chromosomes combinations methodology
         self.chrom = None           # chromosomes and chromosomes probs
 
-        # waves families and variables related aprameters
+        # waves families and variables related parameters
         self.fams = []              # waves families to use in emulator
         self.vars_GEV = []          # variables handled with GEV fit
         self.vars_EMP = []          # varibles handled with Empirical fit
         self.vars_WBL = []          # varibles handled with Weibull fit
         self.extra_variables = []   # extra variables to use in emulator (no waves families)
+
+        # to override a particular variable simulation distribution with a Empirical
+        self.icdf_empirical_override = []  # full variable name: "family_var_WT", example: ['swell_2_Hs_23', 'sea_Hs_15', ...] 
 
         # paths
         self.p_base      = p_base
@@ -974,6 +977,12 @@ class Climate_Emulator(object):
         i_wt - Weather Type index
         xds_GEV_Par: GEV parameters
         '''
+
+        # optional empirical var_wt override
+        fv = '{0}_{1}'.format(vn, i_wt+1)
+        if fv in self.icdf_empirical_override:
+            ppf_VV = Empirical_ICDF(vv, pb)
+            return ppf_VV
 
         # get GEV / EMPIRICAL / WEIBULL variables list
         vars_GEV = self.vars_GEV
