@@ -464,8 +464,9 @@ def Plot_Fit_QQ(data_fit, vn, xds_GEV_Par, kma_fit, color='black',
         ax.plot([0, 1], [0, 1], '--b', transform=ax.transAxes)
 
         # customize axis
+        ax.set_title('WT: {0}'.format(wt))
         ax.axis('equal')
-        ax.set_xlabel('Empirical')
+        #ax.set_xlabel('Empirical')
         ax.set_ylabel('GEV')
         ax.legend(prop={'size':8})
 
