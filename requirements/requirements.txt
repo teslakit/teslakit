@@ -29,7 +29,7 @@ nbconvert==5.6.0
 nbformat==4.4.0
 nc-time-axis==1.1.0
 netCDF4==1.5.3
-notebook==6.0.2
+notebook==6.1.5
 numpy==1.18.1
 pandas==1.0.1
 pandocfilters==1.4.2
