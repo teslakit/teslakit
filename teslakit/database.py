@@ -442,6 +442,16 @@ class Database(object):
         xds = xr.open_dataset(self.paths.site.TIDE.sim_mmsl, decode_times=True)
         return xds
 
+    def Save_TIDE_mmsl_params(self, xds):
+        save_nc(xds, self.paths.site.TIDE.mmsl_model_params, True)
+
+    def Load_TIDE_mmsl_params(self):
+        xds = xr.open_dataset(self.paths.site.TIDE.mmsl_model_params)
+        return xds
+
+
+
+
     # COMPLETE OFFSHORE OUTPUT 
 
     def Generate_HIST_Covariates(self):
@@ -487,7 +497,10 @@ class Database(object):
         MSL_h = MSL_h.drop_vars(['mmsl_median']).rename({'mmsl':'MMSL'})
         MSL_h['MMSL'] = MSL_h['MMSL'] / 1000.0  # mm to m
         DWT_h = DWT_h.rename({'bmus':'DWT'})
-        ATD_h = ATD_h.drop_vars(['observed','ntr','sigma']).rename({'predicted':'AT'})
+
+        # TODO: revisar esto
+        ATD_h = ATD_h.drop_vars(['WaterLevels','Residual']).rename({'Predicted': 'AT'})
+        #ATD_h = ATD_h.drop_vars(['observed','ntr','sigma']).rename({'predicted':'AT'})
 
         # combine data
         xds = xr.combine_by_coords(
@@ -888,6 +901,9 @@ class Database(object):
         RCP85ratioHIST_occurrence = mf['RCP85ratioHIST_occurrence']
 
         return lon, lat, RCP85ratioHIST_occurrence
+
+    def Load_SeaLevelRise(self):
+        return xr.open_dataset(self.paths.site.CLIMATE_CHANGE.slr_nc, decode_times=True)
 
 
 
