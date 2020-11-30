@@ -682,9 +682,10 @@ def Plot_ReturnPeriod_Simulations(l_xds_sim, show=True):
 
 
 
-# TODO: revisar funciones _v2
+# TODO: revisar funciones _cambio climatico
 
-def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
+
+def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_percentile=95):
     'axes plot return period historical vs simulation'
 
     # historical maxima
@@ -708,7 +709,8 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
         linewidth = 2, label = 'Simulation (mean)',
         zorder=8,
     )
-    # simulation maxima - mean
+
+    # simulation climate change maxima - mean
     mn2 = np.mean(v_s2, axis=0)
     ax.semilogx(
         t_s2, mn2, '-b',
@@ -716,9 +718,10 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
         zorder=8,
     )
 
-    # simulation maxima percentile 95% and 05%
-    p95 = np.percentile(v_s, 95, axis=0,)
-    p05 = np.percentile(v_s, 5, axis=0,)
+    # simulation maxima percentiles
+    out = 100 - sim_percentile
+    p95 = np.percentile(v_s, 100-out/2.0, axis=0,)
+    p05 = np.percentile(v_s, out/2.0, axis=0,)
 
     ax.semilogx(
         t_s, p95, linestyle='-', color='grey',
@@ -731,12 +734,13 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
     )
     ax.fill_between(
         t_s, p05, p95, color='lightgray',
-        label = 'Simulation (05 - 95 percentile)'
+        label = 'Simulation ({0}% C.I)'.format(sim_percentile)
     )
 
-    # simulation maxima percentile 95% and 05%
-    p95 = np.percentile(v_s2, 95, axis=0,)
-    p05 = np.percentile(v_s2, 5, axis=0,)
+    # simulation climate change maxima percentiles
+    out = 100 - sim_percentile
+    p95 = np.percentile(v_s2, 100-out/2.0, axis=0,)
+    p05 = np.percentile(v_s2, out/2.0, axis=0,)
 
     ax.semilogx(
         t_s2, p95, linestyle='-', color='skyblue',
@@ -749,7 +753,7 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
     )
     ax.fill_between(
         t_s2, p05, p95, color='skyblue', alpha=0.5,
-        label = 'Simulation Climate Change (05 - 95 percentile)'
+        label = 'Simulation Climate Change ({0}% C.I)'.format(sim_percentile)
     )
 
     # customize axs
@@ -759,9 +763,11 @@ def axplot_RP_v2(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name):
     ax.set_ylabel('{0}'.format(var_name))
     ax.set_xlim(left=10**0, right=np.max(np.concatenate([t_h,t_s])))
     ax.tick_params(axis='both', which='both', top=True, right=True)
+    ax.grid(which='both')
 
-def Plot_ReturnPeriodValidation_v2(xds_hist, xds_sim, xds_sim2, show=True):
-    'Plot Return Period historical - simulation validation'
+
+def Plot_ReturnPeriodValidation_CC(xds_hist, xds_sim, xds_sim2, sim_percentile=95, show=True):
+    'Plot Return Period historical - simulation validation - simulation CLIMATE CHANGE'
 
     # aux func for calculating rp time
     def t_rp(time_y):
@@ -785,32 +791,41 @@ def Plot_ReturnPeriodValidation_v2(xds_hist, xds_sim, xds_sim2, show=True):
 
         return ts, vv
 
+    # clean nans
+    t_r = xds_hist.year.values[:]
+    v_r = xds_hist.values[:]
+
+    ix_nan = np.isnan(v_r)
+    t_r = t_r[~ix_nan]
+    v_r = v_r[~ix_nan]
+
     # RP calculation, var sorting historical
-    t_h = t_rp(xds_hist.year.values[:])
-    v_h = np.sort(xds_hist.values[:])
+    t_h = t_rp(t_r)
+    v_h = np.sort(v_r)
 
     # GEV fit historical
-    tg_h, vg_h = gev_fit(v_h)
+    #tg_h, vg_h = gev_fit(v_h)
+    tg_h, vg_h = [],[]
 
     # RP calculation, var sorting simulation
-    t_s = t_rp(xds_sim.year.values[:-1])  # remove last year
-    v_s = np.sort(xds_sim.values[:,:-1])  # remove last year
+    t_s = t_rp(xds_sim.year.values[:-1])  # remove last year*
+    v_s = np.sort(xds_sim.values[:,:-1])  # remove last year*
 
-    t_s2 = t_rp(xds_sim2.year.values[:-1])  # remove last year
-    v_s2 = np.sort(xds_sim2.values[:,:-1])  # remove last year
+    t_s2 = t_rp(xds_sim2.year.values[:-1])  # remove last year*
+    v_s2 = np.sort(xds_sim2.values[:,:-1])  # remove last year*
 
     # figure
     fig, axs = plt.subplots(figsize=(_faspect*_fsize, _fsize))
 
-    axplot_RP_v2(
+    axplot_RP_CC(
         axs,
         t_h, v_h, tg_h, vg_h,
         t_s, v_s,
         t_s2, v_s2,
         xds_sim.name,
+        sim_percentile=sim_percentile,
     )
 
     # show and return figure
     if show: plt.show()
     return fig
-
