@@ -133,7 +133,7 @@ def MaxDiss_Simplified_NoThreshold(data, num_centers, ix_scalar, ix_directional)
 
     # TODO: REFACTOR / OPTIMIZE 
 
-    print('\nMaxDiss waves parameters: {0} --> {1}\n'.format(
+    print('\nMaxDiss dataset: {0} --> {1}\n'.format(
         data.shape[0], num_centers))
 
     # normalize scalar and directional data
