@@ -685,7 +685,7 @@ def Plot_ReturnPeriod_Simulations(l_xds_sim, show=True):
 # TODO: revisar funciones _cambio climatico
 
 
-def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_percentile=95):
+def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_percentile=95,label_1='Simulation', label_2 = 'Simulation Climate Change', ):
     'axes plot return period historical vs simulation'
 
     # historical maxima
@@ -706,7 +706,7 @@ def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_p
     mn = np.mean(v_s, axis=0)
     ax.semilogx(
         t_s, mn, '-r',
-        linewidth = 2, label = 'Simulation (mean)',
+        linewidth = 2, label = '{} (mean)'.format(label_1),
         zorder=8,
     )
 
@@ -714,7 +714,7 @@ def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_p
     mn2 = np.mean(v_s2, axis=0)
     ax.semilogx(
         t_s2, mn2, '-b',
-        linewidth = 2, label = 'Simulation Climate Change (mean)',
+        linewidth = 2, label = '{} (mean)'.format(label_2),
         zorder=8,
     )
 
@@ -734,7 +734,8 @@ def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_p
     )
     ax.fill_between(
         t_s, p05, p95, color='lightgray',
-        label = 'Simulation ({0}% C.I)'.format(sim_percentile)
+        #label = 'Simulation ({0}% C.I)'.format(sim_percentile)
+        label = '{} ({} C.I)'.format(label_1, sim_percentile)
     )
 
     # simulation climate change maxima percentiles
@@ -753,7 +754,8 @@ def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_p
     )
     ax.fill_between(
         t_s2, p05, p95, color='skyblue', alpha=0.5,
-        label = 'Simulation Climate Change ({0}% C.I)'.format(sim_percentile)
+        #label = 'Simulation Climate Change ({0}% C.I)'.format(sim_percentile)
+        label = '{} ({} C.I)'.format(label_2, sim_percentile)
     )
 
     # customize axs
@@ -766,7 +768,7 @@ def axplot_RP_CC(ax, t_h, v_h, tg_h, vg_h, t_s, v_s, t_s2, v_s2, var_name, sim_p
     ax.grid(which='both')
 
 
-def Plot_ReturnPeriodValidation_CC(xds_hist, xds_sim, xds_sim2, sim_percentile=95, show=True):
+def Plot_ReturnPeriodValidation_CC(xds_hist, xds_sim, xds_sim2, sim_percentile=95, label_1='Simulation', label_2 = 'Simulation Climate Change', show=True):
     'Plot Return Period historical - simulation validation - simulation CLIMATE CHANGE'
 
     # aux func for calculating rp time
@@ -780,7 +782,7 @@ def Plot_ReturnPeriodValidation_CC(xds_hist, xds_sim, xds_sim2, sim_percentile=9
         c = -0.1
         vv = np.linspace(0,10,200)
 
-        sha_g, loc_g, sca_g =  genextreme.fit(var_fit, c)
+        sha_g, loc_g, sca_g = genextreme.fit(var_fit, c)
         pg = genextreme.cdf(vv, sha_g, loc_g, sca_g)
 
         ix = pg > 0.1
@@ -824,6 +826,8 @@ def Plot_ReturnPeriodValidation_CC(xds_hist, xds_sim, xds_sim2, sim_percentile=9
         t_s2, v_s2,
         xds_sim.name,
         sim_percentile=sim_percentile,
+        label_1 = label_1,
+        label_2 = label_2,
     )
 
     # show and return figure
