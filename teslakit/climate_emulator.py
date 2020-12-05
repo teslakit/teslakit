@@ -1157,7 +1157,7 @@ class Climate_Emulator(object):
                 ri = randint(len(tws.time))
 
                 # generate sim_row with sorted waves families variables
-                sim_row = np.stack([tws[vn].values[ri] for vn in wvs_fams_vars+vars_extra])
+                sim_row = np.stack([tws[vn].values[ri] for vn in wvs_fams_vars + vars_extra])
 
             # Filters
 
@@ -1274,6 +1274,8 @@ class Climate_Emulator(object):
             WT = int(DWT_sim[c])
             iwt = WT - 1
 
+            do_upd_wvs = False  # to record when to update simulated waves
+
             # KMA Weather Types tcs generation
             if WT <= n_clusters:
 
@@ -1335,10 +1337,10 @@ class Climate_Emulator(object):
                         # locate index of wave family to modify
                         ixu = wvs_fams.index(mod_fam) * 3
 
-                        # replace waves simulation value
-                        sim_wvs[c, :] = sim_wvs[c,:] * 0
-                        sim_wvs[c, ixu:ixu+3] = [
-                            mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
+                        # replace waves: only sea family 
+                        upd_wvs = sim_wvs[c,:] * 0
+                        upd_wvs[c, ixu:ixu+3] = [mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
+                        do_upd_wvs = True
 
                     else:
                         # TODO: no deberia caer aqui
@@ -1350,7 +1352,14 @@ class Climate_Emulator(object):
 
             # no nans or values < 0 stored 
             if ~np.isnan(sim_row).any() and len(np.where(sim_row<0)[0])==0:
+
+                # store TCs sim
                 sims_out[c] = sim_row
+
+                # update waves: only sea 
+                if do_upd_wvs:
+                    sim_wvs[c, :] = upd_wvs
+
                 c+=1
 
                 # progress bar
