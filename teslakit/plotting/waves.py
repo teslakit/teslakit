@@ -242,3 +242,77 @@ def Plot_Waves_Histogram_FitSim(wvs_fams_hist, wvs_fams_sim,
     if show: plt.show()
     return fig
 
+
+def Plot_DWTs_FamiliesPopulation(xds_wvs_fams_sel, bmus, n_clusters, show=True):
+    '''
+    Plot waves families data count and availability for each WT
+
+    wvs_fams (waves families):
+        xarray.Dataset (time,), fam1_Hs, fam1_Tp, fam1_Dir, ...
+        {any number of families}
+
+    xds_DWTs - ESTELA predictor KMA
+        xarray.Dataset (time,), bmus, ...
+    '''
+
+    # get families names and colors
+    n_fams = [vn.replace('_Hs','') for vn in xds_wvs_fams_sel.keys() if '_Hs' in vn]
+    n_bins = len(n_fams)
+
+    # get number of rows and cols for gridplot
+    n_rows, n_cols = GetBestRowsCols(n_clusters)
+
+    # use Hs to count data
+    wv = 'Hs'
+
+    # figure
+    fig = plt.figure(figsize=(_faspect*_fsize, _fsize))
+    gs = gridspec.GridSpec(n_rows, n_cols, wspace=0.15, hspace=0.33)
+    gr, gc = 0, 0
+    for ic in range(n_clusters):
+
+        # count data at clusters for each family
+        pc = np.where(bmus==ic)[0][:]
+
+        yd = np.zeros(len(n_fams))*np.nan
+        nd = np.zeros(len(n_fams))*np.nan
+        for fc, fn in enumerate(n_fams):
+            dd = xds_wvs_fams_sel['{0}_{1}'.format(fn, wv)]
+            vv = dd.isel(time=pc).values[:]
+
+            yd[fc] = sum(~np.isnan(vv))
+            nd[fc] = sum(np.isnan(vv))
+            td = len(vv)
+
+        # axes plot
+        ax = plt.subplot(gs[gr, gc])
+
+        ax.bar(np.arange(n_bins), yd, 0.35)
+        ax.bar(np.arange(n_bins), nd, 0.35, bottom=yd)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title('WT {0} - {1}'.format(ic+1, td))
+
+        # fig legend
+        if gc == 0 and gr == 0:
+            plt.legend(
+                labels = ['available', 'NaN'],
+                bbox_to_anchor=(1, 1),
+                bbox_transform=fig.transFigure,
+            )
+
+        # counter
+        gc += 1
+        if gc >= n_cols:
+            gc = 0
+            gr += 1
+
+    fig.suptitle(
+        'Number of Samples and NaNs by WT and Family: {0}'.format(', '.join(n_fams)),
+        fontsize=14, fontweight = 'bold')
+
+    # show
+    if show: plt.show()
+    return fig
+
