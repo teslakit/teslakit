@@ -891,7 +891,8 @@ class Climate_Emulator(object):
         return WVS_sims
 
     def Simulate_TCs(self, xds_DWT, WVS_sims, xds_TCs_params,
-                     xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT):
+                     xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT,
+                     extra_vars_update=[]):
         '''
         Climate Emulator DWTs TCs simulation
 
@@ -902,6 +903,9 @@ class Climate_Emulator(object):
         xds_TCs_simulation  - xr.Dataset. vars(storm): mu, hs, ss, tp, dir
         prob_change_TCs     - cumulative probabilities of TC category change
         MU_WT, TAU_WT       - intradaily hidrographs for each WT
+
+        extra_vars_update - list(string), optional extra variables to update
+        with value from "xds_TCs_simulation"
         '''
 
         # max. storm waves and KMA
@@ -922,7 +926,7 @@ class Climate_Emulator(object):
             tcs_sim, wvs_upd_sim = self.GenerateTCs(
                 n_clusters, dwt_bmus_sim, dwt_time_sim,
                 xds_TCs_params, xds_TCs_simulation, prob_change_TCs, MU_WT, TAU_WT,
-                wvs_s
+                wvs_s, extra_vars_update=extra_vars_update,
             )
             ls_tcs_sim.append(tcs_sim)
             ls_wvs_upd.append(wvs_upd_sim)
@@ -1218,7 +1222,7 @@ class Climate_Emulator(object):
 
     def GenerateTCs(self, n_clusters, DWT, DWT_time,
                     TCs_params, TCs_simulation, prob_TCs, MU_WT, TAU_WT,
-                    xds_wvs_sim):
+                    xds_wvs_sim, extra_vars_update=[]):
         '''
         Climate Emulator DWTs TCs simulation
 
@@ -1230,6 +1234,8 @@ class Climate_Emulator(object):
         prob_TCs        - cumulative probabilities of TC category change
         MU_WT, TAU_WT   - intradaily hidrographs for each WT
         xds_wvs_sim     - xr.Dataset, waves simulated without TCs (for updating)
+
+        extra_vars_update - list(string), optional extra variables to update with value from "TCs_simulation"
 
         returns xarray.Datasets with updated Waves and simulated TCs data
             vars waves:
@@ -1260,6 +1266,12 @@ class Climate_Emulator(object):
         sim_wvs = np.column_stack([
             xds_wvs_sim[vn].values[:] for vn in wvs_fams_vars
         ])
+
+        # get simulated extra variables for updating (optional)
+        if extra_vars_update:
+            sim_extra = np.column_stack([
+                xds_wvs_sim[vn].values[:] for vn in extra_vars_update
+            ])
 
         # new progress bar 
         pbar = tqdm(
@@ -1342,6 +1354,12 @@ class Climate_Emulator(object):
                         upd_wvs[c, ixu:ixu+3] = [mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
                         do_upd_wvs = True
 
+                        # replace extra variables (optional)
+                        if extra_vars_update:
+                            upd_extra = sim_extra[c,:]
+                            for ve_c, ve in enumerate(extra_vars_update):
+                                upd_extra[ve_c] = TCs_simulation[ve].values[ri]
+
                     else:
                         # TODO: no deberia caer aqui
                         mu_s = 0
@@ -1356,9 +1374,13 @@ class Climate_Emulator(object):
                 # store TCs sim
                 sims_out[c] = sim_row
 
-                # update waves: only sea 
                 if do_upd_wvs:
+                    # update waves: only sea from TCs
                     sim_wvs[c, :] = upd_wvs
+
+                    # update_extra_variables (optional)
+                    if extra_vars_update:
+                        sim_extra[c, :] = upd_extra
 
                 c+=1
 
@@ -1376,6 +1398,12 @@ class Climate_Emulator(object):
         )
         for c, vn in enumerate(wvs_fams_vars):
             xds_WVS_sim_updated[vn] = (('time',), sim_wvs[:,c])
+
+        # add extra variables to waves simulation update (optional)
+        if extra_vars_update:
+            for c, vn in enumerate(extra_vars_update):
+                xds_WVS_sim_updated[vn] = (('time',), sim_extra[:,c])
+
 
         # generated TCs 
         xds_TCs_sim = xr.Dataset(
