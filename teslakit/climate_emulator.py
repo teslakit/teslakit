@@ -1351,12 +1351,12 @@ class Climate_Emulator(object):
 
                         # replace waves: only sea family 
                         upd_wvs = sim_wvs[c,:] * 0
-                        upd_wvs[c, ixu:ixu+3] = [mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
+                        upd_wvs[ixu:ixu+3] = [mod_fam_Hs, mod_fam_Tp, mod_fam_Dir]
                         do_upd_wvs = True
 
                         # replace extra variables (optional)
                         if extra_vars_update:
-                            upd_extra = sim_extra[c,:]
+                            upd_extra = sim_extra[c,:] * 0
                             for ve_c, ve in enumerate(extra_vars_update):
                                 upd_extra[ve_c] = TCs_simulation[ve].values[ri]
 
