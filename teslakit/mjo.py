@@ -41,3 +41,30 @@ def MJO_Categories(rmm1, rmm2, phase):
 
     return categ.astype(int), rmm_categ
 
+def MJO_Phases(rmm1, rmm2):
+    'calculates and returns MJO phases (1-8) and degrees'
+
+    # mjo degrees phase
+    degr = (np.arctan2(rmm2, rmm1))*360/(2*np.pi)
+    degr[degr<0] = degr[degr<0] + 360
+
+    # degree to mjo phase (1-8)
+    phases_sector = [
+        (5, [0, 45]),
+        (6, [45, 90]),
+        (7, [90, 135]),
+        (8, [135, 180]),
+        (1, [180, 225]),
+        (2, [225, 270]),
+        (3, [270, 315]),
+        (4, [315, 360]),
+    ]
+
+    # calculate phase
+    phase = np.zeros(len(degr))*np.nan
+    for p, s in phases_sector:
+        phase[np.where((degr[:]>s[0]) & (degr[:]<=s[1]))] = p
+    phase = phase.astype(int)
+
+    return phase, degr
+
