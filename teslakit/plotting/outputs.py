@@ -216,14 +216,14 @@ def Plot_FitSim_Histograms(data_fit, data_sim, vns, n_bins=40,
     if show: plt.show()
     return fig
 
-def Plot_LevelVariables_Histograms(data_hist, data_sim, show=True):
+def Plot_LevelVariables_Histograms(data_hist, data_sim, label_1='Historical', label_2 = 'Simulation', show=True):
     'Plots histogram comparison (historical - simulation) for level related variables'
 
     # Compare histograms 
     Plot_FitSim_Histograms(
         data_hist, data_sim, ['level', 'AT', 'MMSL', 'TWL'],
         color_1='white', color_2='skyblue', alpha_1=0.9, alpha_2=0.7,
-        label_1='Historical', label_2 = 'Simulation',
+        label_1= label_1, label_2 = label_2,
         gs_1 = 2, gs_2 = 2,
         density=False, show=True
     )
