@@ -323,6 +323,12 @@ class Database(object):
     def Load_TCs_probs_synth(self):
         return xr.open_dataset(self.paths.site.TCs.probs_synth)
 
+    def Load_TCs_r2_mda_Simulations_hytc(self):
+        return xr.open_dataset(self.paths.site.TCs.mda_r2_simulations_hytc)
+
+    def Save_TCs_r2_mda_Simulations_hytc(self, xds):
+        save_nc(xds, self.paths.site.TCs.mda_r2_simulations_hytc)
+
     # WAVES
 
     def Load_WAVES_partitions_GOW(self):
