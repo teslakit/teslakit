@@ -2,7 +2,7 @@
 
 Teslakit is a Python3 collection of libraries for numerical and statistical calculations and methodologies for handling global climate data.
 
-The stochastic climate emulator proposed is built on the recognition that coastal conditions are the result of meteorological forcing, and that synoptic-scale meteorology is in turn a consequence of large-scale quasi-steady atmospheric and oceanic patterns (e.g., Hannachi & Legras, 1995)
+The stochastic climate emulator proposed is built on the recognition that coastal conditions are the result of meteorological forcing, and that synoptic-scale meteorology is in turn a consequence of large-scale quasi-steady atmospheric and oceanic patterns (e.g., Anderson et al. 2019)
 
 
 ## Main contents
@@ -42,6 +42,8 @@ databases:
 
 
 ## Documentation
+
+Anderson, D., Rueda, A., Cagigal, L., Antolinez, J. A. A., Mendez, F. J., & Ruggiero, P. (2019). Time‐varying emulator for short and long‐term analysis of coastal flood hazard potential. Journal of Geophysical Research: Oceans, 124. https://doi.org/10.1029/2019JC015312
 
 Anderson, D., Ruggiero, P., Mendez, F. J., Rueda, A., Antolinez, J. A., Cagigal, L., Storlazzi, C., Barnard, P., & Marra, J. (2018). TIME-VARYING EMULATOR FOR SHORT- AND LONG-TERM ANALYSIS OF COASTAL FLOODING (TESLA-FLOOD). Coastal Engineering Proceedings, 1(36), currents.4. https://doi.org/10.9753/icce.v36.currents.4
 
