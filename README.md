@@ -55,7 +55,7 @@ Serafin, Ruggiero (2014): Simulating extreme total water levels using a time-dep
 ## Install 
 - - -
 
-Source code is currently privately hosted on GitLab at:  https://gitlab.com/geocean/teslakit/tree/master 
+Source code is currently privately hosted on GitLab at:  https://gitlab.com/geoocean/bluemath/bluemath-projects/teslakit/tree/master 
 
 A public "push" mirror can be located on GitHub at: https://github.com/teslakit/teslakit/tree/master 
 
