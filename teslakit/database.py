@@ -163,7 +163,7 @@ class Database(object):
             ('WAVES', ['spectra'], [op.isfile]),
             ('ESTELA', ['coastmat', 'estelamat', 'slp'],
              [op.isfile, op.isfile, op.isfile]),
-            ('TIDE', ['mareografo_nc', 'hist_astro'], [op.isfile, op.isfile]),
+            ('TIDE', ['gauge', 'hist_astro'], [op.isfile, op.isfile]),
             #('HYCREWW', ['rbf_coef'], [op.isdir]),
             #('NEARSHORE', ['swan_projects'], [op.isdir]),
         ]
